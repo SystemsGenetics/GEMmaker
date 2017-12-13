@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-SRA_file = file("./SRA_IDs.txt")
+SRA_file = file(params.sra_list_path)
 SRAs = SRA_file.readLines()
 SRAs.each { 
   sra_dir = file("$it")
@@ -10,7 +10,7 @@ SRAs.each {
 
 process fastq_dump {
   module 'sratoolkit'
-  publishDir "$sra", mode: 'move', overwrite: true
+  publishDir "$sra", mode: 'move'
   time '24h'
 
   input:
@@ -18,11 +18,10 @@ process fastq_dump {
  
   output:
     file "${sra}_{1,2}.fastq" into raw_fastq
-    file "${sra}.fastq-dump.out" into fastq_dump_out
 
 
   """
-    fastq-dump --split-files $sra > ${sra}.fastq-dump.out 2>&1
+    fastq-dump --split-files $sra 
   """
 }
 
@@ -49,7 +48,6 @@ process trimmomatic {
   output:
     file "${sra}_?.trim.fastq" into trim_fastq
     file "${sra}_?s.trim.fastq" into trim_s_fastq
-    file "${sra}.trimmomatic.out" into trimmomatic_out
 
   script:
       """
@@ -68,7 +66,7 @@ process trimmomatic {
           LEADING:3 \
           TRAILING:6 \
           SLIDINGWINDOW:4:15 \
-          MINLEN:50 > ${sra}.trimmomatic.out 2>&1 
+          MINLEN:50 
       else
         # For ease of the next steps, rename the reverse file to the forward.
         # since these are non-paired it really shouldn't matter.
@@ -85,7 +83,7 @@ process trimmomatic {
           LEADING:3 \
           TRAILING:6 \
           SLIDINGWINDOW:4:15 \
-          MINLEN:50 > ${sra}.trimmomatic.out 2>&1
+          MINLEN:50 
       fi
       """
 }
@@ -108,7 +106,6 @@ process hisat2 {
 
   output:
     file "${sra}_vs_${params.ref.prefix}.sam" into sam_files
-    file "${sra}.hisat2.out" into hisat2_out
   
   script:
     """
@@ -123,7 +120,7 @@ process hisat2 {
           -S ${sra}_vs_${params.ref.prefix}.sam \
           -t \
           -p 1 \
-          --dta-cufflinks > ${sra}.hisat2.out 2>&1
+          --dta-cufflinks 
       else 
         hisat2 \
           -x ${params.ref.path}/${params.ref.prefix} \
@@ -133,7 +130,7 @@ process hisat2 {
           -S ${sra}_vs_${params.ref.prefix}.sam \
           -t \
           -p 1 \
-          --dta-cufflinks > ${sra}.hisat2.out 2>&1
+          --dta-cufflinks 
       fi
     """     
 }
@@ -155,11 +152,10 @@ process samtools_sort {
 
   output: 
     file "${sra}_vs_${params.ref.prefix}.bam" into bam_files
-    file "${sra}.samtools-sort.out" into samtools_sort_out
 
   script:
     """
-    samtools sort -o ${sra}_vs_${params.ref.prefix}.bam -O bam ${sra}_vs_${params.ref.prefix}.sam > ${sra}.samtools-sort.out 2>&1
+    samtools sort -o ${sra}_vs_${params.ref.prefix}.bam -O bam ${sra}_vs_${params.ref.prefix}.sam 
     """
 }
 
@@ -179,11 +175,10 @@ process samtools_index {
 
   output:
     file "${sra}_vs_${params.ref.prefix}.bam.bai" into bai_files
-    file "${sra}.samtools-index.out" into samtools_index_out
 
   script:
     """
-    samtools index ${sra}_vs_${params.ref.prefix}.bam > ${sra}.samtools-index.out 2>&1
+    samtools index ${sra}_vs_${params.ref.prefix}.bam 
     """
 }
 
@@ -206,10 +201,9 @@ process stringtie {
   
   output:
     file "${sra}_vs_${params.ref.prefix}.gtf" into stringtie_gtfs
-    file "${sra}.stringtie.out" into stringtie_out
 
   script:
-   """
-   stringtie -v -p 1 -e -G ${params.ref.path}/${params.ref.prefix}.gtf -o ${sra}_vs_${params.ref.prefix}.gtf -l ${sra} ${sra}_vs_${params.ref.prefix}.bam > ${sra}.stringtie.out 2>&1
-   """
+    """
+    stringtie -v -p 1 -e -G ${params.ref.path}/${params.ref.prefix}.gtf -o ${sra}_vs_${params.ref.prefix}.gtf -l ${sra} ${sra}_vs_${params.ref.prefix}.bam 
+    """
 }
