@@ -10,7 +10,7 @@ SRAs.each {
 
 process fastq_dump {
   module 'sratoolkit'
-  publishDir "$sra", mode: 'move'
+  publishDir "$sra", mode: 'link'
   time '24h'
 
   input:
@@ -38,7 +38,7 @@ process fastq_dump {
 process trimmomatic {
 
   module "trimmomatic"
-  publishDir "$sra", mode: 'move'
+  publishDir "$sra", mode: 'link'
   // Trimmomatic can't work with a symlink
   stageInMode "link"
   
