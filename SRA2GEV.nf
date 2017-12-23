@@ -97,8 +97,8 @@ process trimmomatic {
 process hisat2 {
 
   module 'hisat2' 
-  publishDir "$sra", mode: 'move'
-  stageInMode "symlink"
+  publishDir "$sra", mode: 'link'
+  stageInMode "link"
 
   input:
     val sra from SRAs
@@ -110,9 +110,10 @@ process hisat2 {
   
   script:
     """
+      export HISAT2_INDEXES=${params.ref.path}
       if [ -e ${sra}_2.trim.fastq ]; then
         hisat2 \
-          -x ${params.ref.path}/${params.ref.prefix} \
+          -x ${params.ref.prefix} \
           --no-spliced-alignment \
           -q \
           -1 ${sra}_1.trim.fastq \
@@ -124,7 +125,7 @@ process hisat2 {
           --dta-cufflinks 
       else 
         hisat2 \
-          -x ${params.ref.path}/${params.ref.prefix} \
+          -x ${params.ref.prefix} \
           --no-spliced-alignment \
           -q \
           -U ${sra}_1.trim.fastq \
@@ -144,15 +145,15 @@ process hisat2 {
  */
 process samtools_sort {
   module 'samtools'
-  publishDir "$sra", mode: 'move'
-  stageInMode "symlink"
+  publishDir "$sra", mode: 'link'
+  stageInMode "link"
  
   input:
     val sra from SRAs
     file "${sra}_vs_${params.ref.prefix}.sam" from sam_files
 
   output: 
-    file "${sra}_vs_${params.ref.prefix}.bam" into bam_files
+    file "${sra}_vs_${params.ref.prefix}.bam" into bam4index, bam4stringtie
 
   script:
     """
@@ -167,15 +168,15 @@ process samtools_sort {
  */
 process samtools_index {
   module 'samtools'
-  publishDir "$sra", mode: 'move'
-  stageInMode "symlink"
+  publishDir "$sra", mode: 'link'
+  stageInMode "link"
 
   input:
     val sra from SRAs
-    file "${sra}_vs_${params.ref.prefix}.bam" from bam_files
+    file "${sra}_vs_${params.ref.prefix}.bam" from bam4index
 
   output:
-    file "${sra}_vs_${params.ref.prefix}.bam.bai" into bai_files
+    file "${sra}_vs_${params.ref.prefix}.bam.bai" into bai4stringtie
 
   script:
     """
@@ -190,15 +191,16 @@ process samtools_index {
  */
 process stringtie {
   module 'stringtie'
-  publishDir "$sra", mode: 'move'
-  stageInMode "symlink"
+  publishDir "$sra", mode: 'link'
+  stageInMode "link"
   
   input:
     val sra from SRAs
     // We don't really need the .bai file, but we want to ensure
     // this process runs after the samtools_index step so we
     // require it as an input file.
-    file "${sra}_vs_${params.ref.prefix}.bam.bai" from bai_files
+    file "${sra}_vs_${params.ref.prefix}.bam" from bam4stringtie
+    file "${sra}_vs_${params.ref.prefix}.bam.bai" from bai4stringtie
   
   output:
     file "${sra}_vs_${params.ref.prefix}.gtf" into stringtie_gtfs
