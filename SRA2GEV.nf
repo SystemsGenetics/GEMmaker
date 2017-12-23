@@ -39,6 +39,7 @@ process trimmomatic {
 
   module "trimmomatic"
   publishDir "$sra", mode: 'move'
+  // Trimmomatic can't work with a symlink
   stageInMode "link"
   
   input:
@@ -62,7 +63,7 @@ process trimmomatic {
           ${sra}_1s.trim.fastq \
           ${sra}_2.trim.fastq \
           ${sra}_2s.trim.fastq \
-          ILLUMINACLIP:${ILLUMINACLIP_PATH}/fasta_adapter.txt:2:40:15 \
+          ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
           LEADING:3 \
           TRAILING:6 \
           SLIDINGWINDOW:4:15 \
@@ -79,7 +80,7 @@ process trimmomatic {
           -phred33 \
           ${sra}_1.fastq \
           ${sra}_1.trim.fastq \
-          ILLUMINACLIP:${ILLUMINACLIP_PATH}/fasta_adapter.txt:2:40:15 \
+          ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
           LEADING:3 \
           TRAILING:6 \
           SLIDINGWINDOW:4:15 \
@@ -97,7 +98,7 @@ process hisat2 {
 
   module 'hisat2' 
   publishDir "$sra", mode: 'move'
-  stageInMode "link"
+  stageInMode "symlink"
 
   input:
     val sra from SRAs
@@ -144,7 +145,7 @@ process hisat2 {
 process samtools_sort {
   module 'samtools'
   publishDir "$sra", mode: 'move'
-  stageInMode "link"
+  stageInMode "symlink"
  
   input:
     val sra from SRAs
@@ -167,7 +168,7 @@ process samtools_sort {
 process samtools_index {
   module 'samtools'
   publishDir "$sra", mode: 'move'
-  stageInMode "link"
+  stageInMode "symlink"
 
   input:
     val sra from SRAs
@@ -190,7 +191,7 @@ process samtools_index {
 process stringtie {
   module 'stringtie'
   publishDir "$sra", mode: 'move'
-  stageInMode "link"
+  stageInMode "symlink"
   
   input:
     val sra from SRAs
