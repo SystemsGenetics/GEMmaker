@@ -210,3 +210,23 @@ process stringtie {
     stringtie -v -p 1 -e -G ${params.ref.path}/${params.ref.prefix}.gtf -o ${sra}_vs_${params.ref.prefix}.gtf -l ${sra} ${sra}_vs_${params.ref.prefix}.bam 
     """
 }
+
+/**
+ * Generates the final FPKM file
+ */ 
+process fpkm {
+  publishDir "$sra", mode: 'link'
+  stageInMode "link"
+
+  input:
+    val sra from SRAs
+    file "${sra}_vs_${params.ref.prefix}.gtf" from stringtie_gtfs
+
+  outfile:
+    file "${sra}_vs_${params.ref.prefix}.fpkm" into fpkms
+
+  script:
+    """
+    cat ${sra}_vs_${params.ref.prefix}.gtf | awk -F"\t" '{if ($3 == "transcript") print $0}' | perl -p -e 's/^.*?transcript_id "(.*?)";.*FPKM "(.*?)";.*$/$1\t$2/' > ${sra}_vs_${params.ref.prefix}.fpkm
+    """
+}
