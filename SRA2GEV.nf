@@ -227,6 +227,6 @@ process fpkm {
 
   script:
     """
-    ${PWD}/scripts/gtk2fpkm.sh ${sra} ${params.ref.prefix}.gtf
+    ${PWD}/scripts/gtf2fpkm.sh ${sra} ${params.ref.prefix}.gtf
     """
 }
