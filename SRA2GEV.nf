@@ -222,11 +222,11 @@ process fpkm {
     val sra from SRAs
     file "${sra}_vs_${params.ref.prefix}.gtf" from stringtie_gtfs
 
-  outfile:
+  output:
     file "${sra}_vs_${params.ref.prefix}.fpkm" into fpkms
 
   script:
     """
-    cat ${sra}_vs_${params.ref.prefix}.gtf | awk -F"\t" '{if ($3 == "transcript") print $0}' | perl -p -e 's/^.*?transcript_id "(.*?)";.*FPKM "(.*?)";.*$/$1\t$2/' > ${sra}_vs_${params.ref.prefix}.fpkm
+    ${PWD}/scripts/gtk2fpkm.sh ${sra} ${params.ref.prefix}.gtf
     """
 }
