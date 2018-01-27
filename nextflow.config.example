@@ -14,17 +14,21 @@ params {
     prefix = 'GCA_002793175.1_ASM279317v1_genomic'
   }
 
-  trimmomatic.clip_path = "$ILLUMINACLIP_PATH"
+  // Rename the <ILLUNIACLIP_PATH> to be the path where
+  // the trimmomatic clipping files are housed.
+  trimmomatic.clip_path = "<ILLUMINACLIP_PATH>"
 }
 
 profiles {
   standard {
     process.executor = 'local'
   }
-  kamiak {
+  slurm_cluster {
     process {
       executor = 'slurm'
-      queue = 'ficklin'
+      // Rename the <QUEUE_NAME> to that of your SLURM
+      // queue and set any other options needed to submit the jobs.
+      queue = 'QUEUE_NAME'
       cpus = 1
       time = '8h'
       maxRetries = 3
