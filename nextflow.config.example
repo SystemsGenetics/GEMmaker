@@ -27,7 +27,7 @@ profiles {
       queue = 'ficklin'
       cpus = 1
       time = '8h'
-      maxRetries = 1
+      maxRetries = 3
       errorStrategy = 'retry'
     }
     executor {
