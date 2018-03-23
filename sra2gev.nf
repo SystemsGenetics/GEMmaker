@@ -74,6 +74,10 @@ process trimmomatic {
         if [ -e ${sra}_2.fastq]; then
           mv ${sra}_2.fastq ${sra}_1.fastq
         fi
+        # Even though this is not paired-end, we need to create the 1s.trim.fastq
+        # file as an empty file so that the rest of the workflow works
+        touch ${sra}_1s.trim.fastq
+        # Now run trimmomatic
         java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
           SE \
           -threads 1 \
