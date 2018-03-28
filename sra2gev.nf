@@ -45,8 +45,8 @@ process fastq_dump {
     val sra from SRAs
 
   output:
-    set sra, "${sra}_{1,2}.fastq" into raw_fastq
-
+    set sra into raw_fastq_sra
+    file "${sra}_{1,2}.fastq" into raw_fastq
 
   """
     fastq-dump --split-files $sra
@@ -71,11 +71,13 @@ process trimmomatic {
   stageInMode "link"
 
   input:
-    set sra, "${sra}_?.fastq" from raw_fastq
+    set sra from raw_fastq_sra
+    file "${sra}_?.fastq" from raw_fastq
 
   output:
-    set sra, "${sra}_?.trim.fastq", "${sra}_?s.trim.fastq" into trim_fastq
-
+    set sra into trim_fastq_sra
+    file "${sra}_?.trim.fastq" into trim_fastq
+    file "${sra}_?s.trim.fastq" into trim_s_fastq
   script:
       """
       if [ -e ${sra}_1.fastq ] && [ -e ${sra}_2.fastq ]; then
@@ -131,11 +133,13 @@ process hisat2 {
   stageInMode "link"
 
   input:
-    set sra, "${sra}_?.trim.fastq", "${sra}_?s.trim.fastq" from trim_fastq
+    set sra from trim_fastq_sra
+    file "${sra}_?.trim.fastq" from trim_fastq
+    file "${sra}_?s.trim.fastq" from trim_s_fastq
 
   output:
-    set sra, "${sra}_vs_${params.ref.prefix}.sam" into sam_files
-
+    set sra into sam_files_sra
+    file "${sra}_vs_${params.ref.prefix}.sam" into sam_files
   script:
     """
       export HISAT2_INDEXES=${params.ref.path}
@@ -177,10 +181,13 @@ process samtools_sort {
   stageInMode "link"
 
   input:
-    set sra, "${sra}_vs_${params.ref.prefix}.sam" from sam_files
+    set sra from sam_files_sra
+    file "${sra}_vs_${params.ref.prefix}.sam" from sam_files
 
   output:
-    set sra, "${sra}_vs_${params.ref.prefix}.bam" into bam4index
+    set sra into bam4index_sra
+    file "${sra}_vs_${params.ref.prefix}.bam" into bam4index, bam4stringtie
+
 
   script:
     """
@@ -199,11 +206,12 @@ process samtools_index {
   stageInMode "link"
 
   input:
-    set sra, "${sra}_vs_${params.ref.prefix}.bam" from bam4index
+    set sra from bam4index_sra
+    file "${sra}_vs_${params.ref.prefix}.bam" from bam4index, bam4stringtie
 
   output:
-    set sra, "${sra}_vs_${params.ref.prefix}.bam", "${sra}_vs_${params.ref.prefix}.bam.bai" into bam4stringtie
-
+    set sra into bam4stringtie_sra
+    file "${sra}_vs_${params.ref.prefix}.bam.bai" into bai4stringtie
   script:
     """
     samtools index ${sra}_vs_${params.ref.prefix}.bam
@@ -225,10 +233,12 @@ process stringtie {
     // We don't really need the .bai file, but we want to ensure
     // this process runs after the samtools_index step so we
     // require it as an input file.
-    set sra, "${sra}_vs_${params.ref.prefix}.bam", "${sra}_vs_${params.ref.prefix}.bam.bai" from bam4stringtie
-
+    set sra from bam4stringtie_sra
+    file "${sra}_vs_${params.ref.prefix}.bam" from bam4stringtie
+    file "${sra}_vs_${params.ref.prefix}.bam.bai" from bai4stringtie
   output:
-    set sra, "${sra}_vs_${params.ref.prefix}.gtf" into stringtie_gtfs
+    set sra into stringtie_gtfs_sra
+    file "${sra}_vs_${params.ref.prefix}.gtf" into stringtie_gtfs
 
   script:
     """
@@ -244,7 +254,8 @@ process fpkm {
   stageInMode "link"
 
   input:
-    set sra, "${sra}_vs_${params.ref.prefix}.gtf" from stringtie_gtfs
+    set sra from stringtie_gtfs_sra
+    file "${sra}_vs_${params.ref.prefix}.gtf" from stringtie_gtfs
 
   output:
     file "${sra}_vs_${params.ref.prefix}.fpkm" into fpkms
