@@ -37,8 +37,8 @@ Channel
 
 
 process fastq_dump {
-  // module 'sratoolkit'
-  publishDir "$sra", mode: 'link'
+  module 'sratoolkit'
+  //publishDir "$sra", mode: 'link'
   time '24h'
 
   input:
@@ -202,7 +202,7 @@ process samtools_index {
     set sra, "${sra}_vs_${params.ref.prefix}.bam" from bam4index
 
   output:
-    set sra, "${sra}_vs_${params.ref.prefix}.bam", "${sra}_vs_${params.ref.prefix}.bam.bai" into bai4stringtie
+    set sra, "${sra}_vs_${params.ref.prefix}.bam", "${sra}_vs_${params.ref.prefix}.bam.bai" into bam4stringtie
 
   script:
     """
