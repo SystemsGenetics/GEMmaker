@@ -14,42 +14,24 @@ println """\
 
 //This splits the sra input file into lines.
 Channel
-  .fromPath(params.sra_list_path)
-  .splitText()
+  .from( file(params.sra_list_path).readLines() )
   .set { SRAs }
-// I am going to come back to this and see what I can do later about making
-//dirs
-// process file_dir {
-//   input:
-//     set sra from SRAs
-//
-//   output:
-//     set sra, "mj.txt" into dunkzone
-//
-//
-//   """
-//   echo "hello" > mj.txt
-//   """
-//
-// }
-//
-// dunkzone.println()
 
 
 process fastq_dump {
   module 'sratoolkit'
-  //publishDir "$sra", mode: 'link'
+  publishDir "$sra", mode: 'link'
   time '24h'
+  tag { sra }
 
   input:
     val sra from SRAs
-
+ 
   output:
-    set sra into raw_fastq_sra
-    file "${sra}_{1,2}.fastq" into raw_fastq
+    set val(sra), file("${sra}_?.fastq") into raw_fastq
 
   """
-    fastq-dump --split-files $sra
+    fastq-dump --split-files $sra 
   """
 }
 
@@ -60,24 +42,23 @@ process fastq_dump {
  * variable be set in the trimmomatic module. This indicates
  * the path where the clipping files are stored.
  *
- * depends: download
- *
+ * depends: download 
+ * 
  */
 process trimmomatic {
 
   module "trimmomatic"
-  // publishDir "$sra", mode: 'link'
+  publishDir "$sra", mode: 'link'
   // Trimmomatic can't work with a symlink
   stageInMode "link"
+  tag { sra }
 
   input:
-    set sra from raw_fastq_sra
-    file "${sra}_?.fastq" from raw_fastq
+    set val(sra), file("${sra}_?.fastq") from raw_fastq
 
   output:
-    set sra into trim_fastq_sra
-    file "${sra}_?.trim.fastq" into trim_fastq
-    file "${sra}_?s.trim.fastq" into trim_s_fastq
+    set val(sra), file("${sra}_?.trim.fastq"), file("${sra}_?s.trim.fastq") into trim_fastq
+
   script:
       """
       if [ -e ${sra}_1.fastq ] && [ -e ${sra}_2.fastq ]; then
@@ -95,7 +76,7 @@ process trimmomatic {
           LEADING:3 \
           TRAILING:6 \
           SLIDINGWINDOW:4:15 \
-          MINLEN:50
+          MINLEN:50 
       else
         # For ease of the next steps, rename the reverse file to the forward.
         # since these are non-paired it really shouldn't matter.
@@ -116,10 +97,11 @@ process trimmomatic {
           LEADING:3 \
           TRAILING:6 \
           SLIDINGWINDOW:4:15 \
-          MINLEN:50
+          MINLEN:50 
       fi
       """
 }
+
 
 /**
  * Performs hisat2 alignment of fastq files to a genome reference
@@ -128,18 +110,17 @@ process trimmomatic {
  */
 process hisat2 {
 
-  module 'hisat2'
-  // publishDir "$sra", mode: 'link'
+  module 'hisat2' 
+  publishDir "$sra", mode: 'link'
   stageInMode "link"
+  tag { sra }
 
   input:
-    set sra from trim_fastq_sra
-    file "${sra}_?.trim.fastq" from trim_fastq
-    file "${sra}_?s.trim.fastq" from trim_s_fastq
+    set val(sra), file("${sra}_?.trim.fastq"), file("${sra}_?s.trim.fastq") from trim_fastq
 
   output:
-    set sra into sam_files_sra
-    file "${sra}_vs_${params.ref.prefix}.sam" into sam_files
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.sam") into sam_files
+  
   script:
     """
       export HISAT2_INDEXES=${params.ref.path}
@@ -154,8 +135,8 @@ process hisat2 {
           -S ${sra}_vs_${params.ref.prefix}.sam \
           -t \
           -p 1 \
-          --dta-cufflinks
-      else
+          --dta-cufflinks 
+      else 
         hisat2 \
           -x ${params.ref.prefix} \
           --no-spliced-alignment \
@@ -164,9 +145,9 @@ process hisat2 {
           -S ${sra}_vs_${params.ref.prefix}.sam \
           -t \
           -p 1 \
-          --dta-cufflinks
+          --dta-cufflinks 
       fi
-    """
+    """     
 }
 
 
@@ -177,21 +158,19 @@ process hisat2 {
  */
 process samtools_sort {
   module 'samtools'
-  // publishDir "$sra", mode: 'link'
+  publishDir "$sra", mode: 'link'
   stageInMode "link"
-
+  tag { sra }
+ 
   input:
-    set sra from sam_files_sra
-    file "${sra}_vs_${params.ref.prefix}.sam" from sam_files
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.sam") from sam_files
 
-  output:
-    set sra into bam4index_sra
-    file "${sra}_vs_${params.ref.prefix}.bam" into bam4index, bam4stringtie
-
+  output: 
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam") into bam4index, bam4stringtie
 
   script:
     """
-    samtools sort -o ${sra}_vs_${params.ref.prefix}.bam -O bam ${sra}_vs_${params.ref.prefix}.sam
+    samtools sort -o ${sra}_vs_${params.ref.prefix}.bam -O bam ${sra}_vs_${params.ref.prefix}.sam 
     """
 }
 
@@ -202,19 +181,19 @@ process samtools_sort {
  */
 process samtools_index {
   module 'samtools'
-  // publishDir "$sra", mode: 'link'
+  publishDir "$sra", mode: 'link'
   stageInMode "link"
+  tag { sra }
 
   input:
-    set sra from bam4index_sra
-    file "${sra}_vs_${params.ref.prefix}.bam" from bam4index, bam4stringtie
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam") from bam4index
 
   output:
-    set sra into bam4stringtie_sra
-    file "${sra}_vs_${params.ref.prefix}.bam.bai" into bai4stringtie
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam"), file("${sra}_vs_${params.ref.prefix}.bam.bai") into bambai4stringtie
+
   script:
     """
-    samtools index ${sra}_vs_${params.ref.prefix}.bam
+    samtools index ${sra}_vs_${params.ref.prefix}.bam 
     """
 }
 
@@ -225,37 +204,35 @@ process samtools_index {
  */
 process stringtie {
   module 'stringtie'
-  // publishDir "$sra", mode: 'link'
+  publishDir "$sra", mode: 'link'
   stageInMode "link"
-
+  tag { sra }
+  
   input:
-
     // We don't really need the .bai file, but we want to ensure
     // this process runs after the samtools_index step so we
     // require it as an input file.
-    set sra from bam4stringtie_sra
-    file "${sra}_vs_${params.ref.prefix}.bam" from bam4stringtie
-    file "${sra}_vs_${params.ref.prefix}.bam.bai" from bai4stringtie
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam"), file("${sra}_vs_${params.ref.prefix}.bam.bai") from bambai4stringtie
+  
   output:
-    set sra into stringtie_gtfs_sra
-    file "${sra}_vs_${params.ref.prefix}.gtf" into stringtie_gtfs
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.gtf") into stringtie_gtfs
 
   script:
     """
-    stringtie -v -p 1 -e -G ${params.ref.path}/${params.ref.prefix}.gtf -o ${sra}_vs_${params.ref.prefix}.gtf -l ${sra} ${sra}_vs_${params.ref.prefix}.bam
+    stringtie -v -p 1 -e -G ${params.ref.path}/${params.ref.prefix}.gtf -o ${sra}_vs_${params.ref.prefix}.gtf -l ${sra} ${sra}_vs_${params.ref.prefix}.bam 
     """
 }
 
 /**
  * Generates the final FPKM file
- */
+ */ 
 process fpkm {
-  // publishDir "$sra", mode: 'link'
+  publishDir "$sra", mode: 'link'
   stageInMode "link"
+  tag { sra }
 
   input:
-    set sra from stringtie_gtfs_sra
-    file "${sra}_vs_${params.ref.prefix}.gtf" from stringtie_gtfs
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.gtf") from stringtie_gtfs
 
   output:
     file "${sra}_vs_${params.ref.prefix}.fpkm" into fpkms
