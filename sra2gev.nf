@@ -76,7 +76,7 @@ process trimmomatic {
           LEADING:3 \
           TRAILING:6 \
           SLIDINGWINDOW:4:15 \
-          MINLEN:{params.trimmomatic.MINLEN}
+          MINLEN:${params.trimmomatic.MINLEN}
       else
         # For ease of the next steps, rename the reverse file to the forward.
         # since these are non-paired it really shouldn't matter.
