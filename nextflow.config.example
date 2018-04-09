@@ -17,10 +17,12 @@ params {
   // Rename the <ILLUNIACLIP_PATH> to be the path where
   // the trimmomatic clipping files are housed.
   trimmomatic.clip_path = "<ILLUMINACLIP_PATH>"
-}
+  
   // This is a parameter for he minimum length of your RNA-seq reads. 
   // Change parameter based on dataset being used.
   trimmomatic.MINLEN = "30"
+}
+
 
 profiles {
   standard {
