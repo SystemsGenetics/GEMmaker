@@ -1,24 +1,34 @@
 #!/usr/bin/env nextflow
 
-SRA_file = file(params.sra_list_path)
-SRAs = SRA_file.readLines()
-SRAs.each { 
-  sra_dir = file("$it")
-  sra_dir.mkdir() 
-}
+//We need a cool title, here it is:
+println """\
+         ===============================
+         S R A 2 G E V   P I P E L I N E
+         ===============================
+         """
+         .stripIndent()
+
+//This runs the program on my local machine:
+//nextflow run sra2gev.nf -profile standard
+
+
+//This splits the sra input file into lines.
+Channel
+  .from( file(params.sra_list_path).readLines() )
+  .set { SRAs }
 
 
 process fastq_dump {
   module 'sratoolkit'
   publishDir "$sra", mode: 'link'
   time '24h'
+  tag { sra }
 
   input:
     val sra from SRAs
  
   output:
-    file "${sra}_{1,2}.fastq" into raw_fastq
-
+    set val(sra), file("${sra}_?.fastq") into raw_fastq
 
   """
     fastq-dump --split-files $sra 
@@ -41,14 +51,13 @@ process trimmomatic {
   publishDir "$sra", mode: 'link'
   // Trimmomatic can't work with a symlink
   stageInMode "link"
-  
+  tag { sra }
+
   input:
-    val sra from SRAs
-    file "${sra}_?.fastq" from raw_fastq
+    set val(sra), file("${sra}_?.fastq") from raw_fastq
 
   output:
-    file "${sra}_?.trim.fastq" into trim_fastq
-    file "${sra}_?s.trim.fastq" into trim_s_fastq
+    set val(sra), file("${sra}_?.trim.fastq"), file("${sra}_?s.trim.fastq") into trim_fastq
 
   script:
       """
@@ -67,7 +76,7 @@ process trimmomatic {
           LEADING:3 \
           TRAILING:6 \
           SLIDINGWINDOW:4:15 \
-          MINLEN:50 
+          MINLEN:${params.trimmomatic.MINLEN}
       else
         # For ease of the next steps, rename the reverse file to the forward.
         # since these are non-paired it really shouldn't matter.
@@ -88,10 +97,11 @@ process trimmomatic {
           LEADING:3 \
           TRAILING:6 \
           SLIDINGWINDOW:4:15 \
-          MINLEN:50 
+          MINLEN:${params.trimmomatic.MINLEN} 
       fi
       """
 }
+
 
 /**
  * Performs hisat2 alignment of fastq files to a genome reference
@@ -103,14 +113,13 @@ process hisat2 {
   module 'hisat2' 
   publishDir "$sra", mode: 'link'
   stageInMode "link"
+  tag { sra }
 
   input:
-    val sra from SRAs
-    file "${sra}_?.trim.fastq" from trim_fastq
-    file "${sra}_?s.trim.fastq" from trim_s_fastq
+    set val(sra), file("${sra}_?.trim.fastq"), file("${sra}_?s.trim.fastq") from trim_fastq
 
   output:
-    file "${sra}_vs_${params.ref.prefix}.sam" into sam_files
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.sam") into sam_files
   
   script:
     """
@@ -151,13 +160,13 @@ process samtools_sort {
   module 'samtools'
   publishDir "$sra", mode: 'link'
   stageInMode "link"
+  tag { sra }
  
   input:
-    val sra from SRAs
-    file "${sra}_vs_${params.ref.prefix}.sam" from sam_files
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.sam") from sam_files
 
   output: 
-    file "${sra}_vs_${params.ref.prefix}.bam" into bam4index, bam4stringtie
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam") into bam4index, bam4stringtie
 
   script:
     """
@@ -174,13 +183,13 @@ process samtools_index {
   module 'samtools'
   publishDir "$sra", mode: 'link'
   stageInMode "link"
+  tag { sra }
 
   input:
-    val sra from SRAs
-    file "${sra}_vs_${params.ref.prefix}.bam" from bam4index
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam") from bam4index
 
   output:
-    file "${sra}_vs_${params.ref.prefix}.bam.bai" into bai4stringtie
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam"), file("${sra}_vs_${params.ref.prefix}.bam.bai") into bambai4stringtie
 
   script:
     """
@@ -197,17 +206,16 @@ process stringtie {
   module 'stringtie'
   publishDir "$sra", mode: 'link'
   stageInMode "link"
+  tag { sra }
   
   input:
-    val sra from SRAs
     // We don't really need the .bai file, but we want to ensure
     // this process runs after the samtools_index step so we
     // require it as an input file.
-    file "${sra}_vs_${params.ref.prefix}.bam" from bam4stringtie
-    file "${sra}_vs_${params.ref.prefix}.bam.bai" from bai4stringtie
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam"), file("${sra}_vs_${params.ref.prefix}.bam.bai") from bambai4stringtie
   
   output:
-    file "${sra}_vs_${params.ref.prefix}.gtf" into stringtie_gtfs
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.gtf") into stringtie_gtfs
 
   script:
     """
@@ -221,16 +229,16 @@ process stringtie {
 process fpkm {
   publishDir "$sra", mode: 'link'
   stageInMode "link"
+  tag { sra }
 
   input:
-    val sra from SRAs
-    file "${sra}_vs_${params.ref.prefix}.gtf" from stringtie_gtfs
+    set val(sra), file("${sra}_vs_${params.ref.prefix}.gtf") from stringtie_gtfs
 
   output:
     file "${sra}_vs_${params.ref.prefix}.fpkm" into fpkms
 
   script:
     """
-    ${PWD}/scripts/gtf2fpkm.sh ${sra} ${params.ref.prefix}.gtf
+    ${PWD}/scripts/gtf2fpkm.sh ${sra} ${params.ref.prefix}
     """
 }
