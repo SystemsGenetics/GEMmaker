@@ -5,16 +5,6 @@ println """\
          ===============================
          S R A 2 G E V   P I P E L I N E
          ===============================
-         Remote SRA List:    $(params.sra_list_path)
-         Local Samples Path: $(params.local_samples_path)
-         Reference Path:     $(params.ref.path)
-         Reference Prefix:   $(params.ref.prefix)
-
-
-         Trimmomatic Configuration
-         ----------------------
-         Clip Path:  $(params.trimmomatic.clip_path)
-         Min Length: $(params.trimmomatic.MINLEN)
          """
          .stripIndent()
 
@@ -58,7 +48,7 @@ process fastq_dump {
 }
 
 
-combined_fastq = raw_fastq.mix( local_raw_fastq )
+combined_fastq = raw_fastq.mix( local_SRAs )
 
 
 /*
