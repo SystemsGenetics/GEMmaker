@@ -70,7 +70,7 @@ process trimmomatic {
   tag { sra }
 
   input:
-    set val(sra), file("${sra}_?.fastq") from raw_fastq
+    set val(sra), file("${sra}_?.fastq") from combined_fastq
 
   output:
     set val(sra), file("${sra}_?.trim.fastq"), file("${sra}_?s.trim.fastq") into trim_fastq
