@@ -22,7 +22,9 @@ Channel
 // These files must be in the working directory of the nextflow script.
 Channel
   .fromPath( params.local_samples_path )
-  .map { file -> tuple(file.baseName, file) }
+  // Here the SRA file's basename is pulled then split to ensure the trailing
+  // underscore and number are not part of the SRA id used in the script.
+  .map { file -> tuple(file.baseName.split('_')[0], file) }
   .set { local_SRAs }
 
 
