@@ -63,7 +63,7 @@ combined_fastq = raw_fastq.mix( local_SRAs )
 process trimmomatic {
 
   module "trimmomatic"
-  publishDir "$sra", mode: 'link'
+  publishDir "$sra"//, mode: 'link'
   // Trimmomatic can't work with a symlink
   stageInMode "link"
   tag { sra }
