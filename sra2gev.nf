@@ -21,10 +21,7 @@ Channel
 // This reads local SRA files from a path given in the config file.
 // These files must be in the working directory of the nextflow script.
 Channel
-  .fromPath( params.local_samples_path )
-  // Here the SRA file's basename is pulled then split to ensure the trailing
-  // underscore and number are not part of the SRA id used in the script.
-  .map { file -> tuple(file.baseName.split('_')[0], file) }
+  .fromFilePairs( params.sample_path, size: -1 )
   .set { local_SRAs }
 
 
