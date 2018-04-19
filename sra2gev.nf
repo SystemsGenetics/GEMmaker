@@ -21,7 +21,7 @@ Channel
 // This reads local SRA files from a path given in the config file.
 // These files must be in the working directory of the nextflow script.
 Channel
-  .fromFilePairs( params.sample_path, size: -1 )
+  .fromFilePairs( params.local_samples_path, size: -1 )
   .set { local_SRAs }
 
 
