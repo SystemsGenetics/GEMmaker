@@ -24,12 +24,13 @@ To prepare your own samples for execution you must peform the following:
   - A GTF file containing the gene models.  Sometimes a genome assembly does not provide a GTF file, but rather provides a GFF file. You can convert the GFF file to a GTF file using the **gffread** program of [cufflinks](http://cole-trapnell-lab.github.io/cufflinks/file_formats/), which you may have to download separately.
   - You must have hisat2 index files of your genome sequence. These are constructed by using the **hast2-build** command.
   - Make sure that your GTF file has the exact same prefix as the hisat2 index files.
-  - All of the genome annotation files must be in a directory and this directory must be identified in the **nextflow.config** file using the **ref** > **path** paramter. 
+  - All of the genome annotation files must be in a directory and this directory must be identified in the **nextflow.config** file using the **ref** > **path** paramter.
 - Finally, edit the nextflow.config file and change the **prefix** parameter to be the prefix used with **hisat2-build** when you created the index files.
 
 As an example for a proper setup, you will notice that the sra2gev project contains an **examples** directory and within the **examples/reference** directory all of the files have the same prefix of **GCA_002793175.1_ASM279317v1_genomic**.  You'll also notice that this same value is set for the **prefix** in the nextflow.config.example file. The example diretory also contains an SRA_IDS.txt file containing a list of SRA run IDs.
 
 One your files are preapred you can execute the workflow.
+
 
 ## Execute the Workflow
 To execute the workflow on a local machine use this command
@@ -44,4 +45,11 @@ nextflow run sra2gev.nf -profile standard resume
 ```
 
 
+---
 
+## TODO:
+
+- [ ] Update instructions.
+- [ ] Comment the main nextflow script.
+- [ ] Change the parameter to a `.txt` with a file per line.
+- [ ] Format the trimmomatic options.
