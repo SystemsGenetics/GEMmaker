@@ -5,6 +5,7 @@ println """\
          ===============================
          S R A 2 G E V   P I P E L I N E
          ===============================
+         ${params.sra_list_path}
          """
          .stripIndent()
 
@@ -13,41 +14,41 @@ println """\
 
 
 // This splits the sra input file into lines.
-Channel
-  .from( file(params.sra_list_path).readLines() )
-  .filter { it }
-  .set { SRAs }
+// Channel
+//   .from( file(params.sra_list_path).readLines() )
+//   .filter { it }
+//   .set { SRAs }
 
 // This reads local SRA files from a path given in the config file.
 // These files must be in the working directory of the nextflow script.
 Channel
   .fromFilePairs( params.local_samples_path, size: -1 )
-  .set { local_SRAs }
+  .set { combined_fastq }
 
 
 /*
  * The fastq dump process downloads any needed remote fasta files to the
  * current working directory.
  */
-process fastq_dump {
-  module 'sratoolkit'
-  publishDir "$sra", mode: 'link'
-  time '24h'
-  tag { sra }
+// process fastq_dump {
+//   module 'sratoolkit'
+//   publishDir "$sra", mode: 'link'
+//   time '24h'
+//   tag { sra }
+//
+//   input:
+//     val sra from SRAs
+//
+//   output:
+//     set val(sra), file("${sra}_?.fastq") into raw_fastq
+//
+//   """
+//     fastq-dump --split-files $sra
+//   """
+// }
 
-  input:
-    val sra from SRAs
 
-  output:
-    set val(sra), file("${sra}_?.fastq") into raw_fastq
-
-  """
-    fastq-dump --split-files $sra
-  """
-}
-
-
-combined_fastq = raw_fastq.mix( local_SRAs )
+// combined_fastq = raw_fastq.mix( local_SRAs )
 
 
 /*

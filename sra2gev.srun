@@ -7,5 +7,5 @@
 #SBATCH --job-name=OS-GEV
 #SBATCH --output=OS-GEV-%j.out
 
-module add java nextflow trimmomatic
+# module add java nextflow trimmomatic
 nextflow run sra2gev.nf -profile kamiak -resume
