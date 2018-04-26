@@ -74,7 +74,7 @@ process fastq_dump {
 /*
  * Combine the remote and local samples into the same channel.
  */
-COMBINED_SAMPLES = DOWNLOADED_SRAS.mix( REMOTE_SRAS )
+COMBINED_SAMPLES = DOWNLOADED_SRAS.mix( LOCAL_SAMPLES )
 
 
 /*
