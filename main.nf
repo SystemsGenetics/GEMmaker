@@ -24,7 +24,7 @@ println """\
 =================================
 
  Parameters:
-  + Local sample glob:
+  + Local sample glob:          ${params.local_samples_path}
   + Genome reference path:
   + Reference genome prefix:
   + Trimmomatic clip path:
