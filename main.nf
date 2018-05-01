@@ -16,19 +16,18 @@
 
 
 // Display the workflow title and show user parameters.
-// TODO: Add momre parameters.
-
 println """\
 =================================
  S R A 2 G E V   P I P E L I N E
 =================================
 
- Parameters:
-  + Local sample glob:          ${params.local_samples_path}
-  + Genome reference path:
-  + Reference genome prefix:
-  + Trimmomatic clip path:
-  + Trimmomatic minimum length:
+Parameters:
+  + Remote SRA list path:        ${params.sra_list_path}
+  + Local sample glob:           ${params.local_samples_path}
+  + Genome reference path:       ${params.ref.path}
+  + Reference genome prefix:     ${params.ref.prefix}
+  + Trimmomatic clip path:       ${params.trimmomatic.clip_path}
+  + Trimmomatic minimum length:  ${params.trimmomatic.MINLEN}
 """
 
 
@@ -63,7 +62,7 @@ process fastq_dump {
     val sra from REMOTE_SRAS
 
   output:
-    set val(sra), file("${sra}_?.fastq") into DOWNLOADED_SRAS
+    set val(sra), file("${sra}_?.fastq") into DOWNLOADED_SRAS mode flatten
 
   """
     fastq-dump --split-files $sra
@@ -72,9 +71,47 @@ process fastq_dump {
 
 
 /*
+ * Performs a SRR to SRX converison:
+ *
+ * This first checks to see if the format is standard SRR,ERR,DRR
+ * This takes the input SRR numbersd and converts them to SRX.
+ * This is done by a python script that is stored in the "scripts" dir
+ * The next step combines them
+ */
+process SRR_to_SRX {
+  
+  module 'python3'
+  publishDir "$sra", mode: 'link'
+  tag { sra }
+
+  input:
+    set val(sra), file(pass_files) from DOWNLOADED_SRAS
+
+  output:
+    set stdout, file(pass_files) into SRX_GROUPS
+
+  """
+  if [[ "$sra" == [SDE]RR* ]]; then
+    python3 ${PWD}/scripts/retrieve_sample_metadata.py $sra
+  else
+    echo -n "SRX_$sra"
+  fi
+  """
+}
+
+
+/*
+ * This groups the channels based on srx numbers.
+ */
+SRX_GROUPS
+  .groupTuple()
+  .set { GROUPED_SRX }
+
+
+/*
  * Combine the remote and local samples into the same channel.
  */
-COMBINED_SAMPLES = DOWNLOADED_SRAS.mix( LOCAL_SAMPLES )
+COMBINED_SAMPLES = GROUPED_SRX.mix( LOCAL_SAMPLES )
 
 
 /*
