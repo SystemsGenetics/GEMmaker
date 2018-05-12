@@ -33,25 +33,27 @@ Parameters:
 
 /*
  * Local Sample Input.
+ * This checks the folder that the user has given
  */
 
 if (params.local_samples_path == 'none'){
   Channel
     .empty()
-    .set { LOCAL_SAMPLES}
+    .set { LOCAL_SAMPLES }
 } else{
   Channel
     .fromFilePairs( params.local_samples_path, size: -1 )
-  // .i fEmpty()
     .set { LOCAL_SAMPLES }
 }
+
+// LOCAL_SAMPLES.subscribe{ println it }
 
 /*
  * Remote SRA Input.
  */
 Channel
   .from( file(params.sra_list_path).readLines() )
-  .filter { it }
+  // .filter { it }
   .set { REMOTE_SRAS }
 
 
@@ -64,17 +66,27 @@ process fastq_dump {
   module 'sratoolkit'
   publishDir "$sra", mode: 'link'
   time '24h'
+  tag { sra }
 
   input:
     val sra from REMOTE_SRAS
 
   output:
-    set val(sra), file("${sra}_?.fastq") into DOWNLOADED_SRAS mode flatten
+    set val(sra), file("${sra}_?.fastq") into DOWNLOADED_SRAS
 
   """
     fastq-dump --split-files $sra
   """
 }
+
+// DOWNLOADED_SRAS.subscribe{ println it }
+
+/*
+ * Combine the remote and local samples into the same channel.
+ */
+COMBINED_SAMPLES = DOWNLOADED_SRAS.mix( LOCAL_SAMPLES )
+
+// COMBINED_SAMPLES.subscribe{ println it }
 
 
 /*
@@ -92,20 +104,21 @@ process SRR_to_SRX {
   tag { sra }
 
   input:
-    set val(sra), file(pass_files) from DOWNLOADED_SRAS
+    set val(sra), file(pass_files) from COMBINED_SAMPLES
 
   output:
-    set stdout, file(pass_files) into SRX_GROUPS
+    set stdout, file(pass_files) into SRX_GROUPS mode flatten
 
   """
   if [[ "$sra" == [SDE]RR* ]]; then
     python3 ${PWD}/scripts/retrieve_sample_metadata.py $sra
+
   else
     echo -n "SRX_$sra"
   fi
   """
 }
-
+// SRX_GROUPS.subscribe{ println it }
 
 /*
  * This groups the channels based on srx numbers.
@@ -115,12 +128,36 @@ SRX_GROUPS
   .set { GROUPED_SRX }
 
 
-/*
- * Combine the remote and local samples into the same channel.
- */
-COMBINED_SAMPLES = GROUPED_SRX.mix( LOCAL_SAMPLES )
+// GROUPED_SRX.subscribe{ println it }
 
-// COMBINED_SAMPLES.subscribe{ println it }
+  /**
+   *
+   * This process merges the fastq files based on their SRX number.
+   */
+process SRR_combine{
+  publishDir "$srx", mode: 'link'
+  tag { srx }
+
+  input:
+    set val(srx), file(grouped) from GROUPED_SRX
+  output:
+    set val(srx), file("${srx}_?.fastq") into MERGED_SAMPLES
+
+  // This command tests to see if ls produces a 0 or not by checking
+  // its standard out. We do not use a "if [-e *foo]" becuase it gets
+  // confused if there are more than one things returned by the wildcard
+  """
+    if ls *_1.fastq >/dev/null 2>&1; then
+      cat *_1.fastq >> "${srx}_1.fastq"
+    fi
+
+    if ls *_2.fastq >/dev/null 2>&1; then
+      cat *_2.fastq >> "${srx}_2.fastq"
+    fi
+  """
+
+}
+
 
 
 /*
@@ -134,28 +171,28 @@ COMBINED_SAMPLES = GROUPED_SRX.mix( LOCAL_SAMPLES )
  process trimmomatic {
 
    module "trimmomatic"
-   publishDir "$sra", mode: 'link'
-   tag { sra }
+   publishDir "$srx", mode: 'link'
+   tag { srx }
 
    input:
-     set val(sra), file("${sra}_?.fastq") from COMBINED_SAMPLES
+     set val(srx), file("${srx}_?.fastq") from MERGED_SAMPLES
 
    output:
-     set val(sra), file("${sra}_?.trim.fastq"), file("${sra}_?s.trim.fastq") into TRIMMED_SAMPLES
+     set val(srx), file("${srx}_?.trim.fastq"), file("${srx}_?s.trim.fastq") into TRIMMED_SAMPLES
 
    script:
        """
-       if [ -e ${sra}_1.fastq ] && [ -e ${sra}_2.fastq ]; then
+       if [ -e ${srx}_1.fastq ] && [ -e ${srx}_2.fastq ]; then
          java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
            PE \
            -threads 1 \
            -phred33 \
-           ${sra}_1.fastq \
-           ${sra}_2.fastq \
-           ${sra}_1.trim.fastq \
-           ${sra}_1s.trim.fastq \
-           ${sra}_2.trim.fastq \
-           ${sra}_2s.trim.fastq \
+           ${srx}_1.fastq \
+           ${srx}_2.fastq \
+           ${srx}_1.trim.fastq \
+           ${srx}_1s.trim.fastq \
+           ${srx}_2.trim.fastq \
+           ${srx}_2s.trim.fastq \
            ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
            LEADING:3 \
            TRAILING:6 \
@@ -164,19 +201,19 @@ COMBINED_SAMPLES = GROUPED_SRX.mix( LOCAL_SAMPLES )
        else
          # For ease of the next steps, rename the reverse file to the forward.
          # since these are non-paired it really shouldn't matter.
-         if [ -e ${sra}_2.fastq]; then
-           mv ${sra}_2.fastq ${sra}_1.fastq
+         if [ -e ${srx}_2.fastq]; then
+           mv ${srx}_2.fastq ${srx}_1.fastq
          fi
          # Even though this is not paired-end, we need to create the 1s.trim.fastq
          # file as an empty file so that the rest of the workflow works
-         touch ${sra}_1s.trim.fastq
+         touch ${srx}_1s.trim.fastq
          # Now run trimmomatic
          java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
            SE \
            -threads 1 \
            -phred33 \
-           ${sra}_1.fastq \
-           ${sra}_1.trim.fastq \
+           ${srx}_1.fastq \
+           ${srx}_1.trim.fastq \
            ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
            LEADING:3 \
            TRAILING:6 \
@@ -195,28 +232,28 @@ COMBINED_SAMPLES = GROUPED_SRX.mix( LOCAL_SAMPLES )
 process hisat2 {
 
   module 'hisat2'
-  publishDir "$sra", mode: 'link'
+  publishDir "$srx", mode: 'link'
   stageInMode "link"
-  tag { sra }
+  tag { srx }
 
   input:
-   set val(sra), file("${sra}_?.trim.fastq"), file("${sra}_?s.trim.fastq") from TRIMMED_SAMPLES
+   set val(srx), file("${srx}_?.trim.fastq"), file("${srx}_?s.trim.fastq") from TRIMMED_SAMPLES
 
   output:
-   set val(sra), file("${sra}_vs_${params.ref.prefix}.sam") into INDEXED_SAMPLES
+   set val(srx), file("${srx}_vs_${params.ref.prefix}.sam") into INDEXED_SAMPLES
 
   script:
    """
      export HISAT2_INDEXES=${params.ref.path}
-     if [ -e ${sra}_2.trim.fastq ]; then
+     if [ -e ${srx}_2.trim.fastq ]; then
        hisat2 \
          -x ${params.ref.prefix} \
          --no-spliced-alignment \
          -q \
-         -1 ${sra}_1.trim.fastq \
-         -2 ${sra}_2.trim.fastq \
-         -U ${sra}_1s.trim.fastq,${sra}_2s.trim.fastq \
-         -S ${sra}_vs_${params.ref.prefix}.sam \
+         -1 ${srx}_1.trim.fastq \
+         -2 ${srx}_2.trim.fastq \
+         -U ${srx}_1s.trim.fastq,${srx}_2s.trim.fastq \
+         -S ${srx}_vs_${params.ref.prefix}.sam \
          -t \
          -p 1 \
          --dta-cufflinks
@@ -225,8 +262,8 @@ process hisat2 {
          -x ${params.ref.prefix} \
          --no-spliced-alignment \
          -q \
-         -U ${sra}_1.trim.fastq \
-         -S ${sra}_vs_${params.ref.prefix}.sam \
+         -U ${srx}_1.trim.fastq \
+         -S ${srx}_vs_${params.ref.prefix}.sam \
          -t \
          -p 1 \
          --dta-cufflinks
@@ -242,19 +279,19 @@ process hisat2 {
  */
 process samtools_sort {
   module 'samtools'
-  publishDir "$sra", mode: 'link'
+  publishDir "$srx", mode: 'link'
   stageInMode "link"
-  tag { sra }
+  tag { srx }
 
   input:
-    set val(sra), file("${sra}_vs_${params.ref.prefix}.sam") from INDEXED_SAMPLES
+    set val(srx), file("${srx}_vs_${params.ref.prefix}.sam") from INDEXED_SAMPLES
 
   output:
-    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam") into SORTED_FOR_INDEX
+    set val(srx), file("${srx}_vs_${params.ref.prefix}.bam") into SORTED_FOR_INDEX
 
   script:
     """
-    samtools sort -o ${sra}_vs_${params.ref.prefix}.bam -O bam ${sra}_vs_${params.ref.prefix}.sam
+    samtools sort -o ${srx}_vs_${params.ref.prefix}.bam -O bam ${srx}_vs_${params.ref.prefix}.sam
     """
 }
 
@@ -266,63 +303,72 @@ process samtools_sort {
  */
 process samtools_index {
   module 'samtools'
-  publishDir "$sra", mode: 'link'
+  publishDir "$srx", mode: 'link'
   stageInMode "link"
+  tag { srx }
 
   input:
-    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam") from SORTED_FOR_INDEX
+    set val(srx), file("${srx}_vs_${params.ref.prefix}.bam") from SORTED_FOR_INDEX
 
   output:
-    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam"), file("${sra}_vs_${params.ref.prefix}.bam.bai") into BAM_INDEXED_FOR_STRINGTIE
+    set val(srx), file("${srx}_vs_${params.ref.prefix}.bam"), file("${srx}_vs_${params.ref.prefix}.bam.bai") into BAM_INDEXED_FOR_STRINGTIE
 
   script:
     """
-    samtools index ${sra}_vs_${params.ref.prefix}.bam
+    samtools index ${srx}_vs_${params.ref.prefix}.bam
     """
 }
 
 
-/*
+
+/**
  * Generates expression-level transcript abundance
  *
  * depends: samtools_index
  */
 process stringtie {
   module 'stringtie'
-  publishDir "$sra", mode: 'link'
+  publishDir "$srx", mode: 'link'
   stageInMode "link"
+  tag { srx }
 
   input:
     // We don't really need the .bai file, but we want to ensure
     // this process runs after the samtools_index step so we
     // require it as an input file.
-    set val(sra), file("${sra}_vs_${params.ref.prefix}.bam"), file("${sra}_vs_${params.ref.prefix}.bam.bai") from BAM_INDEXED_FOR_STRINGTIE
+    set val(srx), file("${srx}_vs_${params.ref.prefix}.bam"), file("${srx}_vs_${params.ref.prefix}.bam.bai") from BAM_INDEXED_FOR_STRINGTIE
 
   output:
-    set val(sra), file("${sra}_vs_${params.ref.prefix}.gtf") into STRINGTIE_GTF
+    set val(srx), file("${srx}_vs_${params.ref.prefix}.ga") into STRINGTIE_GTF
 
   script:
     """
-    stringtie -v -p 1 -e -G ${params.ref.path}${params.ref.prefix}.gtf -o ${sra}_vs_${params.ref.prefix}.gtf -l ${sra} ${sra}_vs_${params.ref.prefix}.bam
+    stringtie \
+    -v \
+    -p 1 \
+    -e \
+    -o ${srx}_vs_${params.ref.prefix}.gtf \
+    -G ${params.ref.path}/${params.ref.prefix}.gtf \
+    -A ${srx}_vs_${params.ref.prefix}.ga \
+    -l ${srx} ${srx}_vs_${params.ref.prefix}.bam
     """
 }
-
-
 /*
  * Generates the final FPKM file
  */
 process fpkm {
-  publishDir "$sra", mode: 'link'
+  publishDir "$srx", mode: 'link'
   stageInMode "link"
+  tag { srx }
 
   input:
-    set val(sra), file("${sra}_vs_${params.ref.prefix}.gtf") from STRINGTIE_GTF
+    set val(srx), file("${srx}_vs_${params.ref.prefix}.ga") from STRINGTIE_GTF
 
   output:
-    file "${sra}_vs_${params.ref.prefix}.fpkm" into FPKMS
+    file "${srx}_vs_${params.ref.prefix}.fpkm" into FPKMS
 
   script:
     """
-    ${PWD}/scripts/gtf2fpkm.sh ${sra} ${params.ref.prefix}
+    ${PWD}/scripts/gtf2fpkm.sh ${srx} ${params.ref.prefix}
     """
 }
