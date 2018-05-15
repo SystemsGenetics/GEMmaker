@@ -1,0 +1,14 @@
+#!/bin/sh
+#SBATCH --partition=ficklin
+#SBATCH --account=ficklin
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --time=48:00:00
+#SBATCH --job-name=OS-GEV
+#SBATCH --output=OS-GEV-%j.out
+
+module add java nextflow trimmomatic
+nextflow run main.nf -profile kamiak \
+  -resume \
+  -with-report OS-GEV-report.html \
+  -with-timeline OS-GEV-timeline.html
