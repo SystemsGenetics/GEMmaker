@@ -62,9 +62,9 @@ Channel
  * current working directory.
  */
 process fastq_dump {
-
   module 'sratoolkit'
   publishDir "$sra", mode: 'link'
+  stageInMode "link"
   time '24h'
   tag { sra }
 
@@ -98,9 +98,9 @@ COMBINED_SAMPLES = DOWNLOADED_SRAS.mix( LOCAL_SAMPLES )
  * The next step combines them
  */
 process SRR_to_SRX {
-
   module 'python3'
   publishDir "$sra", mode: 'link'
+  stageInMode "link"
   tag { sra }
 
   input:
@@ -136,6 +136,7 @@ SRX_GROUPS
    */
 process SRR_combine{
   publishDir "$srx", mode: 'link'
+  stageInMode "link"
   tag { srx }
 
   input:
@@ -158,6 +159,31 @@ process SRR_combine{
 
 }
 
+/*
+ * Performs fastqc on fastq files prior to trimmomatic
+ *
+ */
+process fastqc_1 {
+  module "fastQC"
+  publishDir "$srx", mode: 'link'
+  stageInMode "link"
+  tag { srx }
+
+  input:
+    set val(srx), file(pass_files) from MERGED_SAMPLES
+
+  output:
+    set val(srx), file(pass_files) into MERGED_FASTQC_SAMPLES
+    set file("${srx}_?_fastqc.html"), file("${srx}_?_fastqc.zip") into FASTQC_1_OUTPUT
+
+  """
+  fastqc $pass_files
+  """
+}
+
+// MERGED_FASTQC_SAMPLES.subscribe{
+//   println it
+// }
 
 
 /*
@@ -167,77 +193,106 @@ process SRR_combine{
  * variable be set in the trimmomatic module. This indicates
  * the path where the clipping files are stored.
  *
+ * MINLEN is calculated using based on percentage of the mean
+ * read length. The percenage is determined by the user in the
+ * "nextflow.config" file
  */
  process trimmomatic {
-
    module "trimmomatic"
    publishDir "$srx", mode: 'link'
+   stageInMode "link"
    tag { srx }
 
    input:
-     set val(srx), file("${srx}_?.fastq") from MERGED_SAMPLES
+     set val(srx), file("${srx}_?.fastq") from MERGED_FASTQC_SAMPLES
 
    output:
-     set val(srx), file("${srx}_?.trim.fastq"), file("${srx}_?s.trim.fastq") into TRIMMED_SAMPLES
+     set val(srx), file("${srx}_??_trim.fastq") into TRIMMED_SAMPLES
 
    script:
-       """
-       if [ -e ${srx}_1.fastq ] && [ -e ${srx}_2.fastq ]; then
-         java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
-           PE \
-           -threads 1 \
-           -phred33 \
-           ${srx}_1.fastq \
-           ${srx}_2.fastq \
-           ${srx}_1.trim.fastq \
-           ${srx}_1s.trim.fastq \
-           ${srx}_2.trim.fastq \
-           ${srx}_2s.trim.fastq \
-           ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
-           LEADING:3 \
-           TRAILING:6 \
-           SLIDINGWINDOW:4:15 \
-           MINLEN:${params.trimmomatic.MINLEN}
-       else
-         # For ease of the next steps, rename the reverse file to the forward.
-         # since these are non-paired it really shouldn't matter.
-         if [ -e ${srx}_2.fastq]; then
-           mv ${srx}_2.fastq ${srx}_1.fastq
-         fi
-         # Even though this is not paired-end, we need to create the 1s.trim.fastq
-         # file as an empty file so that the rest of the workflow works
-         touch ${srx}_1s.trim.fastq
-         # Now run trimmomatic
-         java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
-           SE \
-           -threads 1 \
-           -phred33 \
-           ${srx}_1.fastq \
-           ${srx}_1.trim.fastq \
-           ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
-           LEADING:3 \
-           TRAILING:6 \
-           SLIDINGWINDOW:4:15 \
-           MINLEN:${params.trimmomatic.MINLEN}
-       fi
-       """
+     """
+     minlen=`'${PWD}/scripts/Mean_length.sh' '${srx}' '${params.trimmomatic.MINLEN}'`
+     if [ -e ${srx}_1.fastq ] && [ -e ${srx}_2.fastq ]; then
+      java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
+        PE \
+        -threads 1 \
+        -phred33 \
+        ${srx}_1.fastq \
+        ${srx}_2.fastq \
+        ${srx}_1p_trim.fastq \
+        ${srx}_1u_trim.fastq \
+        ${srx}_2p_trim.fastq \
+        ${srx}_2u_trim.fastq \
+        ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
+        LEADING:3 \
+        TRAILING:6 \
+        SLIDINGWINDOW:4:15 \
+        MINLEN:"\$minlen"
+     else
+      # For ease of the next steps, rename the reverse file to the forward.
+      # since these are non-paired it really shouldn't matter.
+      if [ -e ${srx}_2.fastq]; then
+        mv ${srx}_2.fastq ${srx}_1.fastq
+      fi
+      # Even though this is not paired-end, we need to create the 1p.trim.fastq
+      # file as an empty file so that the rest of the workflow works
+      touch ${srx}_1p_trim.fastq
+      # Now run trimmomatic
+      java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
+        SE \
+        -threads 1 \
+        -phred33 \
+        ${srx}_1.fastq \
+        ${srx}_1u_trim.fastq \
+        ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
+        LEADING:3 \
+        TRAILING:6 \
+        SLIDINGWINDOW:4:15 \
+        MINLEN:"\$minlen"
+     fi
+
+
+     """
  }
 
 
+ /*
+  * Performs fastqc on fastq files post trimmomatic
+  * Files are stored to an independent folder
+  */
+ process fastqc_2 {
+   module "fastQC"
+   publishDir "$srx", mode: 'link'
+   stageInMode "link"
+   tag { srx }
+
+   input:
+     set val(srx), file(pass_files) from TRIMMED_SAMPLES
+
+   output:
+     set val(srx), file(pass_files) into TRIMMED_FASTQC_SAMPLES
+     set file("${srx}_??_trim_fastqc.html"), file("${srx}_??_trim_fastqc.zip") into FASTQC_2_OUTPUT
+
+   """
+   fastqc $pass_files
+   """
+ }
+ // TRIMMED_FASTQC_SAMPLES.subscribe{
+ //   println it
+ // }
 /*
  * Performs hisat2 alignment of fastq files to a genome reference
  *
  * depends: trimmomatic
  */
 process hisat2 {
-
   module 'hisat2'
   publishDir "$srx", mode: 'link'
   stageInMode "link"
   tag { srx }
 
   input:
-   set val(srx), file("${srx}_?.trim.fastq"), file("${srx}_?s.trim.fastq") from TRIMMED_SAMPLES
+   set val(srx), file(input_files) from TRIMMED_FASTQC_SAMPLES
 
   output:
    set val(srx), file("${srx}_vs_${params.ref.prefix}.sam") into INDEXED_SAMPLES
@@ -245,14 +300,14 @@ process hisat2 {
   script:
    """
      export HISAT2_INDEXES=${params.ref.path}
-     if [ -e ${srx}_2.trim.fastq ]; then
+     if [ -e ${srx}_2p_trim.fastq ]; then
        hisat2 \
          -x ${params.ref.prefix} \
          --no-spliced-alignment \
          -q \
-         -1 ${srx}_1.trim.fastq \
-         -2 ${srx}_2.trim.fastq \
-         -U ${srx}_1s.trim.fastq,${srx}_2s.trim.fastq \
+         -1 ${srx}_1p_trim.fastq \
+         -2 ${srx}_2p_trim.fastq \
+         -U ${srx}_1u_trim.fastq,${srx}_2u_trim.fastq \
          -S ${srx}_vs_${params.ref.prefix}.sam \
          -t \
          -p 1 \
@@ -262,7 +317,7 @@ process hisat2 {
          -x ${params.ref.prefix} \
          --no-spliced-alignment \
          -q \
-         -U ${srx}_1.trim.fastq \
+         -U ${srx}_1u_trim.fastq \
          -S ${srx}_vs_${params.ref.prefix}.sam \
          -t \
          -p 1 \
@@ -270,6 +325,10 @@ process hisat2 {
      fi
    """
 }
+
+// INDEXED_SAMPLES.subscribe{
+//   println it
+// }
 
 
 /*

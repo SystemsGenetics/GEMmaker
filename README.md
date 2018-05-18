@@ -2,7 +2,7 @@
 
 The sra2gev project is a [NextFlow](https://www.nextflow.io/) workflow that downloads a set of samples from the NCBI Short Read Archive (SRA) and generates a file containing FPKM values for all genes in a genome annotation set.
 In other words, a Gene Expression Vector (GEV) for each sample is created.
-This workflow combines the [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/), [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), [Hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml), [Samtools](http://www.htslib.org/), and [StringTie](http://www.ccb.jhu.edu/software/stringtie/) software packages.
+This workflow combines the [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/), [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), [Hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml), [Samtools](http://www.htslib.org/), and [StringTie](http://www.ccb.jhu.edu/software/stringtie/) software packages.
 The workflow expects the Lua-based [Lmod](https://lmod.readthedocs.io/en/latest/) software module system is installed with each software described above available via the module system.
 The sra2gev workflow is setup to work with Illumina RNA-seq datasets housed in the SRA.
 It is intended to be run on a high-performance compute cluster.
