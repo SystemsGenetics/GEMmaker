@@ -22,13 +22,14 @@ println """\
 =================================
 
 Parameters:
-  + Remote SRA list path:        ${params.sra_list_path}
-  + Local sample glob:           ${params.local_samples_path}
-  + Genome reference path:       ${params.ref.path}
-  + Reference genome prefix:     ${params.ref.prefix}
-  + Trimmomatic clip path:       ${params.trimmomatic.clip_path}
-  + Trimmomatic minimum length:  ${params.trimmomatic.MINLEN}
+  + Remote SRA list path:                   ${params.sra_list_path}
+  + Local sample glob:                      ${params.local_samples_path}
+  + Genome reference path:                  ${params.ref.path}
+  + Reference genome prefix:                ${params.ref.prefix}
+  + Trimmomatic clip path:                  ${params.trimmomatic.clip_path}
+  + Trimmomatic minimum length percentage:  ${params.trimmomatic.MINLEN}
 """
+
 
 
 /*
@@ -63,7 +64,7 @@ Channel
  */
 process fastq_dump {
   module 'sratoolkit'
-  publishDir ${params.outputdir_sra}, mode: 'link'
+  publishDir params.outputdir_sra
   stageInMode "link"
   time '24h'
   tag { sra }
@@ -99,7 +100,7 @@ COMBINED_SAMPLES = DOWNLOADED_SRAS.mix( LOCAL_SAMPLES )
  */
 process SRR_to_SRX {
   module 'python3'
-  publishDir ${params.outputdir_sra}, mode: 'link'
+  publishDir params.outputdir_sra
   stageInMode "link"
   tag { sra }
 
@@ -135,7 +136,7 @@ SRX_GROUPS
    * This process merges the fastq files based on their SRX number.
    */
 process SRR_combine{
-  publishDir ${params.outputdir_srx}, mode: 'link'
+  publishDir params.outputdir_srx
   stageInMode "link"
   tag { srx }
 
@@ -165,7 +166,7 @@ process SRR_combine{
  */
 process fastqc_1 {
   module "fastQC"
-  publishDir ${params.outputdir_srx}, mode: 'link'
+  publishDir params.outputdir_srx
   stageInMode "link"
   tag { srx }
 
@@ -199,7 +200,7 @@ process fastqc_1 {
  */
  process trimmomatic {
    module "trimmomatic"
-   publishDir ${params.outputdir_srx}, mode: 'link'
+   publishDir params.outputdir_srx
    stageInMode "link"
    tag { srx }
 
@@ -262,7 +263,7 @@ process fastqc_1 {
   */
  process fastqc_2 {
    module "fastQC"
-   publishDir ${params.outputdir_srx}, mode: 'link'
+   publishDir params.outputdir_srx
    stageInMode "link"
    tag { srx }
 
@@ -287,7 +288,7 @@ process fastqc_1 {
  */
 process hisat2 {
   module 'hisat2'
-  publishDir ${params.outputdir_srx}, mode: 'link'
+  publishDir params.outputdir_srx
   stageInMode "link"
   tag { srx }
 
@@ -338,7 +339,7 @@ process hisat2 {
  */
 process samtools_sort {
   module 'samtools'
-  publishDir ${params.outputdir_srx}, mode: 'link'
+  publishDir params.outputdir_srx
   stageInMode "link"
   tag { srx }
 
@@ -362,7 +363,7 @@ process samtools_sort {
  */
 process samtools_index {
   module 'samtools'
-  publishDir ${params.outputdir_srx}, mode: 'link'
+  publishDir params.outputdir_srx
   stageInMode "link"
   tag { srx }
 
@@ -387,7 +388,7 @@ process samtools_index {
  */
 process stringtie {
   module 'stringtie'
-  publishDir ${params.outputdir_srx}, mode: 'link'
+  publishDir params.outputdir_srx
   stageInMode "link"
   tag { srx }
 
@@ -416,7 +417,7 @@ process stringtie {
  * Generates the final FPKM file
  */
 process fpkm {
-  publishDir ${params.outputdir_srx}, mode: 'link'
+  publishDir params.outputdir_srx
   stageInMode "link"
   tag { srx }
 
