@@ -63,7 +63,7 @@ Channel
  */
 process fastq_dump {
   module 'sratoolkit'
-  publishDir "$sra", mode: 'link'
+  publishDir ${params.outputdir_sra}, mode: 'link'
   stageInMode "link"
   time '24h'
   tag { sra }
@@ -99,7 +99,7 @@ COMBINED_SAMPLES = DOWNLOADED_SRAS.mix( LOCAL_SAMPLES )
  */
 process SRR_to_SRX {
   module 'python3'
-  publishDir "$sra", mode: 'link'
+  publishDir ${params.outputdir_sra}, mode: 'link'
   stageInMode "link"
   tag { sra }
 
@@ -135,7 +135,7 @@ SRX_GROUPS
    * This process merges the fastq files based on their SRX number.
    */
 process SRR_combine{
-  publishDir "$srx", mode: 'link'
+  publishDir ${params.outputdir_srx}, mode: 'link'
   stageInMode "link"
   tag { srx }
 
@@ -165,7 +165,7 @@ process SRR_combine{
  */
 process fastqc_1 {
   module "fastQC"
-  publishDir "$srx", mode: 'link'
+  publishDir ${params.outputdir_srx}, mode: 'link'
   stageInMode "link"
   tag { srx }
 
@@ -199,7 +199,7 @@ process fastqc_1 {
  */
  process trimmomatic {
    module "trimmomatic"
-   publishDir "$srx", mode: 'link'
+   publishDir ${params.outputdir_srx}, mode: 'link'
    stageInMode "link"
    tag { srx }
 
@@ -262,7 +262,7 @@ process fastqc_1 {
   */
  process fastqc_2 {
    module "fastQC"
-   publishDir "$srx", mode: 'link'
+   publishDir ${params.outputdir_srx}, mode: 'link'
    stageInMode "link"
    tag { srx }
 
@@ -287,7 +287,7 @@ process fastqc_1 {
  */
 process hisat2 {
   module 'hisat2'
-  publishDir "$srx", mode: 'link'
+  publishDir ${params.outputdir_srx}, mode: 'link'
   stageInMode "link"
   tag { srx }
 
@@ -338,7 +338,7 @@ process hisat2 {
  */
 process samtools_sort {
   module 'samtools'
-  publishDir "$srx", mode: 'link'
+  publishDir ${params.outputdir_srx}, mode: 'link'
   stageInMode "link"
   tag { srx }
 
@@ -362,7 +362,7 @@ process samtools_sort {
  */
 process samtools_index {
   module 'samtools'
-  publishDir "$srx", mode: 'link'
+  publishDir ${params.outputdir_srx}, mode: 'link'
   stageInMode "link"
   tag { srx }
 
@@ -387,7 +387,7 @@ process samtools_index {
  */
 process stringtie {
   module 'stringtie'
-  publishDir "$srx", mode: 'link'
+  publishDir ${params.outputdir_srx}, mode: 'link'
   stageInMode "link"
   tag { srx }
 
@@ -416,7 +416,7 @@ process stringtie {
  * Generates the final FPKM file
  */
 process fpkm {
-  publishDir "$srx", mode: 'link'
+  publishDir ${params.outputdir_srx}, mode: 'link'
   stageInMode "link"
   tag { srx }
 
