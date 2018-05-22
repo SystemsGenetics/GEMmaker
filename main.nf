@@ -340,7 +340,7 @@ process samtools_sort {
  */
 process samtools_index {
   module 'samtools'
-  publishDir ${params.outputdir_srx}
+  publishDir '${params.outputdir_srx}'
   tag { srx }
 
   input:
