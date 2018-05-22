@@ -11,4 +11,5 @@ module add java nextflow trimmomatic
 nextflow run main.nf -profile kamiak \
   -resume \
   -with-report OS-GEV-report.html \
-  -with-timeline OS-GEV-timeline.html
+  -with-timeline OS-GEV-timeline.html \
+  -with-trace
