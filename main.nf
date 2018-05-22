@@ -27,7 +27,7 @@ Parameters:
   + Genome reference path:       ${params.ref.path}
   + Reference genome prefix:     ${params.ref.prefix}
   + Trimmomatic clip path:       ${params.trimmomatic.clip_path}
-  + Trimmomatic minimum length:  ${params.trimmomatic.MINLEN}
+  + Trimmomatic minimum ratio:  ${params.trimmomatic.MINLEN}
 """
 
 
@@ -78,14 +78,12 @@ process fastq_dump {
   """
 }
 
-// DOWNLOADED_SRAS.subscribe{ println it }
 
 /*
  * Combine the remote and local samples into the same channel.
  */
 COMBINED_SAMPLES = DOWNLOADED_SRAS.mix( LOCAL_SAMPLES )
 
-// COMBINED_SAMPLES.subscribe{ println it }
 
 
 /*
@@ -116,7 +114,7 @@ process SRR_to_SRX {
   fi
   """
 }
-// SRX_GROUPS.subscribe{ println it }
+
 
 /*
  * This groups the channels based on srx numbers.
@@ -126,12 +124,10 @@ SRX_GROUPS
   .set { GROUPED_SRX }
 
 
-// GROUPED_SRX.subscribe{ println it }
-
-  /**
-   *
-   * This process merges the fastq files based on their SRX number.
-   */
+/**
+ *
+ * This process merges the fastq files based on their SRX number.
+ */
 process SRR_combine{
   publishDir ${params.outputdir_srx}
   tag { srx }
@@ -153,8 +149,8 @@ process SRR_combine{
       cat *_2.fastq >> "${srx}_2.fastq"
     fi
   """
-
 }
+
 
 /*
  * Performs fastqc on fastq files prior to trimmomatic
@@ -176,10 +172,6 @@ process fastqc_1 {
   fastqc $pass_files
   """
 }
-
-// MERGED_FASTQC_SAMPLES.subscribe{
-//   println it
-// }
 
 
 /*
@@ -245,8 +237,6 @@ process fastqc_1 {
         SLIDINGWINDOW:4:15 \
         MINLEN:"\$minlen"
      fi
-
-
      """
  }
 
@@ -255,25 +245,24 @@ process fastqc_1 {
   * Performs fastqc on fastq files post trimmomatic
   * Files are stored to an independent folder
   */
- process fastqc_2 {
-   module "fastQC"
-   publishDir ${params.outputdir_srx}
-   tag { srx }
+process fastqc_2 {
+ module "fastQC"
+ publishDir ${params.outputdir_srx}
+ tag { srx }
 
-   input:
-     set val(srx), file(pass_files) from TRIMMED_SAMPLES
+ input:
+   set val(srx), file(pass_files) from TRIMMED_SAMPLES
 
-   output:
-     set val(srx), file(pass_files) into TRIMMED_FASTQC_SAMPLES
-     set file("${srx}_??_trim_fastqc.html"), file("${srx}_??_trim_fastqc.zip") into FASTQC_2_OUTPUT
+ output:
+   set val(srx), file(pass_files) into TRIMMED_FASTQC_SAMPLES
+   set file("${srx}_??_trim_fastqc.html"), file("${srx}_??_trim_fastqc.zip") into FASTQC_2_OUTPUT
 
-   """
-   fastqc $pass_files
-   """
- }
- // TRIMMED_FASTQC_SAMPLES.subscribe{
- //   println it
- // }
+ """
+ fastqc $pass_files
+ """
+}
+
+
 /*
  * Performs hisat2 alignment of fastq files to a genome reference
  *
@@ -319,10 +308,6 @@ process hisat2 {
      fi
    """
 }
-
-// INDEXED_SAMPLES.subscribe{
-//   println it
-// }
 
 
 /*
@@ -403,6 +388,8 @@ process stringtie {
     -l ${srx} ${srx}_vs_${params.ref.prefix}.bam
     """
 }
+
+
 /*
  * Generates the final FPKM file
  */
