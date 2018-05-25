@@ -33,18 +33,42 @@ nextflow clone SystemsGenetics/sra2gev target-dir
 
 To execute the sra2gev with the example dataset you must ensure that the **trimmomatic.clip_path** option is set to the full path where the Trimmomatic clipping files are housed.  Replace the text **<ILLUMINACLIP_PATH>** placeholder text. The example config file also has an example profile for running this workflow on a SLURM cluster. To use the SLURM profile you must, at a minimum, change the **<QUEUE_NAME>** placeholder text to be the name of the queue used for submission on your cluster.  If you require additional settings you can adjust the profile as per the [NextFlow configuration documentation](https://www.nextflow.io/docs/latest/config.html#config-profiles).
 
+Sra2gev comes with example data, which is stored in the example folder. The "nextflow.config" is set up to run this data when you clone the repository. The data is from an imaginary oraganim (name of "Cool Organims" abbreviated "CORG") that has a "genome" of 1471 nucleotides 2 "chromosomes" and 3 "genes". The 3 genes are named "gene\_Alpha", "gene\_Beta" and "gene\_Zeta". The made up reference genome file (CORG.fna), gtf file (CORG.gtf), and hisat files (CORG.?/ht2) are stored in the directory "./sra2gev/examples/reference/". Sra2gev finds these files through the parameters 
+ 
+The example data consists of 3 "RNA-seq" data sets which are contained in the directory "./sra2gev/examples/Data/". They are examples of unpaired data, and are each in a folder of there own. The file format for these reads is "Sample?\_1.fastq" where the "?" is replaced by the number of the sample. Sra2gev finds these files through the glob pattern assigned to the "local\_samples\_path" in the "nextflow.config" file.
 
-### Test using your own data.
+If you wish to use sra2gev to download all or some of your fastq files from NCBI, you would also need to include an SRA\_ID.txt file. An example of such a file is located in "./sra2gev/examples/". You can point sra2gev to this list by modifying the "sra\_list\_path" parameter in the "nextflow.config" file.
+
+Run the example by having nextflow run the "main.nf" script. This is usually done by running "nextflow run main.nf". This may vary depending on if you are running nextflow on a server that has requirments for executing scripts.
+
+The example should output 6 files, 2 for each example. Sra2gev will automatically combine files that have the same experiment number( \[SED\]RX0000000 ) but different run numbers ( \[SED\]RR0000000 ), so it is possible that the \[SED\]RX number contains multiple \[SED\]RR runs. In the example, this is not the case. 
+
+In each SRX\_output file you will find the following files:
+- **fastq** The fastq reads file for the experiment
+- **fastqc** 6 or 12 files (depending on paired or unpaired data) from fastqc. Fastqc is set up to check files before and after trimmomatic
+- **sam** alignment file
+- **bam** binary alignment file
+- **ga** expression level transcript abundance
+- **fpkm** 3 column version of **ga** file with only gene and fpkm value
+
+FPKM files can then be combined into an 
+
+![heatmap](heatmap.png)
+
+## Test using your own data.
 
 To prepare your own samples for execution you must peform the following:
 
 - As with the example data set described above, you must edit the netxflow config file and set the **trimmomatic.clip_path** and customize it for execution on a cluster if desired.
 
-- Identify in NCBI SRA the Run IDs of the SRA samples you want to analyze.
+- For local files, identify a glob pattern that you can add to the "nextflow.config" file that will identify these files.
+
+- For files on NCBI, Identify in NCBI SRA the Run IDs of the SRA samples you want to analyze.
   Run numbers tyipcally start with an SRR or DRR prefix.
   These sample run IDs must be placed, one per line, in the SRA_IDS.txt file.
+  These will be downloaded automatically by the program.
 
-- Download the genome annotation files.
+- Download the genome annotation/reference files.
   You must have the following:
 
   - A FASTA file containing the full genomic sequence (either pseudomolecules or scaffolds). Note, if your genome file is extremly large with hundresd of thousands of contigs/scaffolds, you may want to reduce the size of the FASTA file to contain only those contigs/scaffolds with predicted annotated genes.
