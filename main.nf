@@ -22,14 +22,13 @@ println """\
 =================================
 
 Parameters:
-  + Remote SRA list path:                   ${params.sra_list_path}
-  + Local sample glob:                      ${params.local_samples_path}
-  + Genome reference path:                  ${params.ref.path}
-  + Reference genome prefix:                ${params.ref.prefix}
-  + Trimmomatic clip path:                  ${params.trimmomatic.clip_path}
-  + Trimmomatic minimum length percentage:  ${params.trimmomatic.MINLEN}
+  + Remote SRA list path:        ${params.sra_list_path}
+  + Local sample glob:           ${params.local_samples_path}
+  + Genome reference path:       ${params.ref.path}
+  + Reference genome prefix:     ${params.ref.prefix}
+  + Trimmomatic clip path:       ${params.trimmomatic.clip_path}
+  + Trimmomatic minimum ratio:  ${params.trimmomatic.MINLEN}
 """
-
 
 
 /*
@@ -64,8 +63,7 @@ Channel
  */
 process fastq_dump {
   module 'sratoolkit'
-  publishDir params.outputdir_sra, mode: 'link'
-  stageInMode "link"
+  publishDir params.outputdir_sra
   time '24h'
   tag { sra }
 
@@ -80,14 +78,12 @@ process fastq_dump {
   """
 }
 
-// DOWNLOADED_SRAS.subscribe{ println it }
 
 /*
  * Combine the remote and local samples into the same channel.
  */
 COMBINED_SAMPLES = DOWNLOADED_SRAS.mix( LOCAL_SAMPLES )
 
-// COMBINED_SAMPLES.subscribe{ println it }
 
 
 /*
@@ -100,8 +96,7 @@ COMBINED_SAMPLES = DOWNLOADED_SRAS.mix( LOCAL_SAMPLES )
  */
 process SRR_to_SRX {
   module 'python3'
-  publishDir params.outputdir_sra, mode: 'link'
-  stageInMode "link"
+  publishDir params.outputdir_sra
   tag { sra }
 
   input:
@@ -119,7 +114,7 @@ process SRR_to_SRX {
   fi
   """
 }
-// SRX_GROUPS.subscribe{ println it }
+
 
 /*
  * This groups the channels based on srx numbers.
@@ -129,15 +124,12 @@ SRX_GROUPS
   .set { GROUPED_SRX }
 
 
-// GROUPED_SRX.subscribe{ println it }
-
-  /**
-   *
-   * This process merges the fastq files based on their SRX number.
-   */
+/**
+ *
+ * This process merges the fastq files based on their SRX number.
+ */
 process SRR_combine{
-  publishDir params.outputdir_srx, mode: 'link'
-  stageInMode "link"
+  publishDir params.outputdir_srx
   tag { srx }
 
   input:
@@ -157,8 +149,8 @@ process SRR_combine{
       cat *_2.fastq >> "${srx}_2.fastq"
     fi
   """
-
 }
+
 
 /*
  * Performs fastqc on fastq files prior to trimmomatic
@@ -166,8 +158,7 @@ process SRR_combine{
  */
 process fastqc_1 {
   module "fastQC"
-  publishDir params.outputdir_srx, mode: 'link'
-  stageInMode "link"
+  publishDir params.outputdir_srx
   tag { srx }
 
   input:
@@ -181,10 +172,6 @@ process fastqc_1 {
   fastqc $pass_files
   """
 }
-
-// MERGED_FASTQC_SAMPLES.subscribe{
-//   println it
-// }
 
 
 /*
@@ -200,8 +187,7 @@ process fastqc_1 {
  */
  process trimmomatic {
    module "trimmomatic"
-   publishDir params.outputdir_srx, mode: 'link'
-   stageInMode "link"
+   publishDir params.outputdir_srx
    tag { srx }
 
    input:
@@ -251,8 +237,6 @@ process fastqc_1 {
         SLIDINGWINDOW:4:15 \
         MINLEN:"\$minlen"
      fi
-
-
      """
  }
 
@@ -261,26 +245,24 @@ process fastqc_1 {
   * Performs fastqc on fastq files post trimmomatic
   * Files are stored to an independent folder
   */
- process fastqc_2 {
-   module "fastQC"
-   publishDir params.outputdir_srx, mode: 'link'
-   stageInMode "link"
-   tag { srx }
+process fastqc_2 {
+ module "fastQC"
+ publishDir params.outputdir_srx
+ tag { srx }
 
-   input:
-     set val(srx), file(pass_files) from TRIMMED_SAMPLES
+ input:
+   set val(srx), file(pass_files) from TRIMMED_SAMPLES
 
-   output:
-     set val(srx), file(pass_files) into TRIMMED_FASTQC_SAMPLES
-     set file("${srx}_??_trim_fastqc.html"), file("${srx}_??_trim_fastqc.zip") into FASTQC_2_OUTPUT
+ output:
+   set val(srx), file(pass_files) into TRIMMED_FASTQC_SAMPLES
+   set file("${srx}_??_trim_fastqc.html"), file("${srx}_??_trim_fastqc.zip") into FASTQC_2_OUTPUT
 
-   """
-   fastqc $pass_files
-   """
- }
- // TRIMMED_FASTQC_SAMPLES.subscribe{
- //   println it
- // }
+ """
+ fastqc $pass_files
+ """
+}
+
+
 /*
  * Performs hisat2 alignment of fastq files to a genome reference
  *
@@ -288,7 +270,7 @@ process fastqc_1 {
  */
 process hisat2 {
   module 'hisat2'
-  publishDir params.outputdir_srx, mode: 'link'
+  publishDir params.outputdir_srx
   stageInMode "link"
   tag { srx }
 
@@ -327,10 +309,6 @@ process hisat2 {
    """
 }
 
-// INDEXED_SAMPLES.subscribe{
-//   println it
-// }
-
 
 /*
  * Sorts the SAM alignment file and coverts it to binary BAM
@@ -339,8 +317,7 @@ process hisat2 {
  */
 process samtools_sort {
   module 'samtools'
-  publishDir params.outputdir_srx, mode: 'link'
-  stageInMode "link"
+  publishDir params.outputdir_srx
   tag { srx }
 
   input:
@@ -363,8 +340,7 @@ process samtools_sort {
  */
 process samtools_index {
   module 'samtools'
-  publishDir params.outputdir_srx, mode: 'link'
-  stageInMode "link"
+  publishDir params.outputdir_srx
   tag { srx }
 
   input:
@@ -388,8 +364,7 @@ process samtools_index {
  */
 process stringtie {
   module 'stringtie'
-  publishDir params.outputdir_srx, mode: 'link'
-  stageInMode "link"
+  publishDir params.outputdir_srx
   tag { srx }
 
   input:
@@ -413,12 +388,13 @@ process stringtie {
     -l ${srx} ${srx}_vs_${params.ref.prefix}.bam
     """
 }
+
+
 /*
  * Generates the final FPKM file
  */
 process fpkm {
-  publishDir params.outputdir_srx, mode: 'link'
-  stageInMode "link"
+  publishDir params.outputdir_srx
   tag { srx }
 
   input:
