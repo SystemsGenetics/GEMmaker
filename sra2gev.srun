@@ -3,12 +3,13 @@
 #SBATCH --account=ficklin
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --time=48:00:00
-#SBATCH --job-name=OS-GEV
+#SBATCH --time=720:00:00
+#SBATCH --job-name=OS-GEV-arabidopsis
 #SBATCH --output=OS-GEV-%j.out
 
 module add java nextflow trimmomatic
 nextflow run main.nf -profile kamiak \
   -resume \
   -with-report OS-GEV-report.html \
-  -with-timeline OS-GEV-timeline.html
+  -with-timeline OS-GEV-timeline.html \
+  -with-trace
