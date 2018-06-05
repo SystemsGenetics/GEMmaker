@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 
 /*
- * ------------------
- * fastq_run_id 2 GEV Pipeline
- * ------------------
+* =======
+* GEMaker
+* =======
  *
  * Authors:
  *  + John Hadish
@@ -22,42 +22,39 @@ println """\
 =================================
 
 Parameters:
-  + Remote fastq list path:      ${params.remote_list_path}
-  + Local sample glob:           ${params.local_samples_path}
+  + Remote fastq list path:      ${params.input.remote_list_path}
+  + Local sample glob:           ${params.input.local_samples_path}
   + Genome reference path:       ${params.ref.path}
   + Reference genome prefix:     ${params.ref.prefix}
   + Trimmomatic clip path:       ${params.trimmomatic.clip_path}
   + Trimmomatic minimum ratio:  ${params.trimmomatic.MINLEN}
 """
 
-
 /*
  * Local Sample Input.
  * This checks the folder that the user has given
  */
 
-if (params.local_samples_path == 'none'){
+if (params.input.local_samples_path == 'none'){
   Channel
     .empty()
     .set { LOCAL_SAMPLES }
 } else{
   Channel
-    .fromFilePairs( params.local_samples_path, size: -1 )
+    .fromFilePairs( params.input.local_samples_path, size: -1 )
     .set { LOCAL_SAMPLES }
 }
-
-// LOCAL_SAMPLES.subscribe{ println it }
 
 /*
  * Remote fastq_run_id Input.
  */
-if (params.remote_list_path == 'none'){
+if (params.input.remote_list_path == 'none'){
   Channel
      .empty()
      .set { REMOTE_FASTQ_RUNS }
  } else{
   Channel
-    .from( file(params.remote_list_path).readLines() )
+    .from( file(params.input.remote_list_path).readLines() )
     .set { REMOTE_FASTQ_RUNS }
 }
 
@@ -90,7 +87,7 @@ COMBINED_SAMPLES = DOWNLOADED_FASTQ_RUNS.mix( LOCAL_SAMPLES )
 
 
 /*
- * Performs a SRR to sample_id converison:
+ * Performs a SRR/DRR/ERR to sample_id converison:
  *
  * This first checks to see if the format is standard SRR,ERR,DRR
  * This takes the input SRR numbersd and converts them to sample_id.
@@ -127,11 +124,10 @@ GROUPED_BY_SAMPLE_ID
 
 
 /**
- *
  * This process merges the fastq files based on their sample_id number.
  */
 process SRR_combine{
-  publishDir params.outputdir_sample_id, mode: params.staging_mode
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
   input:
@@ -139,9 +135,10 @@ process SRR_combine{
   output:
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES
 
-  // This command tests to see if ls produces a 0 or not by checking
-  // its standard out. We do not use a "if [-e *foo]" becuase it gets
-  // confused if there are more than one things returned by the wildcard
+  /** This command tests to see if ls produces a 0 or not by checking
+   *its standard out. We do not use a "if [-e *foo]" becuase it gets
+   * confused if there are more than one things returned by the wildcard
+   */
   """
     if ls *_1.fastq >/dev/null 2>&1; then
       cat *_1.fastq >> "${sample_id}_1.fastq"
@@ -156,12 +153,11 @@ process SRR_combine{
 
 /*
  * Performs fastqc on fastq files prior to trimmomatic
- *
  */
 process fastqc_1 {
   module "fastQC"
-  stageInMode params.staging_mode
-  publishDir params.outputdir_sample_id, mode: params.staging_mode
+  stageInMode params.output.staging_mode
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
   input:
@@ -190,7 +186,7 @@ process fastqc_1 {
  */
  process trimmomatic {
    module "trimmomatic"
-   publishDir params.outputdir_sample_id, mode: params.staging_mode
+   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
    tag { sample_id }
 
    input:
@@ -250,8 +246,8 @@ process fastqc_1 {
   */
 process fastqc_2 {
  module "fastQC"
- stageInMode params.staging_mode
- publishDir params.outputdir_sample_id, mode: params.staging_mode
+ stageInMode params.output.staging_mode
+ publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
  tag { sample_id }
 
  input:
@@ -274,7 +270,7 @@ process fastqc_2 {
  */
 process hisat2 {
   module 'hisat2'
-  publishDir params.outputdir_sample_id, mode: params.staging_mode
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
   input:
@@ -320,7 +316,7 @@ process hisat2 {
  */
 process samtools_sort {
   module 'samtools'
-  publishDir params.outputdir_sample_id, mode: params.staging_mode
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
   input:
@@ -357,8 +353,6 @@ process samtools_index {
     """
 }
 
-// , file("${sample_id}_vs_${params.ref.prefix}.bam.bai"
-// , file("${sample_id}_vs_${params.ref.prefix}.bam.bai"
 
 /**
  * Generates expression-level transcript abundance
@@ -367,7 +361,7 @@ process samtools_index {
  */
 process stringtie {
   module 'stringtie'
-  publishDir params.outputdir_sample_id, mode: params.staging_mode
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
   input:
@@ -397,7 +391,7 @@ process stringtie {
  * Generates the final FPKM file
  */
 process fpkm {
-  publishDir params.outputdir_sample_id, mode: params.staging_mode
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
   input:

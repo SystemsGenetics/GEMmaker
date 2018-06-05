@@ -3,7 +3,7 @@
 ## Local Data Example Run
 This directory contains both the reference material for the imaginary organism "Cool Organism" (CORG) and a dataset of 3 artificially made runs. This data set is very small, so it can be run on a local machine with ease.
 
-The reference directory contains the made up reference genome file (**CORG.fna**), gtf file (**CORG.gtf**), and hisat files (**CORG.?/ht2**).
+The reference directory contains the made up reference genome file (**CORG.fna**), gtf file (**CORG.gtf**), and hisat files (**CORG.?/ht2**). It also has a **COMMANDS.sh** file with the command used to generate the hisat files from the genome file.
 
 ## Remote Data Example Run
 This directory also contains a file titled "REMOTE_IDs.txt". This file is an example of a file that is in the proper format to download files from NCBI. To run this remote example, simpley change the "nextflow.config" file's "remote_list_path" parameter to be
