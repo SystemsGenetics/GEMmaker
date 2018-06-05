@@ -28,6 +28,7 @@ To clone the workflow into a directory:
 nextflow clone SystemsGenetics/GEM-maker target-dir
 ```
 
+---
 
 ## Test using the example data
 
@@ -54,7 +55,7 @@ In each SRX\_output file you will find the following files:
 - **ga**  expression level transcript abundance
 - **fpkm**  2 column version of **ga** file with only gene and fpkm value
 
-###### After the workflow
+#### After the workflow
 
 The output of GEM-maker can be used for several different analysis. The FPKM files can be combined into an expression matrix and then visualized using a heatmap. The following heatmap is the Local Example's fpkm values divided by 1000 in heatmap form. We can see that gene_Zeta remained constant across all three samples, gene_Beta decreased, and gene_Alpha increased.
 
@@ -64,6 +65,8 @@ The output of GEM-maker can be used for several different analysis. The FPKM fil
 If you wish to use GEM-maker to download all or some of your fastq files from NCBI, you would also need to include an REMOTE\_IDs.txt file. An example of such a file is located in "./GEM-maker/examples/". You can point GEM-maker to this list by modifying the "remote\_list\_path" parameter in the "nextflow.config" file.
 
 See the README.md in the "/examples/" directory for more information about running the remote example.
+---
+
 
 ## Test using your own data.
 
@@ -101,6 +104,7 @@ The example diretory also contains an SRA_IDS.txt file containing a list of SRA 
 One your files are preapred you can execute the workflow.
 
 ---
+
 
 
 ## Executing the Workflow
