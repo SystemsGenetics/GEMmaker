@@ -3,7 +3,7 @@
 The GEM-maker project is a [NextFlow](https://www.nextflow.io/) workflow that generates a file containing FPKM values for all genes in a genome annotation set.
 In other words, a Gene Expression Vector (GEV) for each sample is created. GEM-maker can automatically download these samples from [NCBI](https://www.ncbi.nlm.nih.gov/), or can operate on files that are stored locally.
 This workflow combines the [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/), [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), [Hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml), [Samtools](http://www.htslib.org/), and [StringTie](http://www.ccb.jhu.edu/software/stringtie/) software packages.
-The workflow expects the Lua-based [Lmod](https://lmod.readthedocs.io/en/latest/) software module system is installed with each software described above, making them available via the module system.
+The workflow expects the Lua-based [Lmod](https://lmod.readthedocs.io/en/latest/) software module system is installed with each software described above, making them available via the module system. In addition, user must have python3 and the python package [xmltodict](https://github.com/martinblech/xmltodict) installed.
 The GEM-maker workflow is setup to work with Illumina RNA-seq datasets.
 It is intended to be run on a high-performance compute cluster.
 
