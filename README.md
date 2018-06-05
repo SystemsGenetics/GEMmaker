@@ -48,7 +48,7 @@ GEM-maker comes with a Local example dataset, which is stored in the **examples*
 
 The example data consists of 3 "RNA-seq" data sets which are contained in the directory "./GEM-maker/examples/Data/". They are examples of unpaired data, and are each in a folder of their own. The file format for these reads is "?\_1.fastq" where the "?" is replaced by the number of the sample. GEM-maker finds these files through the glob pattern assigned to the "local\_samples\_path" in the **nextflow.config** file.
 
-Once you understand the above information, run the Local example dataset using the commands in the section below titled **Executing the Workflow**
+Once you understand the above information, run the Local example dataset using the commands in the section below that is titled **Executing the Workflow**
 
 Once executed, the local example should output 3 directories. GEM-maker will automatically combine files that have the same experiment number( \[SED\]RX0000000 ) but different run numbers ( \[SED\]RR0000000 ), so it is possible that the \[SED\]RX number contains multiple \[SED\]RR runs. However, in the the local example, this is not the case.
 
