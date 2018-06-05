@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 
 /*
- * ------------------
- * SRA 2 GEV Pipeline
- * ------------------
+* =======
+* GEMaker
+* =======
  *
  * Authors:
  *  + John Hadish
@@ -11,7 +11,7 @@
  *  + Stephen Ficklin
  *
  * Summary:
- *   A workflow for processing a large amount of SRA data...
+ *   A workflow for processing a large amount of fastq_run_id data...
  */
 
 
@@ -22,40 +22,41 @@ println """\
 =================================
 
 Parameters:
-  + Remote SRA list path:        ${params.sra_list_path}
-  + Local sample glob:           ${params.local_samples_path}
+  + Remote fastq list path:      ${params.input.remote_list_path}
+  + Local sample glob:           ${params.input.local_samples_path}
   + Genome reference path:       ${params.ref.path}
   + Reference genome prefix:     ${params.ref.prefix}
   + Trimmomatic clip path:       ${params.trimmomatic.clip_path}
-  + Trimmomatic minimum length:  ${params.trimmomatic.MINLEN}
+  + Trimmomatic minimum ratio:  ${params.trimmomatic.MINLEN}
 """
-
 
 /*
  * Local Sample Input.
  * This checks the folder that the user has given
  */
 
-if (params.local_samples_path == 'none'){
+if (params.input.local_samples_path == 'none'){
   Channel
     .empty()
     .set { LOCAL_SAMPLES }
 } else{
   Channel
-    .fromFilePairs( params.local_samples_path, size: -1 )
+    .fromFilePairs( params.input.local_samples_path, size: -1 )
     .set { LOCAL_SAMPLES }
 }
 
-// LOCAL_SAMPLES.subscribe{ println it }
-
 /*
- * Remote SRA Input.
+ * Remote fastq_run_id Input.
  */
-Channel
-  .from( file(params.sra_list_path).readLines() )
-  // .filter { it }
-  .set { REMOTE_SRAS }
-
+if (params.input.remote_list_path == 'none'){
+  Channel
+     .empty()
+     .set { REMOTE_FASTQ_RUNS }
+ } else{
+  Channel
+    .from( file(params.input.remote_list_path).readLines() )
+    .set { REMOTE_FASTQ_RUNS }
+}
 
 /*
  * The fastq dump process downloads any needed remote fasta files to the
@@ -63,127 +64,113 @@ Channel
  */
 process fastq_dump {
   module 'sratoolkit'
-  publishDir "$sra", mode: 'link'
-  stageInMode "link"
   time '24h'
-  tag { sra }
+  tag { fastq_run_id }
 
   input:
-    val sra from REMOTE_SRAS
+    val fastq_run_id from REMOTE_FASTQ_RUNS
 
   output:
-    set val(sra), file("${sra}_?.fastq") into DOWNLOADED_SRAS
+    set val(fastq_run_id), file("${fastq_run_id}_?.fastq") into DOWNLOADED_FASTQ_RUNS
 
   """
-    fastq-dump --split-files $sra
+    fastq-dump --split-files $fastq_run_id
   """
 }
 
-// DOWNLOADED_SRAS.subscribe{ println it }
 
 /*
  * Combine the remote and local samples into the same channel.
  */
-COMBINED_SAMPLES = DOWNLOADED_SRAS.mix( LOCAL_SAMPLES )
+COMBINED_SAMPLES = DOWNLOADED_FASTQ_RUNS.mix( LOCAL_SAMPLES )
 
-// COMBINED_SAMPLES.subscribe{ println it }
 
 
 /*
- * Performs a SRR to SRX converison:
+ * Performs a SRR/DRR/ERR to sample_id converison:
  *
  * This first checks to see if the format is standard SRR,ERR,DRR
- * This takes the input SRR numbersd and converts them to SRX.
+ * This takes the input SRR numbersd and converts them to sample_id.
  * This is done by a python script that is stored in the "scripts" dir
  * The next step combines them
  */
-process SRR_to_SRX {
+process SRR_to_sample_id {
   module 'python3'
-  publishDir "$sra", mode: 'link'
-  stageInMode "link"
-  tag { sra }
+  tag { fastq_run_id }
 
   input:
-    set val(sra), file(pass_files) from COMBINED_SAMPLES
+    set val(fastq_run_id), file(pass_files) from COMBINED_SAMPLES
 
   output:
-    set stdout, file(pass_files) into SRX_GROUPS mode flatten
+    set stdout, file(pass_files) into GROUPED_BY_SAMPLE_ID mode flatten
 
   """
-  if [[ "$sra" == [SDE]RR* ]]; then
-    python3 ${PWD}/scripts/retrieve_sample_metadata.py $sra
+  if [[ "$fastq_run_id" == [SDE]RR* ]]; then
+    python3 ${PWD}/scripts/retrieve_sample_metadata.py $fastq_run_id
 
   else
-    echo -n "SRX_$sra"
+    echo -n "Sample_$fastq_run_id"
   fi
   """
 }
-// SRX_GROUPS.subscribe{ println it }
+
 
 /*
- * This groups the channels based on srx numbers.
+ * This groups the channels based on sample_id.
  */
-SRX_GROUPS
+GROUPED_BY_SAMPLE_ID
   .groupTuple()
-  .set { GROUPED_SRX }
+  .set { GROUPED_SAMPLE_ID }
 
 
-// GROUPED_SRX.subscribe{ println it }
-
-  /**
-   *
-   * This process merges the fastq files based on their SRX number.
-   */
+/**
+ * This process merges the fastq files based on their sample_id number.
+ */
 process SRR_combine{
-  publishDir "$srx", mode: 'link'
-  stageInMode "link"
-  tag { srx }
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
+  tag { sample_id }
 
   input:
-    set val(srx), file(grouped) from GROUPED_SRX
+    set val(sample_id), file(grouped) from GROUPED_SAMPLE_ID
   output:
-    set val(srx), file("${srx}_?.fastq") into MERGED_SAMPLES
+    set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES
 
-  // This command tests to see if ls produces a 0 or not by checking
-  // its standard out. We do not use a "if [-e *foo]" becuase it gets
-  // confused if there are more than one things returned by the wildcard
+  /** This command tests to see if ls produces a 0 or not by checking
+   *its standard out. We do not use a "if [-e *foo]" becuase it gets
+   * confused if there are more than one things returned by the wildcard
+   */
   """
     if ls *_1.fastq >/dev/null 2>&1; then
-      cat *_1.fastq >> "${srx}_1.fastq"
+      cat *_1.fastq >> "${sample_id}_1.fastq"
     fi
 
     if ls *_2.fastq >/dev/null 2>&1; then
-      cat *_2.fastq >> "${srx}_2.fastq"
+      cat *_2.fastq >> "${sample_id}_2.fastq"
     fi
   """
-
 }
+
 
 /*
  * Performs fastqc on fastq files prior to trimmomatic
- *
  */
 process fastqc_1 {
   module "fastQC"
-  publishDir "$srx", mode: 'link'
-  stageInMode "link"
-  tag { srx }
+  stageInMode params.output.staging_mode
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
+  tag { sample_id }
 
   input:
-    set val(srx), file(pass_files) from MERGED_SAMPLES
+    set val(sample_id), file(pass_files) from MERGED_SAMPLES
 
   output:
-    set val(srx), file(pass_files) into MERGED_FASTQC_SAMPLES
-    set file("${srx}_?_fastqc.html"), file("${srx}_?_fastqc.zip") into FASTQC_1_OUTPUT
+    set val(sample_id), file(pass_files) into MERGED_FASTQC_SAMPLES
+    set file("${sample_id}_?_fastqc.html"), file("${sample_id}_?_fastqc.zip") into FASTQC_1_OUTPUT
 
   """
   fastqc $pass_files
   """
 }
-
-// MERGED_FASTQC_SAMPLES.subscribe{
-//   println it
-// }
 
 
 /*
@@ -199,30 +186,29 @@ process fastqc_1 {
  */
  process trimmomatic {
    module "trimmomatic"
-   publishDir "$srx", mode: 'link'
-   stageInMode "link"
-   tag { srx }
+   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
+   tag { sample_id }
 
    input:
-     set val(srx), file("${srx}_?.fastq") from MERGED_FASTQC_SAMPLES
+     set val(sample_id), file("${sample_id}_?.fastq") from MERGED_FASTQC_SAMPLES
 
    output:
-     set val(srx), file("${srx}_??_trim.fastq") into TRIMMED_SAMPLES
+     set val(sample_id), file("${sample_id}_??_trim.fastq") into TRIMMED_SAMPLES
 
    script:
      """
-     minlen=`'${PWD}/scripts/Mean_length.sh' '${srx}' '${params.trimmomatic.MINLEN}'`
-     if [ -e ${srx}_1.fastq ] && [ -e ${srx}_2.fastq ]; then
+     minlen=`'${PWD}/scripts/Mean_length.sh' '${sample_id}' '${params.trimmomatic.MINLEN}'`
+     if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
       java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
         PE \
         -threads 1 \
         -phred33 \
-        ${srx}_1.fastq \
-        ${srx}_2.fastq \
-        ${srx}_1p_trim.fastq \
-        ${srx}_1u_trim.fastq \
-        ${srx}_2p_trim.fastq \
-        ${srx}_2u_trim.fastq \
+        ${sample_id}_1.fastq \
+        ${sample_id}_2.fastq \
+        ${sample_id}_1p_trim.fastq \
+        ${sample_id}_1u_trim.fastq \
+        ${sample_id}_2p_trim.fastq \
+        ${sample_id}_2u_trim.fastq \
         ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
         LEADING:3 \
         TRAILING:6 \
@@ -231,27 +217,25 @@ process fastqc_1 {
      else
       # For ease of the next steps, rename the reverse file to the forward.
       # since these are non-paired it really shouldn't matter.
-      if [ -e ${srx}_2.fastq]; then
-        mv ${srx}_2.fastq ${srx}_1.fastq
+      if [ -e ${sample_id}_2.fastq]; then
+        mv ${sample_id}_2.fastq ${sample_id}_1.fastq
       fi
       # Even though this is not paired-end, we need to create the 1p.trim.fastq
       # file as an empty file so that the rest of the workflow works
-      touch ${srx}_1p_trim.fastq
+      touch ${sample_id}_1p_trim.fastq
       # Now run trimmomatic
       java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
         SE \
         -threads 1 \
         -phred33 \
-        ${srx}_1.fastq \
-        ${srx}_1u_trim.fastq \
+        ${sample_id}_1.fastq \
+        ${sample_id}_1u_trim.fastq \
         ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
         LEADING:3 \
         TRAILING:6 \
         SLIDINGWINDOW:4:15 \
         MINLEN:"\$minlen"
      fi
-
-
      """
  }
 
@@ -260,26 +244,25 @@ process fastqc_1 {
   * Performs fastqc on fastq files post trimmomatic
   * Files are stored to an independent folder
   */
- process fastqc_2 {
-   module "fastQC"
-   publishDir "$srx", mode: 'link'
-   stageInMode "link"
-   tag { srx }
+process fastqc_2 {
+ module "fastQC"
+ stageInMode params.output.staging_mode
+ publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
+ tag { sample_id }
 
-   input:
-     set val(srx), file(pass_files) from TRIMMED_SAMPLES
+ input:
+   set val(sample_id), file(pass_files) from TRIMMED_SAMPLES
 
-   output:
-     set val(srx), file(pass_files) into TRIMMED_FASTQC_SAMPLES
-     set file("${srx}_??_trim_fastqc.html"), file("${srx}_??_trim_fastqc.zip") into FASTQC_2_OUTPUT
+ output:
+   set val(sample_id), file(pass_files) into TRIMMED_FASTQC_SAMPLES
+   set file("${sample_id}_??_trim_fastqc.html"), file("${sample_id}_??_trim_fastqc.zip") into FASTQC_2_OUTPUT
 
-   """
-   fastqc $pass_files
-   """
- }
- // TRIMMED_FASTQC_SAMPLES.subscribe{
- //   println it
- // }
+ """
+ fastqc $pass_files
+ """
+}
+
+
 /*
  * Performs hisat2 alignment of fastq files to a genome reference
  *
@@ -287,28 +270,27 @@ process fastqc_1 {
  */
 process hisat2 {
   module 'hisat2'
-  publishDir "$srx", mode: 'link'
-  stageInMode "link"
-  tag { srx }
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
+  tag { sample_id }
 
   input:
-   set val(srx), file(input_files) from TRIMMED_FASTQC_SAMPLES
+   set val(sample_id), file(input_files) from TRIMMED_FASTQC_SAMPLES
 
   output:
-   set val(srx), file("${srx}_vs_${params.ref.prefix}.sam") into INDEXED_SAMPLES
+   set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.sam") into INDEXED_SAMPLES
 
   script:
    """
      export HISAT2_INDEXES=${params.ref.path}
-     if [ -e ${srx}_2p_trim.fastq ]; then
+     if [ -e ${sample_id}_2p_trim.fastq ]; then
        hisat2 \
          -x ${params.ref.prefix} \
          --no-spliced-alignment \
          -q \
-         -1 ${srx}_1p_trim.fastq \
-         -2 ${srx}_2p_trim.fastq \
-         -U ${srx}_1u_trim.fastq,${srx}_2u_trim.fastq \
-         -S ${srx}_vs_${params.ref.prefix}.sam \
+         -1 ${sample_id}_1p_trim.fastq \
+         -2 ${sample_id}_2p_trim.fastq \
+         -U ${sample_id}_1u_trim.fastq,${sample_id}_2u_trim.fastq \
+         -S ${sample_id}_vs_${params.ref.prefix}.sam \
          -t \
          -p 1 \
          --dta-cufflinks
@@ -317,18 +299,14 @@ process hisat2 {
          -x ${params.ref.prefix} \
          --no-spliced-alignment \
          -q \
-         -U ${srx}_1u_trim.fastq \
-         -S ${srx}_vs_${params.ref.prefix}.sam \
+         -U ${sample_id}_1u_trim.fastq \
+         -S ${sample_id}_vs_${params.ref.prefix}.sam \
          -t \
          -p 1 \
          --dta-cufflinks
      fi
    """
 }
-
-// INDEXED_SAMPLES.subscribe{
-//   println it
-// }
 
 
 /*
@@ -338,19 +316,18 @@ process hisat2 {
  */
 process samtools_sort {
   module 'samtools'
-  publishDir "$srx", mode: 'link'
-  stageInMode "link"
-  tag { srx }
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
+  tag { sample_id }
 
   input:
-    set val(srx), file("${srx}_vs_${params.ref.prefix}.sam") from INDEXED_SAMPLES
+    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.sam") from INDEXED_SAMPLES
 
   output:
-    set val(srx), file("${srx}_vs_${params.ref.prefix}.bam") into SORTED_FOR_INDEX
+    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam") into SORTED_FOR_INDEX
 
   script:
     """
-    samtools sort -o ${srx}_vs_${params.ref.prefix}.bam -O bam ${srx}_vs_${params.ref.prefix}.sam
+    samtools sort -o ${sample_id}_vs_${params.ref.prefix}.bam -O bam ${sample_id}_vs_${params.ref.prefix}.sam
     """
 }
 
@@ -362,22 +339,19 @@ process samtools_sort {
  */
 process samtools_index {
   module 'samtools'
-  publishDir "$srx", mode: 'link'
-  stageInMode "link"
-  tag { srx }
+  tag { sample_id }
 
   input:
-    set val(srx), file("${srx}_vs_${params.ref.prefix}.bam") from SORTED_FOR_INDEX
+    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam") from SORTED_FOR_INDEX
 
   output:
-    set val(srx), file("${srx}_vs_${params.ref.prefix}.bam"), file("${srx}_vs_${params.ref.prefix}.bam.bai") into BAM_INDEXED_FOR_STRINGTIE
+    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam") into BAM_INDEXED_FOR_STRINGTIE
 
   script:
     """
-    samtools index ${srx}_vs_${params.ref.prefix}.bam
+    samtools index ${sample_id}_vs_${params.ref.prefix}.bam
     """
 }
-
 
 
 /**
@@ -387,18 +361,17 @@ process samtools_index {
  */
 process stringtie {
   module 'stringtie'
-  publishDir "$srx", mode: 'link'
-  stageInMode "link"
-  tag { srx }
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
+  tag { sample_id }
 
   input:
     // We don't really need the .bai file, but we want to ensure
     // this process runs after the samtools_index step so we
     // require it as an input file.
-    set val(srx), file("${srx}_vs_${params.ref.prefix}.bam"), file("${srx}_vs_${params.ref.prefix}.bam.bai") from BAM_INDEXED_FOR_STRINGTIE
+    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam") from BAM_INDEXED_FOR_STRINGTIE
 
   output:
-    set val(srx), file("${srx}_vs_${params.ref.prefix}.ga") into STRINGTIE_GTF
+    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.ga") into STRINGTIE_GTF
 
   script:
     """
@@ -406,28 +379,29 @@ process stringtie {
     -v \
     -p 1 \
     -e \
-    -o ${srx}_vs_${params.ref.prefix}.gtf \
+    -o ${sample_id}_vs_${params.ref.prefix}.gtf \
     -G ${params.ref.path}/${params.ref.prefix}.gtf \
-    -A ${srx}_vs_${params.ref.prefix}.ga \
-    -l ${srx} ${srx}_vs_${params.ref.prefix}.bam
+    -A ${sample_id}_vs_${params.ref.prefix}.ga \
+    -l ${sample_id} ${sample_id}_vs_${params.ref.prefix}.bam
     """
 }
+
+
 /*
  * Generates the final FPKM file
  */
 process fpkm {
-  publishDir "$srx", mode: 'link'
-  stageInMode "link"
-  tag { srx }
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
+  tag { sample_id }
 
   input:
-    set val(srx), file("${srx}_vs_${params.ref.prefix}.ga") from STRINGTIE_GTF
+    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.ga") from STRINGTIE_GTF
 
   output:
-    file "${srx}_vs_${params.ref.prefix}.fpkm" into FPKMS
+    file "${sample_id}_vs_${params.ref.prefix}.fpkm" into FPKMS
 
   script:
     """
-    ${PWD}/scripts/gtf2fpkm.sh ${srx} ${params.ref.prefix}
+    ${PWD}/scripts/gtf2fpkm.sh ${sample_id} ${params.ref.prefix}
     """
 }
