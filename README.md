@@ -1,15 +1,15 @@
-# GEM-maker
+# GEMmaker
 
-The GEM-maker project is a [NextFlow](https://www.nextflow.io/) workflow that generates a file containing FPKM values for all genes in a genome annotation set.
-In other words, a Gene Expression Vector (GEV) for each sample is created. GEM-maker can automatically download these samples from [NCBI](https://www.ncbi.nlm.nih.gov/), or can operate on files that are stored locally.
+The GEMmaker project is a [NextFlow](https://www.nextflow.io/) workflow that generates a file containing FPKM values for all genes in a genome annotation set.
+In other words, a Gene Expression Vector (GEV) for each sample is created. GEMmaker can automatically download these samples from [NCBI](https://www.ncbi.nlm.nih.gov/), or can operate on files that are stored locally.
 This workflow combines the [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/), [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), [Hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml), [Samtools](http://www.htslib.org/), and [StringTie](http://www.ccb.jhu.edu/software/stringtie/) software packages.
 The workflow expects the Lua-based [Lmod](https://lmod.readthedocs.io/en/latest/) software module system is installed with each software described above, making them available via the module system. In addition, user must have python3 and the python package [xmltodict](https://github.com/martinblech/xmltodict) installed.
-The GEM-maker workflow is setup to work with Illumina RNA-seq datasets.
+The GEMmaker workflow is setup to work with Illumina RNA-seq datasets.
 It is intended to be run on a high-performance compute cluster.
 
-For testing purpose, or for execution of a small dataset (or large dataset if sufficient storage is available), a Docker image is available that contains all of the necessary software components: https://github.com/SystemsGenetics/GEM-maker-docker
+For testing purpose, or for execution of a small dataset (or large dataset if sufficient storage is available), a Docker image is available that contains all of the necessary software components: https://github.com/SystemsGenetics/GEMmaker-docker
 
-Note: The GEM-maker worflow is not configured to use Hisat2/Stringtie to identify novel splice varients or gene models.
+Note: The GEMmaker worflow is not configured to use Hisat2/Stringtie to identify novel splice varients or gene models.
 It uses the existing predicted gene models as provided with the assembly annotation.
 
 ![flowchart](flowchartgen.png)
@@ -21,20 +21,20 @@ It uses the existing predicted gene models as provided with the assembly annotat
 
 Clone this workflow project into a working directory.
 As with all NextFlow workflows, you can configure the behavior of the workflow by creating a **nextflow.config** file.
-The GEM-maker workflow provides an example file you can use to get started.
+The GEMmaker workflow provides an example file you can use to get started.
 
 To clone the workflow into a directory:
 ```bash
-nextflow clone SystemsGenetics/GEM-maker target-dir
+nextflow clone SystemsGenetics/GEMmaker target-dir
 ```
 
 ---
 
 ## Test using the example data
 
-GEM-maker comes with two examples **Local Example** and **Remote Example**
+GEMmaker comes with two examples **Local Example** and **Remote Example**
 
-To execute the GEM-maker with an example dataset you must first rename the **nextflow.config.example** file as **nextflow.config**.
+To execute the GEMmaker with an example dataset you must first rename the **nextflow.config.example** file as **nextflow.config**.
 
 You should then ensure that the **trimmomatic.clip_path** option in the **nextflow.config** file is set to the full path where the Trimmomatic clipping files are housed.  Replace the text **<ILLUMINACLIP_PATH>** placeholder text with the path.
 
