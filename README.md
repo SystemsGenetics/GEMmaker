@@ -114,21 +114,17 @@ Once your files are prepared, you can execute the workflow.
 
 To execute the workflow on a local machine use this command:
 ```bash
-nextflow run GEM-maker.nf -profile standard
+nextflow run main.nf -profile standard
 ```
 
 To resume a workflow in the event of a failure:
 ```bash
-nextflow run GEM-maker.nf -profile standard resume
+nextflow run main.nf -profile standard -resume
 ```
 
+To execute the workflow and generate trace, timeline and execution reports use this command:
+```bash
+nextflow run main.nf -profile standard -resume -with-report execute-report.html -with-timeline timeline-report.html -with-trace
+```
 
-
----
-
-## TODO:
-
-- [ ] Update instructions.
-- [ ] Comment the main nextflow script.
-- [ ] Change the parameter to a `.txt` with a file per line.
-- [ ] Format the trimmomatic options.
+To execute the workflow on a high performance compute cluter you must edit the nextflow.config file and add an appropriate profile for your system. Please see the [Nextflow documentation] (https://www.nextflow.io/docs/latest/config.html#config-profiles).  Then repeat any of the commands above changing the -profile argument to use the new profile.
