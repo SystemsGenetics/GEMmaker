@@ -1,16 +1,15 @@
 # GEMmaker
 
-The GEMmaker project is a [NextFlow](https://www.nextflow.io/) workflow that generates a file containing FPKM values for all genes in a genome annotation set.
-In other words, a Gene Expression Vector (GEV) for each sample is created. GEMmaker can automatically download these samples from [NCBI](https://www.ncbi.nlm.nih.gov/), or can operate on files that are stored locally.
+The GEMmaker project is a [NextFlow](https://www.nextflow.io/) workflow that generates a file containing FPKM values for all genes in each sample of an RNA-seq dataset.
+In other words, a Gene Expression Vector (GEV) is created for each sample. GEMmaker can automatically download samples from [NCBI SRA](https://www.ncbi.nlm.nih.gov/sra), or can operate on files that are stored locally.
 This workflow combines the [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/), [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), [Hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml), [Samtools](http://www.htslib.org/), and [StringTie](http://www.ccb.jhu.edu/software/stringtie/) software packages.
 The workflow expects the Lua-based [Lmod](https://lmod.readthedocs.io/en/latest/) software module system is installed with each software described above, making them available via the module system. In addition, user must have python3 and the python package [xmltodict](https://github.com/martinblech/xmltodict) installed.
-The GEMmaker workflow is setup to work with Illumina RNA-seq datasets.
-It is intended to be run on a high-performance compute cluster.
+The GEMmaker workflow currently supports Illumina RNA-seq datasets. It is intended to be run on a high-performance compute cluster.
 
 For testing purpose, or for execution of a small dataset (or large dataset if sufficient storage is available), a Docker image is available that contains all of the necessary software components: https://github.com/SystemsGenetics/GEMmaker-docker
 
 Note: The GEMmaker worflow is not configured to use Hisat2/Stringtie to identify novel splice varients or gene models.
-It uses the existing predicted gene models as provided with the assembly annotation.
+It uses the existing predicted gene models as provided by a reference genome's assembly annotation.  The following flowchart describes the steps in this workflow:
 
 ![flowchart](flowchartgen.png)
 
@@ -19,14 +18,18 @@ It uses the existing predicted gene models as provided with the assembly annotat
 
 ## Prepare the Workflow
 
-Clone this workflow project into a working directory.
-As with all NextFlow workflows, you can configure the behavior of the workflow by creating a **nextflow.config** file.
-The GEMmaker workflow provides an example file you can use to get started.
+First, clone this workflow project into a working directory.  
 
 To clone the workflow into a directory:
 ```bash
 nextflow clone SystemsGenetics/GEMmaker target-dir
 ```
+As with all NextFlow workflows, you can configure the behavior of the workflow by creating a **nextflow.config** file.  The GEMmaker workflow provides an example file (nextflow.config.example) you can rename to get started. 
+
+```bash
+mv nextflow.config.example nextflow.config
+```
+Now, edit the nextflow.config file according to the inline instructions and the [Nextflow configuration documentation](https://www.nextflow.io/docs/latest/config.html)
 
 ---
 
@@ -67,7 +70,7 @@ The output of GEM-maker can be used for several different analysis. The FPKM fil
 ![heatmap](heatmap.png)
 
 ### Remote Example
-If you wish to use GEM-maker to download all or some of your fastq files from NCBI, you would also need to include an REMOTE\_IDs.txt file. An example of such a file is located in "./GEM-maker/examples/". You can point GEM-maker to this list by modifying the "remote\_list\_path" parameter in the "nextflow.config" file.
+If you wish to use GEMmaker to download all or some of your fastq files from NCBI, you would also need to include an REMOTE\_IDs.txt file. An example of such a file is located in "./GEMmaker/examples/". You can point GEMmaker to this list by modifying the "remote\_list\_path" parameter in the "nextflow.config" file.
 
 See the **README.md** in the "/examples/" directory for more information about running the remote example.
 
