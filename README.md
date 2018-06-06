@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/114067776.svg)](https://zenodo.org/badge/latestdoi/114067776)
+
 # GEMmaker
 
 The GEMmaker project is a [NextFlow](https://www.nextflow.io/) workflow that generates a file containing FPKM values for all genes in each sample of an RNA-seq dataset.
