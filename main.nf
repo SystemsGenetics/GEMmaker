@@ -165,7 +165,7 @@ process fastqc_1 {
 
   output:
     set val(sample_id), file(pass_files) into MERGED_FASTQC_SAMPLES
-    set file("${sample_id}_?_fastqc.html"), file("${sample_id}_?_fastqc.zip") into FASTQC_1_OUTPUT
+    set file("${sample_id}_?_fastqc.html") optional true, file("${sample_id}_?_fastqc.zip") optional true into FASTQC_1_OUTPUT
 
   """
   fastqc $pass_files
@@ -255,7 +255,7 @@ process fastqc_2 {
 
  output:
    set val(sample_id), file(pass_files) into TRIMMED_FASTQC_SAMPLES
-   set file("${sample_id}_??_trim_fastqc.html"), file("${sample_id}_??_trim_fastqc.zip") into FASTQC_2_OUTPUT
+   set file("${sample_id}_??_trim_fastqc.html") optional true, file("${sample_id}_??_trim_fastqc.zip") optional true into FASTQC_2_OUTPUT
 
  """
  fastqc $pass_files
