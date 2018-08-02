@@ -4,7 +4,7 @@
 # 
 # This is the directory where GEMmaker output directories for
 # Each experiment
-startdir='./'
+startdir='../'
 
 # Name of the output file
 out_file='GEM.txt'
@@ -21,9 +21,12 @@ rename="No"
 # This line is to make sure that we do not add onto an already
 # exisiting GEM_File. It will delete any file with the 
 # 'out_file' name
+
+cd $startdir
+
 rm $out_file
 
-names=()
+
 # This combines all files in the subdirectories that are fpkm
 for fpkm in `ls */*.fpkm`
 do 
@@ -41,11 +44,9 @@ do
             echo gene	$fpkm_name | cat - tmp_fpkm > tmp_fpkm_header
             join $out_file tmp_fpkm_header  > tmp_out
             mv tmp_out $out_file
-	    names+=($fpkm)
     else
             sort $fpkm > tmp_fpkm
 	    echo gene   $fpkm_name | cat - tmp_fpkm > $out_file
-	    names=$fpkm
     fi
 
 done
