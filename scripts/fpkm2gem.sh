@@ -43,8 +43,8 @@ do
     then
 	    sort $fpkm > tmp_fpkm
             echo gene	$fpkm_name | cat - tmp_fpkm > tmp_fpkm_header
-            join -1 1 -2 1 $out_file tmp_fpkm_header  > tmp_out
-            mv tmp_out $out_file
+            join $out_file tmp_fpkm_header  > tmp_out
+	    mv tmp_out $out_file
     else
             sort $fpkm > tmp_fpkm
 	    echo gene   $fpkm_name | cat - tmp_fpkm > $out_file
