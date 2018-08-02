@@ -30,6 +30,7 @@ rm $out_file
 # This combines all files in the subdirectories that are fpkm
 for fpkm in `ls */*.fpkm`
 do 
+    echo $fpkm
     # Checks to see if user wants to rename columns
     if [ $rename == "No" ]
     then
@@ -42,7 +43,7 @@ do
     then
 	    sort $fpkm > tmp_fpkm
             echo gene	$fpkm_name | cat - tmp_fpkm > tmp_fpkm_header
-            join $out_file tmp_fpkm_header  > tmp_out
+            join -1 1 -2 1 $out_file tmp_fpkm_header  > tmp_out
             mv tmp_out $out_file
     else
             sort $fpkm > tmp_fpkm
