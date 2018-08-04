@@ -293,7 +293,8 @@ process hisat2 {
          -S ${sample_id}_vs_${params.ref.prefix}.sam \
          -t \
          -p 1 \
-         --dta-cufflinks
+         --dta-cufflinks \
+         --new-summary
      else
        hisat2 \
          -x ${params.ref.prefix} \
@@ -303,7 +304,8 @@ process hisat2 {
          -S ${sample_id}_vs_${params.ref.prefix}.sam \
          -t \
          -p 1 \
-         --dta-cufflinks
+         --dta-cufflinks \
+         --new-summary
      fi
    """
 }
