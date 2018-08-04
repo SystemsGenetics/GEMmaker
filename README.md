@@ -1,6 +1,8 @@
 [![DOI](https://zenodo.org/badge/114067776.svg)](https://zenodo.org/badge/latestdoi/114067776)
 
-# GEMmaker
+
+![GEMmaker Logo](https://github.com/SystemsGenetics/GEMmaker/blob/reporting/images/GEMmaker-logo-sm.png)
+
 
 The GEMmaker project is a [NextFlow](https://www.nextflow.io/) workflow that generates a file containing FPKM values for all genes in each sample of an RNA-seq dataset.
 In other words, a Gene Expression Vector (GEV) is created for each sample. GEMmaker can automatically download samples from [NCBI SRA](https://www.ncbi.nlm.nih.gov/sra), or can operate on files that are stored locally.
