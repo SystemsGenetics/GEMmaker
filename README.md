@@ -1,7 +1,7 @@
 [![DOI](https://zenodo.org/badge/114067776.svg)](https://zenodo.org/badge/latestdoi/114067776)
 
 
-![GEMmaker Logo](https://github.com/SystemsGenetics/GEMmaker/blob/reporting/images/GEMmaker-logo-sm.png)
+![GEMmaker Logo](images/GEMmaker-logo-sm.png)
 
 
 The GEMmaker project is a [NextFlow](https://www.nextflow.io/) workflow that generates a file containing FPKM values for all genes in each sample of an RNA-seq dataset.
@@ -15,7 +15,7 @@ For testing purpose, or for execution of a small dataset (or large dataset if su
 Note: The GEMmaker worflow is not configured to use Hisat2/Stringtie to identify novel splice varients or gene models.
 It uses the existing predicted gene models as provided by a reference genome's assembly annotation.  The following flowchart describes the steps in this workflow:
 
-![flowchart](flowchartgen.png)
+![flowchart](images/flowchartgen.png)
 
 ---
 
@@ -71,7 +71,7 @@ In each output directory you will find the following files:
 
 The output of GEM-maker can be used for several different analysis. The FPKM files can be combined into an expression matrix and then visualized using a heatmap. The following heatmap is the Local Example's fpkm values divided by 1000 in heatmap form. We can see that gene_Zeta remained constant across all three samples, gene_Beta decreased, and gene_Alpha increased.
 
-![heatmap](heatmap.png)
+![heatmap](images/heatmap.png)
 
 ### Remote Example
 If you wish to use GEMmaker to download all or some of your fastq files from NCBI, you would also need to include an REMOTE\_IDs.txt file. An example of such a file is located in "./GEMmaker/examples/". You can point GEMmaker to this list by modifying the "remote\_list\_path" parameter in the "nextflow.config" file.
