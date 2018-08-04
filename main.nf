@@ -345,6 +345,7 @@ process samtools_sort {
  */
 process samtools_index {
   module 'samtools'
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode, pattern: "*.bam.log"
   tag { sample_id }
 
   input:
@@ -352,10 +353,12 @@ process samtools_index {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam") into BAM_INDEXED_FOR_STRINGTIE
+    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam.log") into BAM_INDEXED_LOG
 
   script:
     """
     samtools index ${sample_id}_vs_${params.ref.prefix}.bam
+    samtools stats ${sample_id}_vs_${params.ref.prefix}.bam > ${sample_id}_vs_${params.ref.prefix}.bam.log
     """
 }
 
