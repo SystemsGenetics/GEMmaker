@@ -27,7 +27,7 @@ Parameters:
   + Genome reference path:       ${params.ref.path}
   + Reference genome prefix:     ${params.ref.prefix}
   + Trimmomatic clip path:       ${params.trimmomatic.clip_path}
-  + Trimmomatic minimum ratio:  ${params.trimmomatic.MINLEN}
+  + Trimmomatic minimum ratio:   ${params.trimmomatic.MINLEN}
 """
 
 /*
@@ -209,7 +209,7 @@ process fastqc_1 {
         ${sample_id}_1u_trim.fastq \
         ${sample_id}_2p_trim.fastq \
         ${sample_id}_2u_trim.fastq \
-        ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
+        ILLUMINACLIP:${params.trimmomatic.clip_path}:2:40:15 \
         LEADING:3 \
         TRAILING:6 \
         SLIDINGWINDOW:4:15 \
@@ -278,6 +278,7 @@ process hisat2 {
 
   output:
    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.sam") into INDEXED_SAMPLES
+   set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.sam.log") into INDEXED_SAMPLES_LOG
 
   script:
    """
@@ -294,7 +295,8 @@ process hisat2 {
          -t \
          -p 1 \
          --dta-cufflinks \
-         --new-summary
+         --new-summary \
+         --summary-file ${sample_id}_vs_${params.ref.prefix}.sam.log
      else
        hisat2 \
          -x ${params.ref.prefix} \
@@ -305,7 +307,8 @@ process hisat2 {
          -t \
          -p 1 \
          --dta-cufflinks \
-         --new-summary
+         --new-summary \
+         --summary-file ${sample_id}_vs_${params.ref.prefix}.sam.log
      fi
    """
 }
