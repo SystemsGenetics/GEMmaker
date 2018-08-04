@@ -135,7 +135,7 @@ params {
   */
   trimmomatic {
     //
-    // The location of the trimmomatic clipping files.
+    // The location of the trimmomatic clipping file.
     //
     clip_path = "${PWD}/files/fasta_adapter.txt"
 

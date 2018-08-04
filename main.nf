@@ -230,7 +230,7 @@ process fastqc_1 {
         -phred33 \
         ${sample_id}_1.fastq \
         ${sample_id}_1u_trim.fastq \
-        ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
+        ILLUMINACLIP:${params.trimmomatic.clip_path}:2:40:15 \
         LEADING:3 \
         TRAILING:6 \
         SLIDINGWINDOW:4:15 \
