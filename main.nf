@@ -194,6 +194,7 @@ process fastqc_1 {
 
    output:
      set val(sample_id), file("${sample_id}_??_trim.fastq") into TRIMMED_SAMPLES
+     set val(sample_id), file("${sample_id}.trim.out") into TRIMMED_SAMPLE_LOG
 
    script:
      """
@@ -213,11 +214,11 @@ process fastqc_1 {
         LEADING:3 \
         TRAILING:6 \
         SLIDINGWINDOW:4:15 \
-        MINLEN:"\$minlen"
+        MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
      else
       # For ease of the next steps, rename the reverse file to the forward.
       # since these are non-paired it really shouldn't matter.
-      if [ -e ${sample_id}_2.fastq]; then
+      if [ -e ${sample_id}_2.fastq ]; then
         mv ${sample_id}_2.fastq ${sample_id}_1.fastq
       fi
       # Even though this is not paired-end, we need to create the 1p.trim.fastq
@@ -230,11 +231,11 @@ process fastqc_1 {
         -phred33 \
         ${sample_id}_1.fastq \
         ${sample_id}_1u_trim.fastq \
-        ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
+        ILLUMINACLIP:${params.trimmomatic.clip_path}:2:40:15 \
         LEADING:3 \
         TRAILING:6 \
         SLIDINGWINDOW:4:15 \
-        MINLEN:"\$minlen"
+        MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
      fi
      """
  }
