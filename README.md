@@ -140,7 +140,7 @@ To execute the workflow on a high performance compute cluter you must edit the n
 The [MultiQC] (http://multiqc.info) tool can be used with GEMmaker to generate a summary report of results from Trimmomatic, Hisat2 and samtools.  This report allows you to explore the quality of the data, trimming and alignments.  To generate the report you must have [MultiQC installed] (http://multiqc.info/docs/#installing-multiqc).  Once installed, you can generate the report with the following command inside of the GEMmaker directory where your workflow was executed:
 
 ```bash
-multiqc -d ./ -x work/ -x .git/ -x files/ -x images 
+multiqc . 
 ```
 The -d argument indicates the directory that MultiQC should traverse, and the -x flags indicate directories it should ignore. 
 
