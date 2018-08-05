@@ -142,7 +142,6 @@ The [MultiQC] (http://multiqc.info) tool can be used with GEMmaker to generate a
 ```bash
 multiqc . 
 ```
-The -d argument indicates the directory that MultiQC should traverse, and the -x flags indicate directories it should ignore. 
 
 ## Generating the Gene Expression Matrix (GEM)
 After GEMmaker completes, the results for all steps for each sample are stored in directories specific for each sample.  You can find a Gene Expression Vector (GEV) for each sample in the sample directory. the GEV will be the file with the .fpkm extension and contains the full vector of expression for all genes in genome.   To compile all of these GEVs into a Gene Expression Matrix execute the following script inside of the GEMmaker directory where your workflow was executed:
