@@ -29,7 +29,7 @@ In each output directory you will find the following files:
 
 The output of GEM-maker can be used for several different analysis. The FPKM files can be combined into an expression matrix and then visualized using a heatmap. The following heatmap is the Local Example's fpkm values divided by 1000 in heatmap form. We can see that gene_Zeta remained constant across all three samples, gene_Beta decreased, and gene_Alpha increased.
 
-![heatmap](images/heatmap.png)
+![heatmap](../images/heatmap.png)
 
 ## Remote Example Run
 
