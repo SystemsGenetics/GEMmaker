@@ -28,7 +28,7 @@ rm $out_file
 
 
 # This combines all files in the subdirectories that are fpkm
-for fpkm in `ls */*.fpkm`
+for fpkm in `find ./ | grep "\.fpkm" | grep -v work`
 do 
     echo $fpkm
     # Checks to see if user wants to rename columns

@@ -140,6 +140,7 @@ params {
       //
       time = '10h'
 
+<<<<<<< HEAD
       //
       // The location of the trimmomatic clipping files.
       //

@@ -196,6 +196,7 @@ process fastqc_1 {
 
    output:
      set val(sample_id), file("${sample_id}_??_trim.fastq") into TRIMMED_SAMPLES
+     set val(sample_id), file("${sample_id}.trim.out") into TRIMMED_SAMPLE_LOG
 
    script:
      """
@@ -215,11 +216,11 @@ process fastqc_1 {
         LEADING:3 \
         TRAILING:6 \
         SLIDINGWINDOW:4:15 \
-        MINLEN:"\$minlen"
+        MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
      else
       # For ease of the next steps, rename the reverse file to the forward.
       # since these are non-paired it really shouldn't matter.
-      if [ -e ${sample_id}_2.fastq]; then
+      if [ -e ${sample_id}_2.fastq ]; then
         mv ${sample_id}_2.fastq ${sample_id}_1.fastq
       fi
       # Even though this is not paired-end, we need to create the 1p.trim.fastq
@@ -236,7 +237,7 @@ process fastqc_1 {
         LEADING:${params.software_params.trimmomatic.LEADING} \
         TRAILING:${params.software_params.trimmomatic.TRAILING} \
         SLIDINGWINDOW:${params.software_params.trimmomatic.SLIDINGWINDOW} \
-        MINLEN:"\$minlen"
+        MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
      fi
      """
  }
@@ -282,6 +283,7 @@ process hisat2 {
 
   output:
    set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.sam") into INDEXED_SAMPLES
+   set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.sam.log") into INDEXED_SAMPLES_LOG
 
   script:
    """
@@ -297,7 +299,9 @@ process hisat2 {
          -S ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam \
          -t \
          -p 1 \
-         --dta-cufflinks
+         --dta-cufflinks \
+         --new-summary \
+         --summary-file ${sample_id}_vs_${params.ref.prefix}.sam.log
      else
        hisat2 \
          -x ${params.software_params.hisat2.prefix} \
@@ -307,7 +311,9 @@ process hisat2 {
          -S ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam \
          -t \
          -p 1 \
-         --dta-cufflinks
+         --dta-cufflinks \
+         --new-summary \
+         --summary-file ${sample_id}_vs_${params.ref.prefix}.sam.log
      fi
    """
 }
@@ -345,6 +351,7 @@ process samtools_sort {
 process samtools_index {
   module 'samtools'
   time params.software_params.samtools_index.time
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode, pattern: "*.bam.log"
   tag { sample_id }
 
   input:
@@ -352,10 +359,13 @@ process samtools_index {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.bam") into BAM_INDEXED_FOR_STRINGTIE
+    set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.bam.log") into BAM_INDEXED_LOG
 
   script:
     """
     samtools index ${sample_id}_vs_${params.software_params.hisat2.prefix}.bam
+    samtools stats ${sample_id}_vs_${params.software_params.hisat2.prefix}.bam > ${sample_id}_vs_${params.software_params.hisat2.prefix}.bam.log
+>>>>>>> origin/master
     """
 }
 
