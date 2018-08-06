@@ -4,21 +4,44 @@
 ![GEMmaker Logo](images/GEMmaker-logo-sm.png)
 
 
-The GEMmaker project is a [NextFlow](https://www.nextflow.io/) workflow that generates a file containing FPKM values for all genes in each sample of an RNA-seq dataset.
-In other words, a Gene Expression Vector (GEV) is created for each sample. GEMmaker can automatically download samples from [NCBI SRA](https://www.ncbi.nlm.nih.gov/sra), or can operate on files that are stored locally.
-This workflow combines the [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/), [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), [Hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml), [Samtools](http://www.htslib.org/), and [StringTie](http://www.ccb.jhu.edu/software/stringtie/) software packages.
-The workflow expects the Lua-based [Lmod](https://lmod.readthedocs.io/en/latest/) software module system is installed with each software described above, making them available via the module system. In addition, user must have python3 and the python package [xmltodict](https://github.com/martinblech/xmltodict) installed.
-The GEMmaker workflow currently supports Illumina RNA-seq datasets. It is intended to be run on a high-performance compute cluster.
+GEMmaker is a Nextflow workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression and gene co-expression network analyses. This report is the MultiQC summary of the GEMmaker workflow results. The GEMmaker workflow currently supports Illumina RNA-seq datasets. 
 
-For testing purpose, or for execution of a small dataset (or large dataset if sufficient storage is available), a Docker image is available that contains all of the necessary software components: https://github.com/SystemsGenetics/GEMmaker-docker
-
-Note: The GEMmaker worflow is not configured to use Hisat2/Stringtie to identify novel splice varients or gene models.
-It uses the existing predicted gene models as provided by a reference genome's assembly annotation.  The following flowchart describes the steps in this workflow:
+The following flowchart describes the workflow that GEMmaker provides:
 
 ![flowchart](images/flowchartgen.png)
 
 ---
 
+## Prerequisites
+Before execution of GEMmaker you must have the necessary software. The following list provides the set of tools and versions that have been verified to work with GEMmaker. Note: newer versions of these tools are assumed to also work. Older versions may work but have not been tested:
+
+- [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/) v2.8.0:  Downloads SRA files from NCBI using the SRA Run IDs.
+- [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) v0.11.7:  Generates read quality statistics for FASTQ files used by the workflow.
+- [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) v0.38:  Removes low-quality bases from the ends of reads and removes adapter sequences.
+- [Hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml) v2.1.0:  Aligns cleaned reads to the reference genome.
+- [Samtools](http://www.htslib.org/) v1.3.1:  Used for indexing and sorting of BAM files created by Hisat2.
+- [StringTie](http://www.ccb.jhu.edu/software/stringtie/) v1.3.4d:  Performs gene expression quantification.
+- [MultiQC](http://multiqc.info/) (optional) v1.5:  If MultiQC is installed it will generate a full summary report for the entire workflow.
+
+Additionally, GEMMaker requires that these software be available on your computer (or cluster) via the [Lmod](https://www.tacc.utexas.edu/research-development/tacc-projects/lmod) system and expects that the modules for these software are named as follows:
+
+- sratoolkit
+- fastQC
+- trimmomatic
+- hisat2
+- stringtie
+- sammtools
+
+Preparing the prerequisites may be challenging for some.  Additionally, some HPC systems may have the software available but not using the module names listed above.  There are a few options to simplify execution of GEMmaker despite these problems
+
+#### Stand-alone computer
+You can execute GEMmaker using a stand alone computer by using the [GEMmaker-docker image](https://github.com/SystemsGenetics/GEMmaker-docker).  See the GitHub site for instructions for execution of your workflow using that image.  It contains all of the necessary software needed to execute the workflow. No installation of software dependencies is reqiured and it will not conflict with existing software.  Note that execution of GEMmaker for a large number of samples is not recommended as it may take a very long time to complete.
+
+#### High-Performance Computing (HPC) cluster
+To execute GEMmaker on an HPC cluster you must do one of the following:
+1) Ask your HPC admins to install the necessary software using the module names specified above.
+2) Install the softwqare into your own space and create your own module files that provide names for the software.  You can find examples of module files in the 'files' directory of the [GEMmaker-docker](https://github.com/SystemsGenetics/GEMmaker-docker) repository.
+3) Edit the main.nf script an alter the module names to match those of your HPC system.
 
 ## Prepare the Workflow
 
