@@ -1,0 +1,25 @@
+title: "GEMmaker Quality Report"
+
+subtitle: "<a href='https://github.com/SystemsGenetics/GEMmaker'>GEMmaker</a> is a Nextflow workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction."
+
+intro_text: "Results from GEMmaker are useful for differential gene expression and gene co-expression network analyses. This report is the MultiQC summary of the GEMmaker workflow results."
+
+custom_logo: './images/GEMmaker-logo-sm.png'
+
+fn_ignore_dirs:
+    - '.git'
+    - 'work'
+    - 'files'
+    - 'images'
+    - 'examples'
+    - 'scripts'
+
+fn_ignore_files:
+    - 'main.nf'
+    - 'multiqc_config.yaml'
+    - 'multiqc_report.html'
+    - 'nextflow.config'
+    - 'nextflow.config.example'
+    - 'README.md'
+    - 'trace.txt'
+    - '*.html'

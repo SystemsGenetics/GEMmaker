@@ -135,9 +135,9 @@ params {
   */
   trimmomatic {
     //
-    // The location of the trimmomatic clipping files.
+    // The location of the trimmomatic clipping file.
     //
-    clip_path = "${ILLUMINACLIP_PATH}"
+    clip_path = "${PWD}/files/fasta_adapter.txt"
 
     //
     // The minimum read length to be used taken as a percentage of the mean of

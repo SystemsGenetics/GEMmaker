@@ -27,7 +27,7 @@ Parameters:
   + Genome reference path:       ${params.ref.path}
   + Reference genome prefix:     ${params.ref.prefix}
   + Trimmomatic clip path:       ${params.trimmomatic.clip_path}
-  + Trimmomatic minimum ratio:  ${params.trimmomatic.MINLEN}
+  + Trimmomatic minimum ratio:   ${params.trimmomatic.MINLEN}
 """
 
 /*
@@ -194,6 +194,7 @@ process fastqc_1 {
 
    output:
      set val(sample_id), file("${sample_id}_??_trim.fastq") into TRIMMED_SAMPLES
+     set val(sample_id), file("${sample_id}.trim.out") into TRIMMED_SAMPLE_LOG
 
    script:
      """
@@ -209,15 +210,15 @@ process fastqc_1 {
         ${sample_id}_1u_trim.fastq \
         ${sample_id}_2p_trim.fastq \
         ${sample_id}_2u_trim.fastq \
-        ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
+        ILLUMINACLIP:${params.trimmomatic.clip_path}:2:40:15 \
         LEADING:3 \
         TRAILING:6 \
         SLIDINGWINDOW:4:15 \
-        MINLEN:"\$minlen"
+        MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
      else
       # For ease of the next steps, rename the reverse file to the forward.
       # since these are non-paired it really shouldn't matter.
-      if [ -e ${sample_id}_2.fastq]; then
+      if [ -e ${sample_id}_2.fastq ]; then
         mv ${sample_id}_2.fastq ${sample_id}_1.fastq
       fi
       # Even though this is not paired-end, we need to create the 1p.trim.fastq
@@ -230,11 +231,11 @@ process fastqc_1 {
         -phred33 \
         ${sample_id}_1.fastq \
         ${sample_id}_1u_trim.fastq \
-        ILLUMINACLIP:${params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
+        ILLUMINACLIP:${params.trimmomatic.clip_path}:2:40:15 \
         LEADING:3 \
         TRAILING:6 \
         SLIDINGWINDOW:4:15 \
-        MINLEN:"\$minlen"
+        MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
      fi
      """
  }
@@ -278,6 +279,7 @@ process hisat2 {
 
   output:
    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.sam") into INDEXED_SAMPLES
+   set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.sam.log") into INDEXED_SAMPLES_LOG
 
   script:
    """
@@ -293,7 +295,9 @@ process hisat2 {
          -S ${sample_id}_vs_${params.ref.prefix}.sam \
          -t \
          -p 1 \
-         --dta-cufflinks
+         --dta-cufflinks \
+         --new-summary \
+         --summary-file ${sample_id}_vs_${params.ref.prefix}.sam.log
      else
        hisat2 \
          -x ${params.ref.prefix} \
@@ -303,7 +307,9 @@ process hisat2 {
          -S ${sample_id}_vs_${params.ref.prefix}.sam \
          -t \
          -p 1 \
-         --dta-cufflinks
+         --dta-cufflinks \
+         --new-summary \
+         --summary-file ${sample_id}_vs_${params.ref.prefix}.sam.log
      fi
    """
 }
@@ -339,6 +345,7 @@ process samtools_sort {
  */
 process samtools_index {
   module 'samtools'
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode, pattern: "*.bam.log"
   tag { sample_id }
 
   input:
@@ -346,10 +353,12 @@ process samtools_index {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam") into BAM_INDEXED_FOR_STRINGTIE
+    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam.log") into BAM_INDEXED_LOG
 
   script:
     """
     samtools index ${sample_id}_vs_${params.ref.prefix}.bam
+    samtools stats ${sample_id}_vs_${params.ref.prefix}.bam > ${sample_id}_vs_${params.ref.prefix}.bam.log
     """
 }
 
