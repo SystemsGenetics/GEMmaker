@@ -15,6 +15,7 @@ The following flowchart describes the workflow that GEMmaker provides:
 ## Prerequisites
 Before execution of GEMmaker you must have the necessary software. The following list provides the set of tools and versions that have been verified to work with GEMmaker. Note: newer versions of these tools are assumed to also work. Older versions may work but have not been tested:
 
+- [Python3](https://www.python.org)
 - [NextFlow](https://www.nextflow.io/) v0.28:  executes the workflow.
 - [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/) v2.8.0:  Downloads SRA files from NCBI using the SRA Run IDs.
 - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) v0.11.7:  Generates read quality statistics for FASTQ files used by the workflow.
