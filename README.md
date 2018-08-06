@@ -58,7 +58,7 @@ As with all NextFlow workflows, you can configure the behavior of the workflow b
 ```bash
 mv nextflow.config.example nextflow.config
 ```
-Now, edit the nextflow.config file according to the inline instructions and the [Nextflow configuration documentation](https://www.nextflow.io/docs/latest/config.html)
+Now, edit the nextflow.config file according to the inline instructions.  You may want to refer to the [Nextflow configuration documentation](https://www.nextflow.io/docs/latest/config.html) to set proper "profile" settings for your computing infrastructure. For example, to execute this workflow on an HPC system you must provide the name of the job scheduler and the job queue to submit to.
 
 ---
 
