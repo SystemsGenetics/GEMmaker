@@ -40,10 +40,10 @@ Preparing the prerequisites may be challenging for some.  Additionally, some HPC
 You can execute GEMmaker using a stand alone computer by using the [GEMmaker-docker image](https://github.com/SystemsGenetics/GEMmaker-docker).  See the GitHub site for instructions for execution of your workflow using that image.  It contains all of the necessary software needed to execute the workflow. No installation of software dependencies is reqiured and it will not conflict with existing software.  Note that execution of GEMmaker for a large number of samples on a single stand-alone machine is not recommended as it may take a very long time to complete.
 
 #### High-Performance Computing (HPC) cluster
-To execute GEMmaker on an HPC cluster you must do one of the following:
+To execute GEMmaker on an HPC cluster you must do **only one** of the following:
 1) Ask your HPC admins to install the necessary software using the module names specified above.
-2) Install the softwqare into your own space and create your own module files that provide names for the software.  You can find examples of module files in the 'files' directory of the [GEMmaker-docker](https://github.com/SystemsGenetics/GEMmaker-docker) repository.
-3) Edit the main.nf script an alter the module names to match those of your HPC system.
+2) Install the software into your own space and create your own module files that provide names for the software.  You can find examples of module files in the 'files' directory of the [GEMmaker-docker](https://github.com/SystemsGenetics/GEMmaker-docker) repository.
+3) Edit the main.nf script and alter the module names to match those of your HPC system.
 
 ## Prepare the Workflow
 
