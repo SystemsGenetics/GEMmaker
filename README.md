@@ -10,7 +10,7 @@ The following flowchart describes the workflow that GEMmaker provides:
 
 ![flowchart](images/flowchartgen.png)
 
----
+
 
 ## Prerequisites
 Before execution of GEMmaker you must have the necessary software. The following list provides the set of tools and versions that have been verified to work with GEMmaker. Note: newer versions of these tools are assumed to also work. Older versions may work but have not been tested:
@@ -60,7 +60,6 @@ mv nextflow.config.example nextflow.config
 ```
 Now, edit the nextflow.config file according to the inline instructions.  You may want to refer to the [Nextflow configuration documentation](https://www.nextflow.io/docs/latest/config.html) to set proper "profile" settings for your computing infrastructure. For example, to execute this workflow on an HPC system you must provide the name of the job scheduler and the job queue to submit to.
 
----
 
 ## Test using the example data
 
@@ -103,7 +102,6 @@ If you wish to use GEMmaker to download all or some of your fastq files from NCB
 
 See the **README.md** in the "/examples/" directory for more information about running the remote example.
 
----
 
 ## Test using your own data.
 
@@ -140,7 +138,6 @@ The example directory also contains an REMOTE_IDS.txt file containing a list of 
 
 Once your files are prepared, you can execute the workflow.
 
----
 
 ## Executing the Workflow
 
