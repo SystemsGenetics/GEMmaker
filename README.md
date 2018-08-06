@@ -43,7 +43,7 @@ You can execute GEMmaker using a stand alone computer by using the [GEMmaker-doc
 To execute GEMmaker on an HPC cluster you must do **only one** of the following:
 1) Ask your HPC admins to install the necessary software using the module names specified above.
 2) Install the software into your own space and create your own module files that provide names for the software.  You can find examples of module files in the 'files' directory of the [GEMmaker-docker](https://github.com/SystemsGenetics/GEMmaker-docker) repository.
-3) Edit the main.nf script and alter the module names to match those of your HPC system.
+3) Edit GEMmaker's main.nf script and alter the module names to match those of your HPC system.
 
 ## Prepare the Workflow
 
