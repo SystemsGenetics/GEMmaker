@@ -4,7 +4,7 @@
 ![GEMmaker Logo](images/GEMmaker-logo-sm.png)
 
 
-GEMmaker is a Nextflow workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression and gene co-expression network analyses. This report is the MultiQC summary of the GEMmaker workflow results. The GEMmaker workflow currently supports Illumina RNA-seq datasets. 
+GEMmaker is a [Nextflow](https://www.nextflow.io/) workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression and gene co-expression network analyses. This report is the MultiQC summary of the GEMmaker workflow results. The GEMmaker workflow currently supports Illumina RNA-seq datasets. 
 
 The following flowchart describes the workflow that GEMmaker provides:
 
@@ -15,6 +15,7 @@ The following flowchart describes the workflow that GEMmaker provides:
 ## Prerequisites
 Before execution of GEMmaker you must have the necessary software. The following list provides the set of tools and versions that have been verified to work with GEMmaker. Note: newer versions of these tools are assumed to also work. Older versions may work but have not been tested:
 
+- [NextFlow](https://www.nextflow.io/) v0.28:  executes the workflow.
 - [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/) v2.8.0:  Downloads SRA files from NCBI using the SRA Run IDs.
 - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) v0.11.7:  Generates read quality statistics for FASTQ files used by the workflow.
 - [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) v0.38:  Removes low-quality bases from the ends of reads and removes adapter sequences.
@@ -45,7 +46,7 @@ To execute GEMmaker on an HPC cluster you must do one of the following:
 
 ## Prepare the Workflow
 
-First, clone this workflow project into a working directory.  
+After ensuring that all necessary software prerequisites are available, clone GEMmaker into a working directory.  
 
 To clone the workflow into a directory:
 ```bash
