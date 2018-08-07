@@ -4,13 +4,13 @@
 ![GEMmaker Logo](images/GEMmaker-logo-sm.png)
 
 
-The GEMmaker project is a [NextFlow](https://www.nextflow.io/) workflow that generates a file containing FPKM values for all genes in each sample of an RNA-seq dataset.
+The GEMmaker project is a [NextFlow](https://www.nextflow.io/) workflow that generates a file containing FPKM values for all genes in each sample of an RNA-seq data set.
 In other words, a Gene Expression Vector (GEV) is created for each sample. GEMmaker can automatically download samples from [NCBI SRA](https://www.ncbi.nlm.nih.gov/sra), or can operate on files that are stored locally.
 This workflow combines the [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/), [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), [Hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml), [Samtools](http://www.htslib.org/), and [StringTie](http://www.ccb.jhu.edu/software/stringtie/) software packages.
 The workflow expects the Lua-based [Lmod](https://lmod.readthedocs.io/en/latest/) software module system is installed with each software described above, making them available via the module system. In addition, user must have python3 and the python package [xmltodict](https://github.com/martinblech/xmltodict) installed.
-The GEMmaker workflow currently supports Illumina RNA-seq datasets. It is intended to be run on a high-performance compute cluster.
+The GEMmaker workflow currently supports Illumina RNA-seq data sets. It is intended to be run on a high-performance compute cluster.
 
-For testing purpose, or for execution of a small dataset (or large dataset if sufficient storage is available), a Docker image is available that contains all of the necessary software components: https://github.com/SystemsGenetics/GEMmaker-docker
+For testing purpose, or for execution of a small data set (or large data set if sufficient storage is available), a Docker image is available that contains all of the necessary software components: https://github.com/SystemsGenetics/GEMmaker-docker
 
 Note: The GEMmaker worflow is not configured to use Hisat2/Stringtie to identify novel splice varients or gene models.
 It uses the existing predicted gene models as provided by a reference genome's assembly annotation.  The following flowchart describes the steps in this workflow:
@@ -41,12 +41,13 @@ Now, edit the nextflow.config file according to the inline instructions and the 
 
 GEMmaker comes with two examples **Local Run Example** and **Remote Run Example**
 
-To execute the GEMmaker with an example dataset you must first rename the **nextflow.config.example** file as **nextflow.config**.
+To execute the GEMmaker with an example data set you must first rename the **nextflow.config.example** file as **nextflow.config**.
 
 You should then ensure that the **trimmomatic.clip_path** option in the **nextflow.config** file is set to the full path where the Trimmomatic clipping files are housed.  Replace the text **<ILLUMINACLIP_PATH>** placeholder text with the path.
 
-The example config file also has an example profile for running this workflow on a SLURM cluster. To use the SLURM profile you must, at a minimum, change the **<QUEUE_NAME>** placeholder text to be the name of the queue used for submission on your cluster.  If you require additional settings you can adjust the profile as per the [NextFlow configuration documentation](https://www.nextflow.io/docs/latest/config.html#config-profiles).
+The example config file also has an example profile for running this workflow on a SLURM cluster. If you want to use the SLURM profile you must, at a minimum, change the **<QUEUE_NAME>** placeholder text to be the name of the queue used for submission on your cluster.  If you require additional settings you can adjust the profile as per the [NextFlow configuration documentation](https://www.nextflow.io/docs/latest/config.html#config-profiles).
 
+Additional information on what is in the test data can be found in the **GEMmaker/examples/README.md** file. This contains information on what is going on behind the scene, and what to do if you are interested in using the **Remote Run** feature of GEMmaker, which will automatically download RNA-seq read files from NCBI.
 ---
 
 ## Test using your own data.
