@@ -39,15 +39,20 @@ Now, edit the nextflow.config file according to the inline instructions and the 
 
 ## Test using the example data
 
-GEMmaker comes with two examples **Local Run Example** and **Remote Run Example**
+GEMmaker comes with two examples **Local Run Example** and **Remote Run Example**. The **nextflow.config.example** is set up to run the **Local Run Example**
 
-To execute the GEMmaker with an example data set you must first rename the **nextflow.config.example** file as **nextflow.config**.
+To execute the GEMmaker with an example data set you must first rename the **nextflow.config.example** file as **nextflow.config**:
 
-You should then ensure that the **trimmomatic.clip_path** option in the **nextflow.config** file is set to the full path where the Trimmomatic clipping files are housed.  Replace the text **<ILLUMINACLIP_PATH>** placeholder text with the path.
+```bash
+mv nextflow.config.example nextflow.config
+```
+The default setting for the **software_params.trimmomatic.clip_path** in the **nextflow.config** is set to **${ILLUMINACLIP_PATH}**. This will have GEMmaker check your PATH to find where your Trimmomatic clipping files are housed. If you do not have your **ILLUMINACLIP_PATH** set, it will be necessary to change this setting to direct GEMmaker to the location of the Trimmomatic clipping files.
+Read more about Trimmomatic clipping files in the [Trimmomatic Documentation](http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf)
 
-The example config file also has an example profile for running this workflow on a SLURM cluster. If you want to use the SLURM profile you must, at a minimum, change the **<QUEUE_NAME>** placeholder text to be the name of the queue used for submission on your cluster.  If you require additional settings you can adjust the profile as per the [NextFlow configuration documentation](https://www.nextflow.io/docs/latest/config.html#config-profiles).
+After you have renamed the nextflow.config.example file and insured your ILLUMINACLIP_PATH is correct, you can run the workflow with the commands in the section below in the section titled **Executing the Workflow**
 
-Additional information on what is in the test data can be found in the **GEMmaker/examples/README.md** file. This contains information on what is going on behind the scene, and what to do if you are interested in using the **Remote Run** feature of GEMmaker, which will automatically download RNA-seq read files from NCBI.
+Additional information on what is in the test data can be found in the **GEMmaker/examples/README.md** file. This contains information on what is going on behind the scene, and how to change the **nextflow.config** to run the **Remote Run Example**.
+
 ---
 
 ## Test using your own data.
