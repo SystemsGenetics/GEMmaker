@@ -30,7 +30,7 @@ params {
     // "_1.fastq" or "_2.fastq" in the subdirectories of the folder "Sample".
     // If no local files are to be used, set parameter as "none"
     //
-    local_samples_path = "${PWD}/examples/Data/Sample*/*_{1,2}.fastq"
+    local_samples_path = "${PWD}/examples/LocalExampleRun/Data/Sample*/*_{1,2}.fastq"
   }
 
   /**
@@ -140,7 +140,6 @@ params {
       //
       time = '10h'
 
-<<<<<<< HEAD
       //
       // The location of the trimmomatic clipping files.
       //
@@ -217,7 +216,7 @@ params {
       // The full file system path of the directory containing the
       // genome reference files.
       //
-      path = "${PWD}/examples/reference/"
+      path = "${PWD}/examples/LocalExampleRun/reference/"
 
       //
       // The prefix (used by hisat2-build) for the genome reference files. Note:
