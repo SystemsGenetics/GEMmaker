@@ -301,7 +301,7 @@ process hisat2 {
          -p 1 \
          --dta-cufflinks \
          --new-summary \
-         --summary-file ${sample_id}_vs_${params.ref.prefix}.sam.log
+         --summary-file ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam.log
      else
        hisat2 \
          -x ${params.software_params.hisat2.prefix} \
@@ -313,7 +313,7 @@ process hisat2 {
          -p 1 \
          --dta-cufflinks \
          --new-summary \
-         --summary-file ${sample_id}_vs_${params.ref.prefix}.sam.log
+         --summary-file ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam.log
      fi
    """
 }
@@ -365,7 +365,6 @@ process samtools_index {
     """
     samtools index ${sample_id}_vs_${params.software_params.hisat2.prefix}.bam
     samtools stats ${sample_id}_vs_${params.software_params.hisat2.prefix}.bam > ${sample_id}_vs_${params.software_params.hisat2.prefix}.bam.log
->>>>>>> origin/master
     """
 }
 

@@ -28,7 +28,7 @@ To clone the workflow into a directory:
 ```bash
 nextflow clone SystemsGenetics/GEMmaker target-dir
 ```
-As with all NextFlow workflows, you can configure the behavior of the workflow by creating a **nextflow.config** file.  The GEMmaker workflow provides an example file (nextflow.config.example) you can rename to get started. 
+As with all NextFlow workflows, you can configure the behavior of the workflow by creating a **nextflow.config** file.  The GEMmaker workflow provides an example file (nextflow.config.example) you can rename to get started.
 
 ```bash
 mv nextflow.config.example nextflow.config
@@ -39,7 +39,7 @@ Now, edit the nextflow.config file according to the inline instructions and the 
 
 ## Test using the example data
 
-GEMmaker comes with two examples **Local Example** and **Remote Example**
+GEMmaker comes with two examples **Local Run Example** and **Remote Run Example**
 
 To execute the GEMmaker with an example dataset you must first rename the **nextflow.config.example** file as **nextflow.config**.
 
@@ -109,7 +109,7 @@ To execute the workflow on a high performance compute cluter you must edit the n
 The [MultiQC] (http://multiqc.info) tool can be used with GEMmaker to generate a summary report of results from Trimmomatic, Hisat2 and samtools.  This report allows you to explore the quality of the data, trimming and alignments.  To generate the report you must have [MultiQC installed] (http://multiqc.info/docs/#installing-multiqc).  Once installed, you can generate the report with the following command inside of the GEMmaker directory where your workflow was executed:
 
 ```bash
-multiqc . 
+multiqc .
 ```
 
 ## Generating the Gene Expression Matrix (GEM)
