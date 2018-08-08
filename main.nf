@@ -406,7 +406,7 @@ process stringtie {
 /*
  * Generates the final FPKM file
  */
-process fpkm {
+process fpkm_or_tpm {
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
@@ -414,10 +414,16 @@ process fpkm {
     set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.ga") from STRINGTIE_GTF
 
   output:
-    file "${sample_id}_vs_${params.software_params.hisat2.prefix}.fpkm" into FPKMS
-
+    file "${sample_id}_vs_${params.software_params.hisat2.prefix}.fpkm" optional true into FPKMS
+    file "${sample_id}_vs_${params.software_params.hisat2.prefix}.tpm" optional true into TPM
   script:
+  if ( params.software_params.fpkm_or_tpm.fpkm == true)
     """
-    ${PWD}/scripts/gtf2fpkm.sh ${sample_id} ${params.software_params.hisat2.prefix}
+    awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.software_params.hisat2.prefix}.ga > ${sample_id}_vs_${params.software_params.hisat2.prefix}.fpkm
     """
+  if( params.software_params.fpkm_or_tpm.tpm == true )
+    """
+    awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.software_params.hisat2.prefix}.ga > ${sample_id}_vs_${params.software_params.hisat2.prefix}.tpm
+    """
+
 }

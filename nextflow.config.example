@@ -144,7 +144,7 @@ params {
       // The location of the trimmomatic clipping files.
       //
       clip_path = "${ILLUMINACLIP_PATH}"
- 
+
       //
       // The minimum read length to be used taken as a percentage of the mean of
       // each sample. This is different than how Trimmomatic normally does this
@@ -261,6 +261,20 @@ params {
       //  Time allowed for stringtie
       //
       time = '10h'
+    }
+
+      /**
+      * fpkm_or_tpm
+      *
+      * Creates either fpkm or tpm file from stringtie *.ga
+      */
+      fpkm_or_tpm{
+        //
+        //  Should this workflow output fpkm or tpm?
+        //  options = 'fpkm', 'tpm'
+        //
+        fpkm = true
+        tpm = true
     }
   }
 }
