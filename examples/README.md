@@ -93,6 +93,7 @@ local_samples_path = "none"
 ```
 ### Files Output by Local Run Example
 This will output 1 directory titled "SRR649944", which is the name of the run GEMmaker was set to download. It will contain the standard set of output files.
+It should be noted that this RNA-seq dataset does not produce any fpkm values.
 
 ### Running both Local and Remote at the same time
 GEMmaker is capable of running both Local and Remote at the same time. Just indicate where your local samples and list of remote samples is located in the **nextflow.config**
