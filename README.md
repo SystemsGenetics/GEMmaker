@@ -49,13 +49,13 @@ mv nextflow.config.example nextflow.config
 The default setting for the **software_params.trimmomatic.clip_path** in the **nextflow.config** is set to **${ILLUMINACLIP_PATH}**. This will have GEMmaker check your PATH to find where your Trimmomatic clipping files are housed. If you do not have your **ILLUMINACLIP_PATH** set, it will be necessary to change this setting to direct GEMmaker to the location of the Trimmomatic clipping files.
 Read more about Trimmomatic clipping files in the [Trimmomatic Documentation](http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf)
 
-After you have renamed the nextflow.config.example file and insured your ILLUMINACLIP_PATH is correct, you can run the workflow with the commands in the section below in the section titled **Executing the Workflow**
+After you have renamed the nextflow.config.example file and insured your ILLUMINACLIP_PATH is correct, you can run the workflow with the commands in the section below titled **Executing the Workflow**
 
 Additional information on what is in the test data can be found in the **GEMmaker/examples/README.md** file. This contains information on what is going on behind the scene, and how to change the **nextflow.config** to run the **Remote Run Example**.
 
 ---
 
-## Test using your own data.
+## Using your own data.
 
 To prepare your own samples for execution you must peform the following:
 

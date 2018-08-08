@@ -1,15 +1,17 @@
 This README.md conatins information on what is going on behind the scene with the example data. To run the example data, please reference the README.md on the front page of this github repository.
 
-This README.md is useful for understanding what you will need for a run of your own.
+This README.md is useful for understanding what you will need for a run of your own by providing examples.
 
 # Example Data
 
-GEMmaker comes with two examples **Local Example Run** and **Remote Example Run**. Use a **Local Run** when you already have the raw fastq files on your local machine or local computing cluster. A **Remote Run** is when you wish to download files from NCBI automatically.
+GEMmaker comes with two examples **Local Run Example** and **Remote Run Example**. These are representative of the two types of runs GEMmaker is capable of:
+* **Local Run** - used when you already have the raw fastq files on your local machine or local computing cluster. If the data is not published, use this type of run.
+* **Remote Run** - used when you wish to have GEMmaker download files from NCBI automatically.
 
-## Local Example Run
+## Local Run Example
 A **local run** is when you already have the raw fastq files on your local machine or computing cluster.
 
-This directory contains both the reference material for the imaginary organism "Cool Organism" (CORG) and a data set of 3 artificially made RNA-seq runs for CORG. This is simulating a local run because the RNA-seq data is already on your local machine or cluster. This data set is very small, so it can be run on a desktop machine with ease.
+You can find the raw data and reference material needed to perform the **Local Run Example** in the directory GEMmaker/examples/LocalRunExample. This directory contains both the reference material for the imaginary organism "Cool Organism" (CORG) and a data set of 3 artificially made RNA-seq runs for CORG. This is simulating a local run because the RNA-seq data is already on your local machine or cluster. This data set is very small, so it can be run on a desktop machine with ease.
 
 The reference directory contains the made up reference genome file (**CORG.fna**), gtf file (**CORG.gtf**), and hisat files (**CORG.?/ht2**). It also has a **COMMANDS.sh** file with the command used to generate the hisat files from the genome file.
 
@@ -35,7 +37,7 @@ The output of GEM-maker can be used for several different analysis. The FPKM fil
 
 ![heatmap](../images/heatmap.png)
 
-## Remote Example Run
+## Remote Run Example
 
 If you wish to use GEMmaker to download all or some of your fastq files from NCBI, you would also need to include an REMOTE\_IDs.txt file. An example of such a file is located in "./GEMmaker/RemoteExampleRun/". You can point GEMmaker to this list by modifying the "remote\_list\_path" parameter in the "nextflow.config" file.
 
