@@ -84,7 +84,7 @@ prefix = "GCA_002793175.1_ASM279317v1_genomic"
 
 **params.input.remote_list_path** should be set to point to SRA_IDs.txt file:
 ```bash
-remote_list_path = "/data/ficklin/projects/JohnWhileScidasFull/GEMmaker/examples/RemoteExampleRun/SRA_IDs.txt"
+remote_list_path = "${PWD}/examples/RemoteExampleRun/SRA_IDs.txt"
 ```  
 **params.input.local_samples_path** should be set to indicate that we have no local samples:
 ```bash
