@@ -21,7 +21,7 @@ params {
     // No blank lines are allowed
     // If no remote files are to be downloaded, set parameter as "none"
     //
-    remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
+    remote_list_path = "none"
 
     //
     // The glob that retrieves locally stored "fastq" files
