@@ -270,8 +270,7 @@ params {
       */
       fpkm_or_tpm{
         //
-        //  Should this workflow output fpkm or tpm?
-        //  options = 'fpkm', 'tpm'
+        //  Should this workflow output fpkm and/or tpm?
         //
         fpkm = true
         tpm = true

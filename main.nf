@@ -417,13 +417,20 @@ process fpkm_or_tpm {
     file "${sample_id}_vs_${params.software_params.hisat2.prefix}.fpkm" optional true into FPKMS
     file "${sample_id}_vs_${params.software_params.hisat2.prefix}.tpm" optional true into TPM
   script:
-  if ( params.software_params.fpkm_or_tpm.fpkm == true)
+  if( params.software_params.fpkm_or_tpm.fpkm == true && params.software_params.fpkm_or_tpm.tpm == true )
+    """
+    awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.software_params.hisat2.prefix}.ga > ${sample_id}_vs_${params.software_params.hisat2.prefix}.fpkm
+    awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.software_params.hisat2.prefix}.ga > ${sample_id}_vs_${params.software_params.hisat2.prefix}.tpm
+    """
+  else if( params.software_params.fpkm_or_tpm.fpkm == true)
     """
     awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.software_params.hisat2.prefix}.ga > ${sample_id}_vs_${params.software_params.hisat2.prefix}.fpkm
     """
-  if( params.software_params.fpkm_or_tpm.tpm == true )
+  else if( params.software_params.fpkm_or_tpm.tpm == true )
     """
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.software_params.hisat2.prefix}.ga > ${sample_id}_vs_${params.software_params.hisat2.prefix}.tpm
     """
+  else
+    error "Please choose at least one output and resume GEMmaker"
 
 }
