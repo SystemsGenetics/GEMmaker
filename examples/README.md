@@ -1,19 +1,18 @@
 This README.md conatins information on what is going on behind the scene with the example data. To run the example data, please reference the README.md on the front page of this github repository.
 
-This README.md is useful for understanding what you will need for a run of your own by providing examples.
 
 # Example Data
 
-GEMmaker comes with two examples **Local Run Example** and **Remote Run Example**. These are representative of the two types of runs GEMmaker is capable of:
+GEMmaker comes with two examples, **Local Run Example** and **Remote Run Example**. These are representative of the two types of runs GEMmaker is capable of:
 * **Local Run** - used when you already have the raw fastq files on your local machine or local computing cluster. If the data is not published, use this type of run.
 * **Remote Run** - used when you wish to have GEMmaker download files from NCBI automatically.
 
 ---
 
 # Local Run Example
-A **local run** is when you already have the raw fastq files on your local machine or computing cluster.
+A **Local Run** is when you already have the raw fastq files on your local machine or computing cluster.
 
-The Local Run Example uses the imaginary organism "Cool Organism" (CORG) and a data set of 3 artificially made RNA-seq runs for CORG. CORG has a very small "genome" of only 1,953 nucleotides, 2 "chromosomes" and 3 "genes". The 3 genes are named "gene\_Alpha", "gene\_Beta" and "gene\_Zeta".
+The **Local Run Example** uses the imaginary organism "Cool Organism" (CORG) and a data set of 3 artificially made RNA-seq runs for CORG. CORG has a very small "genome" of only 1,953 nucleotides, 2 "chromosomes" and 3 "genes". The 3 genes are named "gene\_Alpha", "gene\_Beta" and "gene\_Zeta".
 
 This data set simulates a local run because the RNA-seq data is already on your local machine or cluster. This data set is very small, so it can be run on a desktop machine in a short amount of time.
 
@@ -22,7 +21,9 @@ The reference directory for the **Local Run Example** is located at:
 ```bash
 GEMmaker/examples/LocalRunExample/reference
 ```
-This directory contains the made up reference genome file (**CORG.fna**), gtf file (**CORG.gtf**), and hisat files (**CORG.?/ht2**). It also has a **COMMANDS.sh** file with the command used to generate the hisat files from the genome file. You can modify this command to make hisat files for your own project.
+This directory contains the made up reference genome file (**CORG.fna**), gtf file (**CORG.gtf**), and hisat files (**CORG.?/ht2**).
+
+The directory also has a **COMMANDS.sh** file with the command used to generate the hisat files from the genome file. You can modify this command to make hisat files for your own project.
 
 ### Data directory
 The example data directory for the **Local Run Example** is located at:  
@@ -32,7 +33,7 @@ The example data directory for the **Local Run Example** is located at:
 This directory contains 3 "RNA-seq" data sets which are examples of unpaired data, and are each in a directory of their own. The file format for these reads is "?\_1.fastq" where the "?" is replaced by the number of the sample. GEM-maker finds these files through the glob pattern assigned to the "local\_samples\_path" in the **nextflow.config** file.
 
 ### Running Local Run Example Data
-If you have not done so already, you can execute the Local Run Example workflow using the information contained in the section **Test using the example data** in the Readme.md on the front page of this github repository.
+If you have not done so already, you can execute the **Local Run Example** workflow using the information contained in the section **Test using the example data** in the Readme.md on the front page of this github repository.
 
 ### Files Output by Local Run Example
 Once executed, the Local Run Example should output 3 directories. These will be titled Sample_1, Sample_2, and Sample_3. In a real run, GEMmaker will automatically combine files that have the same experiment number( \[SED\]RX0000000 ) but different run numbers ( \[SED\]RR0000000 ), so it is possible that the \[SED\]RX number contains multiple \[SED\]RR runs. However, in the the local example, this is not the case.
@@ -55,7 +56,7 @@ The output of GEM-maker can be used for several different analysis. The FPKM fil
 # Remote Run Example
 A **Remote Run** is used when you wish to have GEMmaker download files from NCBI automatically
 
-The Remote Run Example uses data from an unidentified bacteria that is located on NCBI. The data set is unusually small, which makes it useful as an example.
+The **Remote Run Example** uses data from an unidentified bacteria. The data set is located on NCBI, and is unusually small, which makes it useful as an example.
 
 ### Reference directory
 The reference directory for the Local Run Example is located at:
@@ -82,11 +83,11 @@ The parameter right below this is **params.software_params.hisat2.prefix**. This
 prefix = "GCA_002793175.1_ASM279317v1_genomic"
 ```
 
-**params.input.remote_list_path** should be set to point to SRA_IDs.txt file:
+**params.input.remote_list_path** should be set to point to the SRA_IDs.txt file:
 ```bash
 remote_list_path = "${PWD}/examples/RemoteExampleRun/SRA_IDs.txt"
 ```  
-**params.input.local_samples_path** should be set to indicate that we have no local samples:
+**params.input.local_samples_path** should be set to indicate that there are no local samples:
 ```bash
 local_samples_path = "none"
 ```
