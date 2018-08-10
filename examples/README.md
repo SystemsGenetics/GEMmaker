@@ -1,7 +1,7 @@
 
 # Example Data
 
-GEMmaker provides two examples for processing RNA-seq samples that are either stored on a local computer or housed in [NCBI's SRA repository](https://www.ncbi.nlm.nih.gov/sra).  
+GEMmaker provides two examples for processing RNA-seq samples that are either stored on a local computer or housed in [NCBI's SRA repository](https://www.ncbi.nlm.nih.gov/sra).  You can test this workflow without installing all of the necessary prerequisites by using the [GEMmaker-docker](https://github.com/SystemsGenetics/GEMmaker-docker) image.
 
 
 ## Analyze Local Data
