@@ -90,5 +90,5 @@ local_samples_path = "none"
 ### Results
 Because there is only one smaple, a single directory named "SRR649944" will be presetn. This is the NCBI experiment ID that the sample belongs to. It will contain the same output files describe above for the local run example.  It should be noted that this RNA-seq dataset does not produce any fpkm values.
 
-## Running both Local and Remote at the same time
-GEMmaker is combining both local and remote data by setting both parameters in the input section of the **nextflow.config** file.
+## Analyzing Both Local and Remote Together
+GEMmaker is capable of combining both local and remote data in a single execution if both the **remote_list_path** and **local_samples_path** are set in the **nextflow.config** file.
