@@ -212,10 +212,10 @@ process fastqc_1 {
         ${sample_id}_1u_trim.fastq \
         ${sample_id}_2p_trim.fastq \
         ${sample_id}_2u_trim.fastq \
-        ILLUMINACLIP:${params.software_params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
-        LEADING:3 \
-        TRAILING:6 \
-        SLIDINGWINDOW:4:15 \
+        ILLUMINACLIP:${params.trimmomatic.clip_path}:2:40:15 \
+        LEADING:${params.software_params.trimmomatic.LEADING} \
+        TRAILING:${params.software_params.trimmomatic.TRAILING} \
+        SLIDINGWINDOW:${params.software_params.trimmomatic.SLIDINGWINDOW} \
         MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
      else
       # For ease of the next steps, rename the reverse file to the forward.
@@ -233,7 +233,7 @@ process fastqc_1 {
         ${params.software_params.trimmomatic.Quality} \
         ${sample_id}_1.fastq \
         ${sample_id}_1u_trim.fastq \
-        ILLUMINACLIP:${params.software_params.trimmomatic.clip_path}/fasta_adapter.txt:2:40:15 \
+        ILLUMINACLIP:${params.trimmomatic.clip_path}:2:40:15 \
         LEADING:${params.software_params.trimmomatic.LEADING} \
         TRAILING:${params.software_params.trimmomatic.TRAILING} \
         SLIDINGWINDOW:${params.software_params.trimmomatic.SLIDINGWINDOW} \
@@ -299,6 +299,7 @@ process hisat2 {
          -S ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam \
          -t \
          -p 1 \
+         --un ${sample_id}_un.fastq \
          --dta-cufflinks \
          --new-summary \
          --summary-file ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam.log
@@ -311,6 +312,7 @@ process hisat2 {
          -S ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam \
          -t \
          -p 1 \
+         --un ${sample_id}_un.fastq \
          --dta-cufflinks \
          --new-summary \
          --summary-file ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam.log
