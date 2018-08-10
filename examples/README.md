@@ -64,7 +64,7 @@ It contains the reference files like the directory for the local example, but fo
 Unlike for local data, analysis of remote data requires a list of [NCBI Sequence Read Archive (SRA)](https://www.ncbi.nlm.nih.gov/sra). Run IDs. The file should contain one SRA RUN ID per line, with no blank lines at the bottom. Here is an example file:
 
 ```bash
-GEMmaker/examples/RempRunExample/SRA_IDs.txt
+GEMmaker/examples/RemoteRunExample/SRA_IDs.txt
 ```
 The file specifies the SRA RUN ID [SRR649944](https://www.ncbi.nlm.nih.gov/sra/SRR649944/)
 
@@ -73,7 +73,7 @@ To run the Remote Run Example, you must change some parameters in the **nextflow
 
 First, change the **params.software_params.hisat2.path** so that it points to the proper reference files directory. For this example, it should be set to:
 ```bash
-path = "${PWD}/examples/RemoteExampleRun/reference/"
+path = "${PWD}/examples/RemoteRunExample/reference/"
 ```
 The parameter below this is **params.software_params.hisat2.prefix**. This should be changed to the prefix of the reference files. In this example, the prefix should be set to:
 ```bash
