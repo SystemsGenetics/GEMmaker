@@ -212,7 +212,7 @@ process fastqc_1 {
         ${sample_id}_1u_trim.fastq \
         ${sample_id}_2p_trim.fastq \
         ${sample_id}_2u_trim.fastq \
-        ILLUMINACLIP:${params.trimmomatic.clip_path}:2:40:15 \
+        ILLUMINACLIP:${params.software_params.trimmomatic.clip_path}:2:40:15 \
         LEADING:${params.software_params.trimmomatic.LEADING} \
         TRAILING:${params.software_params.trimmomatic.TRAILING} \
         SLIDINGWINDOW:${params.software_params.trimmomatic.SLIDINGWINDOW} \
@@ -233,7 +233,7 @@ process fastqc_1 {
         ${params.software_params.trimmomatic.Quality} \
         ${sample_id}_1.fastq \
         ${sample_id}_1u_trim.fastq \
-        ILLUMINACLIP:${params.trimmomatic.clip_path}:2:40:15 \
+        ILLUMINACLIP:${params.software_params.trimmomatic.clip_path}:2:40:15 \
         LEADING:${params.software_params.trimmomatic.LEADING} \
         TRAILING:${params.software_params.trimmomatic.TRAILING} \
         SLIDINGWINDOW:${params.software_params.trimmomatic.SLIDINGWINDOW} \
