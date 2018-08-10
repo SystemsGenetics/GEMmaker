@@ -38,12 +38,13 @@ nextflow run main.nf -profile standard
 Once executed, the Local Run Example should output 3 directories. These will be titled Sample_1, Sample_2, and Sample_3. In a real run, GEMmaker will automatically combine files that have the same experiment number( \[SED\]RX0000000 ) but different run numbers ( \[SED\]RR0000000 ), so it is possible that the \[SED\]RX number contains multiple \[SED\]RR runs. However, in the the local example, this is not the case.
 
 In each output directory you will find the following files:
-- **fastq**   The fastq reads file for the experiment
-- **fastqc**  6 or 12 files (depending on paired or unpaired data) from fastqc. Fastqc is set up to check files before and after trimmomatic
-- **sam**  alignment file
-- **bam**   binary alignment file
-- **ga**  expression level transcript abundance
-- **fpkm**  2 column version of **ga** file with only gene and fpkm value
+- **fastq**   The fastq reads file for the experiment.
+- **fastqc**  6 or 12 files (depending on paired or unpaired data) from fastqc. Fastqc is set up to check files before and after trimmomatic.
+- **sam**  alignment file.
+- **bam**   binary alignment file.
+- **ga**  expression level transcript abundance.
+- **fpkm**  2 column version of **ga** file with only gene and FPKM value.
+- **tpm** 2 column version of the **ga** file with only gene and TPM values.
 
 The output of GEM-maker can be used for several different analysis. The FPKM files can be combined into an expression matrix and then visualized using a heatmap. The following heatmap is the Local Example's fpkm values divided by 1000 in heatmap form. We can see that gene_Zeta remained constant across all three samples, gene_Beta decreased, and gene_Alpha increased.
 
