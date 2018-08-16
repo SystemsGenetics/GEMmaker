@@ -24,10 +24,10 @@ println """\
 Parameters:
   + Remote fastq list path:      ${params.input.remote_list_path}
   + Local sample glob:           ${params.input.local_samples_path}
-  + Genome reference path:       ${params.ref.path}
-  + Reference genome prefix:     ${params.ref.prefix}
-  + Trimmomatic clip path:       ${params.trimmomatic.clip_path}
-  + Trimmomatic minimum ratio:   ${params.trimmomatic.MINLEN}
+  + Genome reference path:       ${params.software_params.hisat2.path}
+  + Reference genome prefix:     ${params.software_params.hisat2.prefix}
+  + Trimmomatic clip path:       ${params.software_params.trimmomatic.clip_path}
+  + Trimmomatic minimum ratio:  ${params.software_params.trimmomatic.MINLEN}
 """
 
 /*
@@ -64,7 +64,7 @@ if (params.input.remote_list_path == 'none'){
  */
 process fastq_dump {
   module 'sratoolkit'
-  time '24h'
+  time params.software_params.fastq_dump.time
   tag { fastq_run_id }
 
   input:
@@ -156,6 +156,7 @@ process SRR_combine{
  */
 process fastqc_1 {
   module "fastQC"
+  time params.software_params.fastqc_1.time
   stageInMode params.output.staging_mode
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
@@ -186,6 +187,7 @@ process fastqc_1 {
  */
  process trimmomatic {
    module "trimmomatic"
+   time params.software_params.trimmomatic.time
    publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
    tag { sample_id }
 
@@ -198,7 +200,7 @@ process fastqc_1 {
 
    script:
      """
-     minlen=`'${PWD}/scripts/Mean_length.sh' '${sample_id}' '${params.trimmomatic.MINLEN}'`
+     minlen=`'${PWD}/scripts/Mean_length.sh' '${sample_id}' '${params.software_params.trimmomatic.MINLEN}'`
      if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
       java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
         PE \
@@ -210,10 +212,10 @@ process fastqc_1 {
         ${sample_id}_1u_trim.fastq \
         ${sample_id}_2p_trim.fastq \
         ${sample_id}_2u_trim.fastq \
-        ILLUMINACLIP:${params.trimmomatic.clip_path}:2:40:15 \
-        LEADING:3 \
-        TRAILING:6 \
-        SLIDINGWINDOW:4:15 \
+        ILLUMINACLIP:${params.software_params.trimmomatic.clip_path}:2:40:15 \
+        LEADING:${params.software_params.trimmomatic.LEADING} \
+        TRAILING:${params.software_params.trimmomatic.TRAILING} \
+        SLIDINGWINDOW:${params.software_params.trimmomatic.SLIDINGWINDOW} \
         MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
      else
       # For ease of the next steps, rename the reverse file to the forward.
@@ -228,13 +230,13 @@ process fastqc_1 {
       java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
         SE \
         -threads 1 \
-        -phred33 \
+        ${params.software_params.trimmomatic.Quality} \
         ${sample_id}_1.fastq \
         ${sample_id}_1u_trim.fastq \
-        ILLUMINACLIP:${params.trimmomatic.clip_path}:2:40:15 \
-        LEADING:3 \
-        TRAILING:6 \
-        SLIDINGWINDOW:4:15 \
+        ILLUMINACLIP:${params.software_params.trimmomatic.clip_path}:2:40:15 \
+        LEADING:${params.software_params.trimmomatic.LEADING} \
+        TRAILING:${params.software_params.trimmomatic.TRAILING} \
+        SLIDINGWINDOW:${params.software_params.trimmomatic.SLIDINGWINDOW} \
         MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
      fi
      """
@@ -247,6 +249,7 @@ process fastqc_1 {
   */
 process fastqc_2 {
  module "fastQC"
+ time params.software_params.fastqc_2.time
  stageInMode params.output.staging_mode
  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
  tag { sample_id }
@@ -271,6 +274,7 @@ process fastqc_2 {
  */
 process hisat2 {
   module 'hisat2'
+  time params.software_params.hisat2.time
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
@@ -278,38 +282,40 @@ process hisat2 {
    set val(sample_id), file(input_files) from TRIMMED_FASTQC_SAMPLES
 
   output:
-   set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.sam") into INDEXED_SAMPLES
-   set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.sam.log") into INDEXED_SAMPLES_LOG
+   set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.sam") into INDEXED_SAMPLES
+   set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.sam.log") into INDEXED_SAMPLES_LOG
 
   script:
    """
-     export HISAT2_INDEXES=${params.ref.path}
+     export HISAT2_INDEXES=${params.software_params.hisat2.path}
      if [ -e ${sample_id}_2p_trim.fastq ]; then
        hisat2 \
-         -x ${params.ref.prefix} \
+         -x ${params.software_params.hisat2.prefix} \
          --no-spliced-alignment \
          -q \
          -1 ${sample_id}_1p_trim.fastq \
          -2 ${sample_id}_2p_trim.fastq \
          -U ${sample_id}_1u_trim.fastq,${sample_id}_2u_trim.fastq \
-         -S ${sample_id}_vs_${params.ref.prefix}.sam \
+         -S ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam \
          -t \
          -p 1 \
+         --un ${sample_id}_un.fastq \
          --dta-cufflinks \
          --new-summary \
-         --summary-file ${sample_id}_vs_${params.ref.prefix}.sam.log
+         --summary-file ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam.log
      else
        hisat2 \
-         -x ${params.ref.prefix} \
+         -x ${params.software_params.hisat2.prefix} \
          --no-spliced-alignment \
          -q \
          -U ${sample_id}_1u_trim.fastq \
-         -S ${sample_id}_vs_${params.ref.prefix}.sam \
+         -S ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam \
          -t \
          -p 1 \
+         --un ${sample_id}_un.fastq \
          --dta-cufflinks \
          --new-summary \
-         --summary-file ${sample_id}_vs_${params.ref.prefix}.sam.log
+         --summary-file ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam.log
      fi
    """
 }
@@ -322,18 +328,19 @@ process hisat2 {
  */
 process samtools_sort {
   module 'samtools'
+  time params.software_params.samtools_sort.time
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.sam") from INDEXED_SAMPLES
+    set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.sam") from INDEXED_SAMPLES
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam") into SORTED_FOR_INDEX
+    set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.bam") into SORTED_FOR_INDEX
 
   script:
     """
-    samtools sort -o ${sample_id}_vs_${params.ref.prefix}.bam -O bam ${sample_id}_vs_${params.ref.prefix}.sam
+    samtools sort -o ${sample_id}_vs_${params.software_params.hisat2.prefix}.bam -O bam ${sample_id}_vs_${params.software_params.hisat2.prefix}.sam
     """
 }
 
@@ -345,20 +352,21 @@ process samtools_sort {
  */
 process samtools_index {
   module 'samtools'
+  time params.software_params.samtools_index.time
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode, pattern: "*.bam.log"
   tag { sample_id }
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam") from SORTED_FOR_INDEX
+    set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.bam") from SORTED_FOR_INDEX
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam") into BAM_INDEXED_FOR_STRINGTIE
-    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam.log") into BAM_INDEXED_LOG
+    set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.bam") into BAM_INDEXED_FOR_STRINGTIE
+    set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.bam.log") into BAM_INDEXED_LOG
 
   script:
     """
-    samtools index ${sample_id}_vs_${params.ref.prefix}.bam
-    samtools stats ${sample_id}_vs_${params.ref.prefix}.bam > ${sample_id}_vs_${params.ref.prefix}.bam.log
+    samtools index ${sample_id}_vs_${params.software_params.hisat2.prefix}.bam
+    samtools stats ${sample_id}_vs_${params.software_params.hisat2.prefix}.bam > ${sample_id}_vs_${params.software_params.hisat2.prefix}.bam.log
     """
 }
 
@@ -370,6 +378,7 @@ process samtools_index {
  */
 process stringtie {
   module 'stringtie'
+  time params.software_params.stringtie.time
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
@@ -377,10 +386,10 @@ process stringtie {
     // We don't really need the .bai file, but we want to ensure
     // this process runs after the samtools_index step so we
     // require it as an input file.
-    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.bam") from BAM_INDEXED_FOR_STRINGTIE
+    set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.bam") from BAM_INDEXED_FOR_STRINGTIE
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.ga") into STRINGTIE_GTF
+    set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.ga") into STRINGTIE_GTF
 
   script:
     """
@@ -388,10 +397,10 @@ process stringtie {
     -v \
     -p 1 \
     -e \
-    -o ${sample_id}_vs_${params.ref.prefix}.gtf \
-    -G ${params.ref.path}/${params.ref.prefix}.gtf \
-    -A ${sample_id}_vs_${params.ref.prefix}.ga \
-    -l ${sample_id} ${sample_id}_vs_${params.ref.prefix}.bam
+    -o ${sample_id}_vs_${params.software_params.hisat2.prefix}.gtf \
+    -G ${params.software_params.hisat2.path}/${params.software_params.hisat2.prefix}.gtf \
+    -A ${sample_id}_vs_${params.software_params.hisat2.prefix}.ga \
+    -l ${sample_id} ${sample_id}_vs_${params.software_params.hisat2.prefix}.bam
     """
 }
 
@@ -399,18 +408,31 @@ process stringtie {
 /*
  * Generates the final FPKM file
  */
-process fpkm {
+process fpkm_or_tpm {
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.ref.prefix}.ga") from STRINGTIE_GTF
+    set val(sample_id), file("${sample_id}_vs_${params.software_params.hisat2.prefix}.ga") from STRINGTIE_GTF
 
   output:
-    file "${sample_id}_vs_${params.ref.prefix}.fpkm" into FPKMS
-
+    file "${sample_id}_vs_${params.software_params.hisat2.prefix}.fpkm" optional true into FPKMS
+    file "${sample_id}_vs_${params.software_params.hisat2.prefix}.tpm" optional true into TPM
   script:
+  if( params.software_params.fpkm_or_tpm.fpkm == true && params.software_params.fpkm_or_tpm.tpm == true )
     """
-    ${PWD}/scripts/gtf2fpkm.sh ${sample_id} ${params.ref.prefix}
+    awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.software_params.hisat2.prefix}.ga > ${sample_id}_vs_${params.software_params.hisat2.prefix}.fpkm
+    awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.software_params.hisat2.prefix}.ga > ${sample_id}_vs_${params.software_params.hisat2.prefix}.tpm
     """
+  else if( params.software_params.fpkm_or_tpm.fpkm == true)
+    """
+    awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.software_params.hisat2.prefix}.ga > ${sample_id}_vs_${params.software_params.hisat2.prefix}.fpkm
+    """
+  else if( params.software_params.fpkm_or_tpm.tpm == true )
+    """
+    awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.software_params.hisat2.prefix}.ga > ${sample_id}_vs_${params.software_params.hisat2.prefix}.tpm
+    """
+  else
+    error "Please choose at least one output and resume GEMmaker"
+
 }
