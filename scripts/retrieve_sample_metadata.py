@@ -1,12 +1,12 @@
 import sys
 import urllib
 import xmltodict
+import json
 
 query = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=sra&term='
 fetch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=sra&id='
 
 script, SRR = sys.argv
-
 
 def download_json (line):
     '''
@@ -28,13 +28,33 @@ def download_json (line):
     response = xmltodict.parse(response_xml)
 
     # This returns all the SRR numbers associated with this SRX
-    sys.stdout.write(
-        response
-        ["EXPERIMENT_PACKAGE_SET"]
-        ["EXPERIMENT_PACKAGE"]
-        ["EXPERIMENT"]
-        ["IDENTIFIERS"]
-        ["PRIMARY_ID"])
+    SRX = response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]["EXPERIMENT"]["IDENTIFIERS"]["PRIMARY_ID"]
+    sys.stdout.write(SRX)
+
+    # The query returns the experiment details. Write out
+    # the metadata for the experiment.
+    exp = response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]
+    with open(SRX + '.ncbi.meta.json', 'w') as expfile:
+      json.dump(exp, expfile)
+
+    # Next, write out the sample meta data file
+    sample = response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]["SAMPLE"]
+    sample_id = sample['@accession']
+    with open(sample_id + '.ncbi.meta.json', 'w') as samplefile:
+      json.dump(sample, samplefile)
+
+    # Next, find the run details and write that meta data file
+    runs = response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]["RUN_SET"]["RUN"]
+    if isinstance(runs, list):
+      pass
+    else:
+      runs = []
+      runs.append(response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]["RUN_SET"]["RUN"])
+
+    for run in runs:
+      if run["@accession"] == SRR:
+        with open(SRR + '.ncbi.meta.json', 'w') as runfile:
+          json.dump(run, runfile)
 
 
 if __name__ == "__main__":
