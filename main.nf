@@ -27,7 +27,7 @@ Parameters:
   + Genome reference path:       ${params.software_params.hisat2.path}
   + Reference genome prefix:     ${params.software_params.hisat2.prefix}
   + Trimmomatic clip path:       ${params.software_params.trimmomatic.clip_path}
-  + Trimmomatic minimum ratio:  ${params.software_params.trimmomatic.MINLEN}
+  + Trimmomatic minimum ratio:   ${params.software_params.trimmomatic.MINLEN}
 """
 
 /*
@@ -103,10 +103,13 @@ process SRR_to_sample_id {
 
   output:
     set stdout, file(pass_files) into GROUPED_BY_SAMPLE_ID mode flatten
+    set stdout, file(pass_files) into GROUPED_BY_SAMPLE_ID mode flatten
+    set stdout, file(_?.meta._?) into GROUPED_META_BY_SAMPLE_ID mode flatten
 
   """
   if [[ "$fastq_run_id" == [SDE]RR* ]]; then
     python3 ${PWD}/scripts/retrieve_sample_metadata.py $fastq_run_id
+    python3 ${PWD}/scripts/parse_sample_metadata.py $fastq_run_id > $fastq_run_id.pasre_metadata.log 2>&1
 
   else
     echo -n "Sample_$fastq_run_id"
@@ -122,6 +125,24 @@ GROUPED_BY_SAMPLE_ID
   .groupTuple()
   .set { GROUPED_SAMPLE_ID }
 
+GROUPED_META_BY_SAMPLE_ID
+  .groupTuple()
+  .set { GROUPED_META_SAMPLE_ID }
+
+/**
+ * This process simply publisheds the meta data for each sample
+ */
+process publish_meta  {
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
+  tag { sample_id }
+
+  input:
+    set val(sample_id), file(grouped) from GROUPED_META_SAMPLE_ID
+  output:
+    set val(sample_id), file("${sample_id}_?.meta.json") into META_JSON
+    set val(sample_id), file("${sample_id}_?.meta.tab") into META_TAB
+}
+
 
 /**
  * This process merges the fastq files based on their sample_id number.
@@ -135,8 +156,9 @@ process SRR_combine{
   output:
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES
 
-  /** This command tests to see if ls produces a 0 or not by checking
-   *its standard out. We do not use a "if [-e *foo]" becuase it gets
+  /** 
+   * This command tests to see if ls produces a 0 or not by checking
+   * its standard out. We do not use a "if [-e *foo]" becuase it gets
    * confused if there are more than one things returned by the wildcard
    */
   """
