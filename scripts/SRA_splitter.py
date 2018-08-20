@@ -4,7 +4,7 @@
 ##  of NCBI SRAs into smaller chunk files for use with GEMmaker.
 ## 
 ##  Usage:
-##    python SRA_splitter.pl [file] [chunk_size]
+##    python SRA_splitter.py [file] [chunk_size]
 ## 
 ## The [file] argument should be the name of the file with the 
 ## list of SRA IDs. It should be a two-column tab-delimited file
