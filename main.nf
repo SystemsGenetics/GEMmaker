@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 
-/*
-* =======
-* GEMaker
-* =======
+/**
+ * =======
+ * GEMaker
+ * =======
  *
  * Authors:
  *  + John Hadish
@@ -15,10 +15,10 @@
  */
 
 
-// Display the workflow title and show user parameters.
+
 println """\
 =================================
- S R A 2 G E V   P I P E L I N E
+ G E M A K E R   P I P E L I N E
 =================================
 
 Parameters:
@@ -27,43 +27,48 @@ Parameters:
   + Genome reference path:       ${params.software_params.hisat2.path}
   + Reference genome prefix:     ${params.software_params.hisat2.prefix}
   + Trimmomatic clip path:       ${params.software_params.trimmomatic.clip_path}
-  + Trimmomatic minimum ratio:  ${params.software_params.trimmomatic.MINLEN}
+  + Trimmomatic minimum ratio:   ${params.software_params.trimmomatic.MINLEN}
 """
 
-/*
+
+
+/**
  * Local Sample Input.
  * This checks the folder that the user has given
  */
-
-if (params.input.local_samples_path == 'none'){
+if (params.input.local_samples_path == "none") {
   Channel
     .empty()
     .set { LOCAL_SAMPLES }
-} else{
+} else {
   Channel
     .fromFilePairs( params.input.local_samples_path, size: -1 )
     .set { LOCAL_SAMPLES }
 }
 
-/*
+
+
+/**
  * Remote fastq_run_id Input.
  */
-if (params.input.remote_list_path == 'none'){
+if (params.input.remote_list_path == "none") {
   Channel
      .empty()
      .set { REMOTE_FASTQ_RUNS }
- } else{
+} else {
   Channel
     .from( file(params.input.remote_list_path).readLines() )
     .set { REMOTE_FASTQ_RUNS }
 }
 
-/*
+
+
+/**
  * The fastq dump process downloads any needed remote fasta files to the
  * current working directory.
  */
 process fastq_dump {
-  module 'sratoolkit'
+  module "sratoolkit"
   time params.software_params.fastq_dump.time
   tag { fastq_run_id }
 
@@ -79,14 +84,15 @@ process fastq_dump {
 }
 
 
-/*
+
+/**
  * Combine the remote and local samples into the same channel.
  */
 COMBINED_SAMPLES = DOWNLOADED_FASTQ_RUNS.mix( LOCAL_SAMPLES )
 
 
 
-/*
+/**
  * Performs a SRR/DRR/ERR to sample_id converison:
  *
  * This first checks to see if the format is standard SRR,ERR,DRR
@@ -95,7 +101,8 @@ COMBINED_SAMPLES = DOWNLOADED_FASTQ_RUNS.mix( LOCAL_SAMPLES )
  * The next step combines them
  */
 process SRR_to_sample_id {
-  module 'python3'
+  module "anaconda3"
+  module "python3"
   tag { fastq_run_id }
 
   input:
@@ -115,7 +122,8 @@ process SRR_to_sample_id {
 }
 
 
-/*
+
+/**
  * This groups the channels based on sample_id.
  */
 GROUPED_BY_SAMPLE_ID
@@ -123,10 +131,11 @@ GROUPED_BY_SAMPLE_ID
   .set { GROUPED_SAMPLE_ID }
 
 
+
 /**
  * This process merges the fastq files based on their sample_id number.
  */
-process SRR_combine{
+process SRR_combine {
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
@@ -135,8 +144,9 @@ process SRR_combine{
   output:
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES
 
-  /** This command tests to see if ls produces a 0 or not by checking
-   *its standard out. We do not use a "if [-e *foo]" becuase it gets
+  /**
+   * This command tests to see if ls produces a 0 or not by checking
+   * its standard out. We do not use a "if [-e *foo]" becuase it gets
    * confused if there are more than one things returned by the wildcard
    */
   """
@@ -151,7 +161,8 @@ process SRR_combine{
 }
 
 
-/*
+
+/**
  * Performs fastqc on fastq files prior to trimmomatic
  */
 process fastqc_1 {
@@ -174,7 +185,8 @@ process fastqc_1 {
 }
 
 
-/*
+
+/**
  * Performs Trimmomatic on all fastq files.
  *
  * This process requires that the ILLUMINACLIP_PATH environment
@@ -185,7 +197,7 @@ process fastqc_1 {
  * read length. The percenage is determined by the user in the
  * "nextflow.config" file
  */
- process trimmomatic {
+process trimmomatic {
    module "trimmomatic"
    time params.software_params.trimmomatic.time
    publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
@@ -240,40 +252,42 @@ process fastqc_1 {
         MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
      fi
      """
- }
-
-
- /*
-  * Performs fastqc on fastq files post trimmomatic
-  * Files are stored to an independent folder
-  */
-process fastqc_2 {
- module "fastQC"
- time params.software_params.fastqc_2.time
- stageInMode params.output.staging_mode
- publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
- tag { sample_id }
-
- input:
-   set val(sample_id), file(pass_files) from TRIMMED_SAMPLES
-
- output:
-   set val(sample_id), file(pass_files) into TRIMMED_FASTQC_SAMPLES
-   set file("${sample_id}_??_trim_fastqc.html"), file("${sample_id}_??_trim_fastqc.zip") optional true into FASTQC_2_OUTPUT
-
- """
- fastqc $pass_files
- """
 }
 
 
-/*
+
+/**
+ * Performs fastqc on fastq files post trimmomatic
+ * Files are stored to an independent folder
+ */
+process fastqc_2 {
+  module "fastQC"
+  time params.software_params.fastqc_2.time
+  stageInMode params.output.staging_mode
+  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
+  tag { sample_id }
+
+  input:
+    set val(sample_id), file(pass_files) from TRIMMED_SAMPLES
+
+  output:
+    set val(sample_id), file(pass_files) into TRIMMED_FASTQC_SAMPLES
+    set file("${sample_id}_??_trim_fastqc.html"), file("${sample_id}_??_trim_fastqc.zip") optional true into FASTQC_2_OUTPUT
+
+  """
+  fastqc $pass_files
+  """
+}
+
+
+
+/**
  * Performs hisat2 alignment of fastq files to a genome reference
  *
  * depends: trimmomatic
  */
 process hisat2 {
-  module 'hisat2'
+  module "hisat2"
   time params.software_params.hisat2.time
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
@@ -321,13 +335,14 @@ process hisat2 {
 }
 
 
-/*
+
+/**
  * Sorts the SAM alignment file and coverts it to binary BAM
  *
  * depends: hisat2
  */
 process samtools_sort {
-  module 'samtools'
+  module "samtools"
   time params.software_params.samtools_sort.time
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
@@ -345,13 +360,14 @@ process samtools_sort {
 }
 
 
-/*
+
+/**
  * Indexes the BAM alignment file
  *
  * depends: samtools_index
  */
 process samtools_index {
-  module 'samtools'
+  module "samtools"
   time params.software_params.samtools_index.time
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode, pattern: "*.bam.log"
   tag { sample_id }
@@ -371,13 +387,14 @@ process samtools_index {
 }
 
 
+
 /**
  * Generates expression-level transcript abundance
  *
  * depends: samtools_index
  */
 process stringtie {
-  module 'stringtie'
+  module "stringtie"
   time params.software_params.stringtie.time
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
@@ -405,7 +422,8 @@ process stringtie {
 }
 
 
-/*
+
+/**
  * Generates the final FPKM file
  */
 process fpkm_or_tpm {
@@ -418,6 +436,7 @@ process fpkm_or_tpm {
   output:
     file "${sample_id}_vs_${params.software_params.hisat2.prefix}.fpkm" optional true into FPKMS
     file "${sample_id}_vs_${params.software_params.hisat2.prefix}.tpm" optional true into TPM
+
   script:
   if( params.software_params.fpkm_or_tpm.fpkm == true && params.software_params.fpkm_or_tpm.tpm == true )
     """
@@ -434,5 +453,4 @@ process fpkm_or_tpm {
     """
   else
     error "Please choose at least one output and resume GEMmaker"
-
 }
