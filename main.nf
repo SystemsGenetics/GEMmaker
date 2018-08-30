@@ -17,9 +17,9 @@
 
 // Display the workflow title and show user parameters.
 println """\
-=================================
- S R A 2 G E V   P I P E L I N E
-=================================
+===================================
+ G E M M A K E R   P I P E L I N E
+===================================
 
 Parameters:
   + Remote fastq list path:      ${params.input.remote_list_path}
