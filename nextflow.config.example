@@ -11,7 +11,7 @@ params {
 
   /**
    * Input
-   * Information about how GEMaker should access raw files
+   * Information about how GEMmaker should access raw files
    *
    */
   input {
@@ -35,7 +35,7 @@ params {
 
   /**
    * Output
-   * How GEMaker outputs files and creates directories. You can also indicate if
+   * How GEMmaker outputs files and creates directories. You can also indicate if
    * it should collect performance data.
    *
    */
@@ -77,7 +77,6 @@ params {
     //            will slow down pipeline drastically
     //
     staging_mode = "link"
-
   }
 
   /**
@@ -86,7 +85,7 @@ params {
    * This section references each process in the GEMmaker nextflow. This can be
    * used to modify how each Software within GEMmaker will act.
    */
-  software_params {
+  software {
     /**
      * fastq_dump
      *
@@ -96,7 +95,7 @@ params {
       //
       //  Time allowed for fastq_dump
       //
-      time = '48h'
+      time = "48h"
     }
 
     /**
@@ -110,7 +109,7 @@ params {
       //
       //  Time allowed for fastqc_1 (fastqc prior to trimmomatic)
       //
-      time = '24h'
+      time = "24h"
     }
 
     /**
@@ -123,7 +122,7 @@ params {
       //
       //  Time allowed for trimmomatic
       //
-      time = '86h'
+      time = "72h"
 
       //
       // The location of the trimmomatic clipping files.
@@ -148,10 +147,9 @@ params {
       // Trimmomatic options for how to process each read. See documentation at:
       // http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf
       //
-      SLIDINGWINDOW = '4:15'
+      SLIDINGWINDOW = "4:15"
       LEADING = "3"
       TRAILING = "6"
-
     }
 
     /**
@@ -165,7 +163,7 @@ params {
       //
       //  Time allowed for fastqc_2 (fastqc after trimmomatic)
       //
-      time = '48h'
+      time = "48h"
     }
 
     /**
@@ -177,7 +175,7 @@ params {
       //
       //  Time allowed for hisat2
       //
-      time = '48h'
+      time = "48h"
 
       /**
        * Parameters for the reference genome for hisat2.
@@ -220,7 +218,7 @@ params {
       //
       //  Time allowed for samtools_sort
       //
-      time = '48h'
+      time = "48h"
     }
 
     /**
@@ -232,7 +230,7 @@ params {
       //
       //  Time allowed for samtools_index
       //
-      time = '10h'
+      time = "10h"
     }
 
     /**
@@ -244,7 +242,7 @@ params {
       //
       //  Time allowed for stringtie
       //
-      time = '10h'
+      time = "10h"
     }
 
     /**
@@ -274,7 +272,7 @@ params {
  * with how Nextflow collects trace data and you specifically want to tweak it.
  */
 trace {
-  fields = 'task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes'
+  fields = "task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes"
   raw = true
 }
 
@@ -294,7 +292,7 @@ profiles {
   // desktop computer.
   //
   standard {
-    process.executor = 'local'
+    process.executor = "local"
   }
 
   //
@@ -304,11 +302,11 @@ profiles {
   //
   pbs {
     process {
-      executor = 'pbs'
+      executor = "pbs"
       cpus = 1
-      time = '4h'
+      time = "4h"
       maxRetries = 2
-      errorStrategy = 'retry'
+      errorStrategy = "retry"
     }
     executor {
       queueSize = 100
@@ -322,12 +320,12 @@ profiles {
   //
   slurm {
     process {
-      executor = 'slurm'
+      executor = "slurm"
       queue = {users queue}
       cpus = 1
-      time = '4h'
+      time = "4h"
       maxRetries = 2
-      errorStrategy = 'retry'
+      errorStrategy = "retry"
     }
     executor {
       queueSize = 100
