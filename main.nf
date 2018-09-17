@@ -18,7 +18,7 @@
 
 println """\
 =================================
- G E M A K E R   P I P E L I N E
+ S R A 2 G E V   P I P E L I N E
 =================================
 
 Parameters:
