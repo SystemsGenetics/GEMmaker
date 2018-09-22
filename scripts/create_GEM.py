@@ -1,3 +1,18 @@
+#!/usr/bin/env python
+
+"""A Python script for creating gene expression matrix (GEM) files
+
+
+.. module:: GEMmaker
+  :platform: Unix, Windows
+  :synopsis: The Gene expression matrix (GEM) file can be created after a successful run of 
+    GEMmaker.  It can be used to create GEM files containing either FPKM or TPM
+    values.  It can also be used to combine the results from multiple GEMmaker 
+    directories into a single GEM file.
+
+.. moduleauthor:: John Hadish & Stephen Ficklin
+
+"""
 import argparse
 import pandas as pd
 import glob
@@ -28,7 +43,7 @@ for source_dir in args.path:
   print("Finding " + args.type + " files in " + source_dir)
 
   # Check for NCBI SRA files
-  for filename in glob.iglob(source_dir + '[SED]RX/*' + str.lower(args.type), recursive=True):
+  for filename in glob.iglob(source_dir + '[SED]RX*/*' + str.lower(args.type), recursive=True):
     result_files.append(filename)
 
   # Check for local non SRA files
