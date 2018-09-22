@@ -130,7 +130,7 @@ python ./scripts/create_GEM.py -h
 To create a GEM file after GEMmaker completes using the TPM values use the following:
 
 ```bash
-python ./scripts/create_GEM.py --source . --type TPM --prefix my_project
+python ./scripts/create_GEM.py --source ./ --type TPM --prefix my_project
 ```
 
 Be sure to change `my_project` to a meaningful prefix for your project. Once completed the GEM file named `my_project.GEM.TPM.txt` will be created.
