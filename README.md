@@ -121,10 +121,20 @@ multiqc .
 
 ## Generating the Gene Expression Matrix (GEM)
 
-After GEMmaker completes, the results for all steps for each sample are stored in directories specific for each sample.  You can find a Gene Expression Vector (GEV) for each sample in the sample directory. the GEV will be the file with the .fpkm extension and contains the full vector of expression for all genes in genome.   To compile all of these GEVs into a Gene Expression Matrix execute the following script inside of the GEMmaker directory where your workflow was executed:
+After GEMmaker completes, the results for all steps for each sample are stored in directories specific for each sample.  You can find a Gene Expression Vector (GEV) for each sample in the sample directory. the GEV will be the file with the extension .fpkm (for FPKM values) or .tpm (for TPM values). To compile all GEVs into a Gene Expression Matrix (GEM) you can use the `create_GEM.py` script found in the scripts directory.  To see help documentation for this script run the following:
 
 ```bash
-./scripts/fpkm2gem.sh
+python ./scripts/create_GEM.py -h
 ```
+
+To create a GEM file after GEMmaker completes using the TPM values use the following:
+
+```bash
+python ./scripts/create_GEM.py --source . --type TPM --prefix my_project
+```
+
+Be sure to change `my_project` to a meaningful prefix for your project. Once completed the GEM file named `my_project.GEM.TPM.txt` will be created.
+
+If you want to combine the results of multiple GEMmaker runs into a single GEM you can do so.  This may be useful if you split a set of input files into different GEMmaker runs and now you want to combine then.  To do so, you can provide to the `--source` argument the path to each GEMmaker directory.
 
 Once completed, you will have a new file named GEM.txt inside the working directory.
