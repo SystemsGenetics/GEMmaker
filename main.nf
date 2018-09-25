@@ -26,8 +26,11 @@ Parameters:
   + Local sample glob:           ${params.input.local_samples_path}
   + Genome reference path:       ${params.software.hisat2.path}
   + Reference genome prefix:     ${params.software.hisat2.prefix}
+  + Trimmomatic threads:         ${params.software.trimmomatic.threads}
   + Trimmomatic clip path:       ${params.software.trimmomatic.clip_path}
   + Trimmomatic minimum ratio:   ${params.software.trimmomatic.MINLEN}
+  + Hisat2 threads:              ${params.software.hisat2.threads}
+  + Stringtie threads:           ${params.software.stringtie.threads}
 """
 
 
@@ -200,6 +203,8 @@ process fastqc_1 {
 process trimmomatic {
    module "trimmomatic"
    time params.software.trimmomatic.time
+   cpus { executor == "pbs" ? 1 : params.software.trimmomatic.threads }
+   clusterOptions { executor == "pbs" ? "-l select=1:ncpus=${params.software.trimmomatic.threads}" : "" }
    publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
    tag { sample_id }
 
@@ -216,7 +221,7 @@ process trimmomatic {
      if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
       java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
         PE \
-        -threads 1 \
+        -threads ${params.software.trimmomatic.threads} \
         -phred33 \
         ${sample_id}_1.fastq \
         ${sample_id}_2.fastq \
@@ -289,6 +294,8 @@ process fastqc_2 {
 process hisat2 {
   module "hisat2"
   time params.software.hisat2.time
+  cpus { executor == "pbs" ? 1 : params.software.hisat2.threads }
+  clusterOptions { executor == "pbs" ? "-l select=1:ncpus=${params.software.hisat2.threads}" : "" }
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
@@ -312,7 +319,7 @@ process hisat2 {
          -U ${sample_id}_1u_trim.fastq,${sample_id}_2u_trim.fastq \
          -S ${sample_id}_vs_${params.software.hisat2.prefix}.sam \
          -t \
-         -p 1 \
+         -p ${params.software.hisat2.threads} \
          --un ${sample_id}_un.fastq \
          --dta-cufflinks \
          --new-summary \
@@ -325,7 +332,7 @@ process hisat2 {
          -U ${sample_id}_1u_trim.fastq \
          -S ${sample_id}_vs_${params.software.hisat2.prefix}.sam \
          -t \
-         -p 1 \
+         -p ${params.software.hisat2.threads} \
          --un ${sample_id}_un.fastq \
          --dta-cufflinks \
          --new-summary \
@@ -396,6 +403,8 @@ process samtools_index {
 process stringtie {
   module "stringtie"
   time params.software.stringtie.time
+  cpus { executor == "pbs" ? 1 : params.software.stringtie.threads }
+  clusterOptions { executor == "pbs" ? "-l select=1:ncpus=${params.software.stringtie.threads}" : "" }
   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
   tag { sample_id }
 
@@ -412,7 +421,7 @@ process stringtie {
     """
     stringtie \
     -v \
-    -p 1 \
+    -p ${params.software.stringtie.threads} \
     -e \
     -o ${sample_id}_vs_${params.software.hisat2.prefix}.gtf \
     -G ${params.software.hisat2.path}/${params.software.hisat2.prefix}.gtf \

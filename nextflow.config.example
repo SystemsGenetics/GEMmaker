@@ -125,6 +125,11 @@ params {
       time = "72h"
 
       //
+      //  Number of threads for trimmomatic
+      //
+      threads = 1
+
+      //
       // The location of the trimmomatic clipping files.
       //
       clip_path = "${PWD}/files/fasta_adapter.txt"
@@ -176,6 +181,11 @@ params {
       //  Time allowed for hisat2
       //
       time = "48h"
+
+      //
+      //  Number of threads for hisat2
+      //
+      threads = 1
 
       /**
        * Parameters for the reference genome for hisat2.
@@ -243,6 +253,11 @@ params {
       //  Time allowed for stringtie
       //
       time = "10h"
+
+      //
+      //  Number of threads for stringtie
+      //
+      threads = 1
     }
 
     /**
@@ -309,7 +324,7 @@ profiles {
       errorStrategy = "retry"
     }
     executor {
-      queueSize = 100
+      queueSize = 1000
     }
   }
 
