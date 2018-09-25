@@ -31,24 +31,25 @@ parser.add_argument('--type', dest='type', action='store', required=True, choice
 # Read in the input arguments
 args = parser.parse_args()
 
-# Iterate through the source dirs and find the FPKM or TPM files
-# This is what you want your ematrix to be called at the end. You can select
-# file path as well if you so desire.
+# Set the name of the output GEM file.
 ematrix_name = args.prefix + ".GEM." + args.type + '.txt';
-
 
 # Iterate through the GEMmaker directories and find the FPKM and TPM files
 result_files = []
 for source_dir in args.path:
-  print("Finding " + args.type + " files in " + source_dir)
+  # Remove any trailing slash from the source dir.
+  source_dir = re.sub(r'/$', '', source_dir)
 
   # Check for NCBI SRA files
-  for filename in glob.iglob(source_dir + '[SED]RX*/*' + str.lower(args.type), recursive=True):
+  print("Finding %s files in %s" % (args.type,  source_dir))
+  for filename in glob.iglob(source_dir + '/[SED]RX*/*' + str.lower(args.type), recursive=True):
     result_files.append(filename)
 
   # Check for local non SRA files
-  for filename in glob.iglob(source_dir + 'Sample_*/*' + str.lower(args.type), recursive=True):
+  for filename in glob.iglob(source_dir + '/Sample_*/*' + str.lower(args.type), recursive=True):
     result_files.append(filename)
+
+print("Found %d sample files" % (len(result_files)))
 
 # Initialize the expression matrix by reading in the
 ematrix = pd.DataFrame({'gene' : []})
