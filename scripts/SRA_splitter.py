@@ -1,72 +1,78 @@
 #!/usr/bin/env python
 ##
-##  This is a helper script for splitting a very large file 
-##  of NCBI SRAs into smaller chunk files for use with GEMmaker.
-## 
-##  Usage:
-##    python SRA_splitter.py [file] [chunk_size]
-## 
-## The [file] argument should be the name of the file with the 
+## This is a helper script for splitting a very large file
+## of NCBI SRAs into smaller chunk files for use with GEMmaker.
+##
+## Usage:
+##   python SRA_splitter.py [file] [chunk-size]
+##
+## The [file] argument should be the name of the file with the
 ## list of SRA IDs. It should be a two-column tab-delimited file
 ## where the fist column is the SRA experiment ID and the second
 ## is the SRA run ID.
 ##
-## This script will then split the file into files near the
-## size specified by [chunk_size].  Because GEMmaker merges all
-## runs for an experiment into a single sample, this script will
-## ensure that each split file does not split runs belonging to the
-## same experiment into two different files.
+## This script will then split the file into files with at most
+## [chunk-size] lines per file. Because GEMmaker merges all
+## runs for an experiment into a single sample, this script ensures
+## that the runs of an experiment are not split between two files.
 ##
-##
-
+import glob
+import os
 import pandas as pd
 import sys
-import glob, os
 
-script, SRA_file, chunk_size = sys.argv
-chunk_size = int(chunk_size)
+# parse command-line arguments
+if len(sys.argv) != 3:
+  print("usage: python SRA_splitter.py [file] [chunk-size]")
 
-# Remove existing SRA_IDs.*.txt files
-for f in glob.glob("SRA_IDs*.txt"):
+SRA_file = sys.argv[1]
+chunk_size = int(sys.argv[2])
+
+# remove existing SRA_IDs.*.txt files
+for f in glob.glob("SRA_IDs.*.txt"):
   os.remove(f)
 
-# Import the samples and decide the chunks size
-print("Reading file " + SRA_file)
-samples = pd.read_table(SRA_file, sep='\t', names=['EXPID','RUNID'])
+# load the SRA file as a dataframe
+print("Reading file %s" % (SRA_file))
 
-# Open the first chunk
-print("Splitting into files with approximatly %d samples per file" % chunk_size)
+samples = pd.read_table(SRA_file, names=["exp_id", "run_id"])
+
+# open the first chunk file
 chunk_num = 1
-filename = "SRA_IDs.%02d.txt" % (chunk_num)
-chunkf = open(filename, 'w')
-print("Writing " + filename)
-prev_exp = ''
-increment_chunk = False
-for index, sample in samples.iterrows():
+chunk_filename = "SRA_IDs.%02d.txt" % (chunk_num)
+chunk_file = open(chunk_filename, "w")
+curr_size = 0
 
-  # Write the sample to the chunk file.
-  curr_exp = sample[0]
-  curr_run = sample[1]
-  chunkf.write(curr_run + "\n")
-  
-  # Check if we have added chunk_size items to the
-  # file. if so, then indicate we need to increment to the next
-  # chunk.
-  if ((index + 1) % chunk_size == 0):
-    increment_chunk = True 
+# iterate through unique experiment IDs
+experiments = list(set(samples["exp_id"]))
+experiments.sort()
 
-  # If we should increment to the next chunk file make sure that
-  # we are not in the middle of an experiment. If so, wait until
-  # the experiment ends.
-  if (increment_chunk and curr_exp != prev_exp):
-    chunkf.close()
-    chunk_num = chunk_num + 1
-    filename = "SRA_IDs.%02d.txt" % (chunk_num)
-    chunkf = open(filename, 'w');
-    print("Writing " + filename)
-    increment_chunk = False
+for exp in experiments:
+  # fetch the run IDs for the given experiment ID
+  runs = samples.loc[samples["exp_id"] == exp, "run_id"]
 
-  # Set this experiment as the prev_exp 
-  prev_exp = curr_exp
+  # throw error if there are too many run IDs for chunk size
+  if len(runs) > chunk_size:
+    print("error: experiment %s has %d runs which cannot be satisfied by chunk size of %d" % (exp, len(runs), chunk_size))
+    sys.exit(-1)
 
-chunkf.close()
+  # determine whether the current chunk file has enough
+  # lines remaining for the given run IDs
+  if curr_size + len(runs) > chunk_size:
+    # close the current chunk file
+    print("Wrote %4d runs to %s" % (curr_size, chunk_filename))
+    chunk_file.close()
+
+    # open the next chunk file
+    chunk_num += 1
+    chunk_filename = "SRA_IDs.%02d.txt" % (chunk_num)
+    chunk_file = open(chunk_filename, "w")
+    curr_size = 0
+
+  # write the run IDs to the chunk file
+  chunk_file.write("".join(["%s\t%s\n" % (exp, run) for run in runs]))
+  curr_size += len(runs)
+
+# close the last chunk file
+print("Wrote %4d runs to %s" % (curr_size, chunk_filename))
+chunk_file.close()
