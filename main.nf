@@ -235,9 +235,6 @@ process trimmomatic {
       if [ -e ${sample_id}_2.fastq ]; then
         mv ${sample_id}_2.fastq ${sample_id}_1.fastq
       fi
-      # Even though this is not paired-end, we need to create the 1p.trim.fastq
-      # file as an empty file so that the rest of the workflow works
-      touch ${sample_id}_1p_trim.fastq
       # Now run trimmomatic
       java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
         SE \
