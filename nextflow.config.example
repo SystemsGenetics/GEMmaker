@@ -5,14 +5,13 @@
  *
  * This file provides the configuration settings needed to customize execution
  * of this workflow. A description of each setting is provided.
- *
  */
 params {
 
   /**
    * Input
-   * Information about how GEMmaker should access raw files
    *
+   * Parameters for input files and directories.
    */
   input {
     //
@@ -31,13 +30,35 @@ params {
     // If no local files are to be used, set parameter as "none"
     //
     local_samples_path = "${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq"
+
+    //
+    // The full file system path of the directory containing the genome reference
+    // files. The reference genome is provided to this workflow via a set of files
+    // in a single directory. The list of files includes:
+    //
+    // 1) A FASTA file containing the genomic sequence
+    // 2) Hisat2 index files for the reference, which must be created with bisat2-bulid
+    // 3) A GTF file containing the genes annotated within hte genome
+    //
+    // All files for the reference genome must begin with the same file prefix. For
+    // example, if the prefix is TAIR10_Araport11 then the following files should be
+    // present all with "TAIR10_Araport11" as the file prefix:
+    // TAIR10_Araport11.fna, TAIR10_Araport11.1.ht2, TAIR10_Araport11.2.ht2, (with
+    // potentially more hisat2 index files), and TAIR10_Araport11.gtf.
+    //
+    reference_path = "${PWD}/examples/LocalRunExample/reference/"
+
+    //
+    // The prefix (used by hisat2-build) for the genome reference files. Note:
+    // all files in the reference directory must have this prefix as well.
+    //
+    reference_prefix = "CORG"
   }
 
   /**
    * Output
-   * How GEMmaker outputs files and creates directories. You can also indicate if
-   * it should collect performance data.
    *
+   * Parameters for output files and directories.
    */
   output {
     //
@@ -66,7 +87,7 @@ params {
     outputdir_sample_id = { "${PWD}/${sample_id}" }
 
     //
-    // staging_mode for publishDir and stageInMode
+    // publish mode for publishDir
     //
     // Options are the standard nextflow stage options. These are:
     // "link"     Reccomended, this creates a hardlink of all files that should be
@@ -76,14 +97,36 @@ params {
     //            after they are created in the pipeline. Takes alot of memory and
     //            will slow down pipeline drastically
     //
-    staging_mode = "link"
+    publish_mode = "link"
   }
 
   /**
-   * Software Params
+   * Execution
    *
-   * This section references each process in the GEMmaker nextflow. This can be
-   * used to modify how each Software within GEMmaker will act.
+   * Parameters for the executor, primarily for non-local executors.
+   */
+  execution {
+    //
+    //  Maximum number of processes to execute at once
+    //
+    queue_size = 100
+
+    //
+    //  Number of threads for multi-threaded processes
+    //
+    threads = 1
+
+    //
+    //  Number of times to resubmit a failed process before terminating
+    //  the entire workflow
+    //
+    max_retries = 2
+  }
+
+  /**
+   * Software
+   *
+   * Parameters specific to each process in the workflow.
    */
   software {
     /**
@@ -123,11 +166,6 @@ params {
       //  Time allowed for trimmomatic
       //
       time = "72h"
-
-      //
-      //  Number of threads for trimmomatic
-      //
-      threads = 1
 
       //
       // The location of the trimmomatic clipping files.
@@ -181,41 +219,6 @@ params {
       //  Time allowed for hisat2
       //
       time = "48h"
-
-      //
-      //  Number of threads for hisat2
-      //
-      threads = 1
-
-      /**
-       * Parameters for the reference genome for hisat2.
-       *
-       * The reference genome is provided to this workflow via a set of files housed in a
-       * single directory.  The list of files includes:
-       *
-       * 1) A FASTA file containing the genomic sequence.
-       * 2) Hisat2 index files for the reference.  These index files must
-       *    be created using the hisat2-build function.
-       * 3) A GTF file containing the genes annotated within hte genome.
-       *
-       * All files for the reference genome must begin with the same file prefix. For
-       * example, if the prefix is TAIR10_Araport11 then the following files should be
-       * present all with "TAIR10_Araport11" as the file prefix:
-       * TAIR10_Araport11.fna, TAIR10_Araport11.1.ht2, TAIR10_Araport11.2.ht2, (with
-       * potentially more hista2 index files), and TAIR10_Araport11.gtf.
-       */
-
-      //
-      // The full file system path of the directory containing the
-      // genome reference files.
-      //
-      path = "${PWD}/examples/LocalRunExample/reference/"
-
-      //
-      // The prefix (used by hisat2-build) for the genome reference files. Note:
-      // all files in the reference directory must have this prefix as well.
-      //
-      prefix = "CORG"
     }
 
     /**
@@ -253,17 +256,12 @@ params {
       //  Time allowed for stringtie
       //
       time = "10h"
-
-      //
-      //  Number of threads for stringtie
-      //
-      threads = 1
     }
 
     /**
      * fpkm_or_tpm
      *
-     * Creates either fpkm or tpm file from stringtie *.ga
+     * Creates fpkm and/or tpm file from stringtie *.ga
      */
     fpkm_or_tpm {
       //
@@ -303,8 +301,8 @@ trace {
 profiles {
 
   //
-  // Indicates the executor plugin. By default this is set to use a local
-  // desktop computer.
+  // The standard profile is for use on a local machine. It will run
+  // each process as a literal process on the machine.
   //
   standard {
     process.executor = "local"
@@ -313,37 +311,60 @@ profiles {
   //
   // Clemson's Palmetto cluster uses the PBS scheduler. Here we provide
   // an example for execution of this workflow on Palmetto with some
-  // defaults for all steps of the workflow
+  // defaults for all steps of the workflow.
+  //
+  // Since the PBS resource list does not support disk or local scratch,
+  // we must use a custom resource list in order to guarantee a certain
+  // amount of local scratch space. In this case, the nodes on Palmetto
+  // which have K20 GPUs also have plenty of local scratch, so we request
+  // a K20 GPU even though the workflow doesn't use GPUs. Additionally,
+  // nextflow does not properly support the "ncpus" and "mem" options in
+  // PBS Professional, so we must specify these resources in the resource
+  // list instead of the "cpus" and "mem" directives.
   //
   pbs {
     process {
       executor = "pbs"
-      cpus = 1
       time = "4h"
-      maxRetries = 2
       errorStrategy = "retry"
+      maxRetries = "${params.execution.max_retries}"
+      scratch = true
+      stageInMode = "copy"
+
+      withLabel: "multithreaded" {
+        clusterOptions = "-l select=1:ngpus=1:gpu_model=k20:mem=8gb:ncpus=${params.execution.threads}"
+      }
+      withLabel: "!multithreaded" {
+        clusterOptions = "-l select=1:ngpus=1:gpu_model=k20:mem=2gb"
+      }
     }
     executor {
-      queueSize = 1000
+      queueSize = "${params.execution.queue_size}"
     }
   }
 
   //
   // WSU's Kamiak cluster uses the SLURM scheduler. Here we provide
   // an example for execution of this workflow on Kamiak with some
-  // defaults for all steps of the workflow
+  // defaults for all steps of the workflow.
   //
   slurm {
     process {
       executor = "slurm"
       queue = {users queue}
-      cpus = 1
       time = "4h"
-      maxRetries = 2
       errorStrategy = "retry"
+      maxRetries = "${params.execution.max_retries}"
+
+      withLabel: "multithreaded" {
+        cpus = ${params.execution.threads}
+      }
+      withLabel: "!multithreaded" {
+        cpus = 1
+      }
     }
     executor {
-      queueSize = 100
+      queueSize = "${params.execution.queue_size}"
     }
   }
 }
