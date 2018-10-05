@@ -70,7 +70,7 @@ for exp in experiments:
     curr_size = 0
 
   # write the run IDs to the chunk file
-  chunk_file.write("".join(["%s\t%s\n" % (exp, run) for run in runs]))
+  chunk_file.write("".join(["%s\n" % (run) for run in runs]))
   curr_size += len(runs)
 
 # close the last chunk file
