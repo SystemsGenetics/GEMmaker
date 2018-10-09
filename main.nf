@@ -129,19 +129,28 @@ GROUPED_META_BY_SAMPLE_ID
   .groupTuple()
   .set { GROUPED_META_SAMPLE_ID }
 
-/**
- * This process simply publisheds the meta data for each sample
- */
-process publish_meta  {
-  publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
-  tag { sample_id }
 
-  input:
-    set val(sample_id), file(grouped) from GROUPED_META_SAMPLE_ID
-  output:
-    set val(sample_id), file("${sample_id}_?.meta.json") into META_JSON
-    set val(sample_id), file("${sample_id}_?.meta.tab") into META_TAB
-}
+/**
+ * This process publishes the meta data for each sample
+ */
+
+
+ process publish_meta  {
+   publishDir params.output.outputdir_sample_id, mode: params.output.staging_mode
+   tag { sample_id }
+
+   input:
+     set val(sample_id), file(grouped) from GROUPED_META_SAMPLE_ID
+   output:
+     set val(sample_id), file("*.meta.*") into META_DATA
+
+    """
+    for file in ${grouped}
+    do
+     mv \$file \$file.orig
+    done
+    """
+ }
 
 
 /**
