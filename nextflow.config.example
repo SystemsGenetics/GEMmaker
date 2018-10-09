@@ -11,7 +11,7 @@ params {
 
   /**
    * Input
-   * Information about how GEMaker should access raw files
+   * Information about how GEMmaker should access raw files
    *
    */
   input {
@@ -35,7 +35,7 @@ params {
 
   /**
    * Output
-   * How GEMaker outputs files and creates directories. You can also indicate if
+   * How GEMmaker outputs files and creates directories. You can also indicate if
    * it should collect performance data.
    *
    */
@@ -77,22 +77,6 @@ params {
     //            will slow down pipeline drastically
     //
     staging_mode = "link"
-
-  }
-
-  /**
-   * Trace
-   * The following instructs nextflow to collect performance data. You can use
-   * this data to generate trace reports. See the Tracing and Visualization section
-   * of the Nextflow Documentation for more information.
-   *
-   * Most likely you do not need to change these settings unless you are familiar
-   * with how Nextflow collects trace data and you specifically want to tweak it.
-   */
-  trace {
-    enabled = true
-    file = 'pipeline_trace.txt'
-    fields = 'task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes'
   }
 
   /**
@@ -101,17 +85,17 @@ params {
    * This section references each process in the GEMmaker nextflow. This can be
    * used to modify how each Software within GEMmaker will act.
    */
-  software_params{
+  software {
     /**
      * fastq_dump
      *
      * retreives fastq files from NCBI
      */
-    fastq_dump{
+    fastq_dump {
       //
       //  Time allowed for fastq_dump
       //
-      time = '48h'
+      time = "48h"
     }
 
     /**
@@ -121,11 +105,11 @@ params {
      * quality, GC content, and much more. This nextflow pipeline runs fastQC
      * two times, once before Trimmomatic, and once after.
      */
-    fastqc_1{
+    fastqc_1 {
       //
       //  Time allowed for fastqc_1 (fastqc prior to trimmomatic)
       //
-      time = '24h'
+      time = "24h"
     }
 
     /**
@@ -138,7 +122,7 @@ params {
       //
       //  Time allowed for trimmomatic
       //
-      time = '86h'
+      time = "72h"
 
       //
       // The location of the trimmomatic clipping files.
@@ -151,7 +135,7 @@ params {
       // step. This is so that many samples of different length reads can be
       // processed at the same time.
       //
-      MINLEN = ".7"
+      MINLEN = "0.7"
 
       // Quality encoding. Choose "-phred33", "phred64" or leave blank ""
       // (If left blank, Trimmomatic will determine which to use automatically.
@@ -163,10 +147,9 @@ params {
       // Trimmomatic options for how to process each read. See documentation at:
       // http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf
       //
-      SLIDINGWINDOW = '4:15'
+      SLIDINGWINDOW = "4:15"
       LEADING = "3"
       TRAILING = "6"
-
     }
 
     /**
@@ -176,23 +159,23 @@ params {
      * quality, GC content, and much more. This nextflow pipeline runs fastQC
      * two times, once before Trimmomatic, and once after.
      */
-    fastqc_2{
+    fastqc_2 {
       //
       //  Time allowed for fastqc_2 (fastqc after trimmomatic)
       //
-      time = '48h'
+      time = "48h"
     }
 
     /**
-    * hisat2
-    *
-    * Aligns reads to the reference genome.
-    */
-    hisat2{
+     * hisat2
+     *
+     * Aligns reads to the reference genome.
+     */
+    hisat2 {
       //
       //  Time allowed for hisat2
       //
-      time = '48h'
+      time = "48h"
 
       /**
        * Parameters for the reference genome for hisat2.
@@ -225,18 +208,17 @@ params {
       prefix = "CORG"
     }
 
-
     /**
      * samtools_sort
      *
      * Sorts the SAM alignment file from hisat2 and converts it to a binary BAM
      * file
      */
-    samtools_sort{
+    samtools_sort {
       //
       //  Time allowed for samtools_sort
       //
-      time = '48h'
+      time = "48h"
     }
 
     /**
@@ -244,31 +226,31 @@ params {
      *
      * Indexes the BAM alignment file
      */
-    samtools_index{
+    samtools_index {
       //
       //  Time allowed for samtools_index
       //
-      time = '10h'
+      time = "10h"
     }
 
     /**
-      * stringtie
-      *
-      * Generates expression level transcript abundance.
-      */
-    stringtie{
+     * stringtie
+     *
+     * Generates expression level transcript abundance.
+     */
+    stringtie {
       //
       //  Time allowed for stringtie
       //
-      time = '10h'
+      time = "10h"
     }
 
     /**
-      * fpkm_or_tpm
-      *
-      * Creates either fpkm or tpm file from stringtie *.ga
-      */
-    fpkm_or_tpm{
+     * fpkm_or_tpm
+     *
+     * Creates either fpkm or tpm file from stringtie *.ga
+     */
+    fpkm_or_tpm {
       //
       //  Should this workflow output fpkm and/or tpm?
       //
@@ -277,6 +259,23 @@ params {
     }
   }
 }
+
+
+
+/**
+ * Trace
+ * The following instructs nextflow to collect performance data. You can use
+ * this data to generate trace reports. See the Tracing and Visualization section
+ * of the Nextflow Documentation for more information.
+ *
+ * Most likely you do not need to change these settings unless you are familiar
+ * with how Nextflow collects trace data and you specifically want to tweak it.
+ */
+trace {
+  fields = "task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes"
+  raw = true
+}
+
 
 
 /**
@@ -288,13 +287,30 @@ params {
  */
 profiles {
 
-  standard {
   //
   // Indicates the executor plugin. By default this is set to use a local
   // desktop computer.
   //
-  process.executor = 'local'
+  standard {
+    process.executor = "local"
+  }
 
+  //
+  // Clemson's Palmetto cluster uses the PBS scheduler. Here we provide
+  // an example for execution of this workflow on Palmetto with some
+  // defaults for all steps of the workflow
+  //
+  pbs {
+    process {
+      executor = "pbs"
+      cpus = 1
+      time = "4h"
+      maxRetries = 2
+      errorStrategy = "retry"
+    }
+    executor {
+      queueSize = 100
+    }
   }
 
   //
@@ -302,17 +318,17 @@ profiles {
   // an example for execution of this workflow on Kamiak with some
   // defaults for all steps of the workflow
   //
-  slurm_cluster {
+  slurm {
     process {
-    executor = 'slurm'
-    queue = {users queue}
-    cpus = 1
-    time = '4h'
-    maxRetries = 2
-    errorStrategy = 'retry'
+      executor = "slurm"
+      queue = {users queue}
+      cpus = 1
+      time = "4h"
+      maxRetries = 2
+      errorStrategy = "retry"
     }
     executor {
-    queueSize = 100
+      queueSize = 100
     }
   }
 }
