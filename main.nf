@@ -208,7 +208,7 @@ process trimmomatic {
 
    output:
      set val(sample_id), file("${sample_id}_??_trim.fastq") into TRIMMED_SAMPLES
-     set val(sample_id), file("${sample_id}.trim.out") into TRIMMED_SAMPLE_LOG
+     set val(sample_id), file("${sample_id}.trim.log") into TRIMMED_SAMPLE_LOG
 
    script:
      """
@@ -217,7 +217,7 @@ process trimmomatic {
       java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
         PE \
         -threads ${params.execution.threads} \
-        -phred33 \
+        ${params.software.trimmomatic.quality} \
         ${sample_id}_1.fastq \
         ${sample_id}_2.fastq \
         ${sample_id}_1p_trim.fastq \
@@ -228,7 +228,7 @@ process trimmomatic {
         LEADING:${params.software.trimmomatic.LEADING} \
         TRAILING:${params.software.trimmomatic.TRAILING} \
         SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
-        MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
+        MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
      else
       # For ease of the next steps, rename the reverse file to the forward.
       # since these are non-paired it really shouldn't matter.
@@ -242,14 +242,14 @@ process trimmomatic {
       java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
         SE \
         -threads ${params.execution.threads} \
-        ${params.software.trimmomatic.Quality} \
+        ${params.software.trimmomatic.quality} \
         ${sample_id}_1.fastq \
         ${sample_id}_1u_trim.fastq \
         ILLUMINACLIP:${params.software.trimmomatic.clip_path}:2:40:15 \
         LEADING:${params.software.trimmomatic.LEADING} \
         TRAILING:${params.software.trimmomatic.TRAILING} \
         SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
-        MINLEN:"\$minlen" > ${sample_id}.trim.out 2>&1
+        MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
      fi
      """
 }
@@ -401,7 +401,7 @@ process stringtie {
   label "multithreaded"
 
   input:
-    // We don't really need the .bai file, but we want to ensure
+    // We don't really need the .bam file, but we want to ensure
     // this process runs after the samtools_index step so we
     // require it as an input file.
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") from BAM_INDEXED_FOR_STRINGTIE

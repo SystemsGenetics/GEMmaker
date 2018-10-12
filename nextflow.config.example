@@ -1,10 +1,18 @@
 /**
- * ==================
+ * ===========================
  * GEMmaker Configuration File
- * ==================
+ * ===========================
  *
- * This file provides the configuration settings needed to customize execution
- * of this workflow. A description of each setting is provided.
+ * This file provides the configuration settings for the GEMmaker workflow.
+ */
+manifest {
+  mainScript = "main.nf"
+  defaultBranch = "master"
+  nextflowVersion = ">=0.32.0"
+}
+
+/**
+ * Parameters
  */
 params {
 
@@ -180,11 +188,17 @@ params {
       //
       MINLEN = "0.7"
 
-      // Quality encoding. Choose "-phred33", "phred64" or leave blank ""
-      // (If left blank, Trimmomatic will determine which to use automatically.
-      // (Trimmomatic version 0.32 and on ))
-      // Reccomended to leave blank unless there is a specific reason not to.
-      Quality = ""
+      //
+      // Quality score, can be "-phred33", "-phred64" or empty "".
+      //
+      // Leaving this option empty will cause different behavior depending on
+      // your version of Trimmomatic. Prior to v0.32, phred64 is used by default.
+      // Since v0.32, the quality encoding is determined automatically if left blank.
+      //
+      // The recommended method is to use trimmomatic v0.32 or newer and leave this
+      // option blank, in case you have samples with both types of encoding.
+      //
+      quality = ""
 
       //
       // Trimmomatic options for how to process each read. See documentation at:
@@ -243,7 +257,7 @@ params {
       //
       //  Time allowed for samtools_index
       //
-      time = "10h"
+      time = "12h"
     }
 
     /**
@@ -255,7 +269,7 @@ params {
       //
       //  Time allowed for stringtie
       //
-      time = "10h"
+      time = "12h"
     }
 
     /**
@@ -277,6 +291,7 @@ params {
 
 /**
  * Trace
+ *
  * The following instructs nextflow to collect performance data. You can use
  * this data to generate trace reports. See the Tracing and Visualization section
  * of the Nextflow Documentation for more information.
@@ -315,27 +330,26 @@ profiles {
   //
   // Since the PBS resource list does not support disk or local scratch,
   // we must use a custom resource list in order to guarantee a certain
-  // amount of local scratch space. In this case, the nodes on Palmetto
-  // which have K20 GPUs also have plenty of local scratch, so we request
-  // a K20 GPU even though the workflow doesn't use GPUs. Additionally,
-  // nextflow does not properly support the "ncpus" and "mem" options in
-  // PBS Professional, so we must specify these resources in the resource
-  // list instead of the "cpus" and "mem" directives.
+  // amount of local scratch space. In this case, we select nodes from phases
+  // on Palmetto which have plenty of local scratch and tend to be highly
+  // available. Additionally, nextflow does not properly support the "ncpus"
+  // and "mem" options in PBS Professional, so we must specify these resources
+  // using "clusterOptions" instead of the "cpus" and "mem" directives.
   //
   pbs {
     process {
       executor = "pbs"
-      time = "4h"
+      time = "8h"
       errorStrategy = "retry"
       maxRetries = "${params.execution.max_retries}"
       scratch = true
       stageInMode = "copy"
 
       withLabel: "multithreaded" {
-        clusterOptions = "-l select=1:ngpus=1:gpu_model=k20:mem=8gb:ncpus=${params.execution.threads}"
+        clusterOptions = "-l select=1:phase=4:mem=8gb:ncpus=${params.execution.threads}"
       }
       withLabel: "!multithreaded" {
-        clusterOptions = "-l select=1:ngpus=1:gpu_model=k20:mem=2gb"
+        clusterOptions = "-l select=1:phase=4:mem=2gb:ncpus=2"
       }
     }
     executor {
