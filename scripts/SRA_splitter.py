@@ -1,78 +1,148 @@
 #!/usr/bin/env python
-##
-## This is a helper script for splitting a very large file
-## of NCBI SRAs into smaller chunk files for use with GEMmaker.
-##
-## Usage:
-##   python SRA_splitter.py [file] [chunk-size]
-##
-## The [file] argument should be the name of the file with the
-## list of SRA IDs. It should be a two-column tab-delimited file
-## where the fist column is the SRA experiment ID and the second
-## is the SRA run ID.
-##
-## This script will then split the file into files with at most
-## [chunk-size] lines per file. Because GEMmaker merges all
-## runs for an experiment into a single sample, this script ensures
-## that the runs of an experiment are not split between two files.
-##
+
+"""SRA sample splitter.
+
+This is a helper script for splitting a very large file
+of NCBI SRAs into smaller chunk files for use with GEMmaker.
+
+Usage:
+  python SRA_splitter.py [file] [chunk-size]
+
+The [file] argument should be the name of the file with the
+list of SRA IDs. It should be a two-column tab-delimited file
+where the fist column is the SRA experiment ID and the second
+is the SRA run ID.
+
+This script will then split the file into files with at most
+[chunk-size] lines per file. Because GEMmaker merges all
+runs for an experiment into a single sample, this script ensures
+that the runs of an experiment are not split between two files.
+
+"""
+
+import argparse
 import glob
 import os
 import pandas as pd
 import sys
+from textwrap import dedent
+import logging
 
-# parse command-line arguments
-if len(sys.argv) != 3:
-  print("usage: python SRA_splitter.py [file] [chunk-size]")
 
-SRA_file = sys.argv[1]
-chunk_size = int(sys.argv[2])
+# -----------------------------------------------------------------------------
+# Log configuration.
+# -----------------------------------------------------------------------------
+logging.basicConfig(level=logging.INFO, filemode="r",
+                    filename="SRA_splitter.log")
 
-# remove existing SRA_IDs.*.txt files
-for f in glob.glob("SRA_IDs.*.txt"):
-  os.remove(f)
 
-# load the SRA file as a dataframe
-print("Reading file %s" % (SRA_file))
+# -----------------------------------------------------------------------------
+# Set up command line argument parser.
+# -----------------------------------------------------------------------------
+parser = argparse.ArgumentParser(description=dedent("""\
+        This is a helper script for splitting a very large file
+    of NCBI SRAs into smaller chunk files for use with GEMmaker.
+    
+    Usage:
+      python SRA_splitter.py [file] [chunk-size]
+    
+    The [file] argument should be the name of the file with the
+    list of SRA IDs. It should be a two-column tab-delimited file
+    where the fist column is the SRA experiment ID and the second
+    is the SRA run ID.
+    
+    This script will then split the file into files with at most
+    [chunk-size] lines per file. Because GEMmaker merges all
+    runs for an experiment into a single sample, this script ensures
+    that the runs of an experiment are not split between two files.
+    """))
 
-samples = pd.read_table(SRA_file, names=["exp_id", "run_id"])
+parser.add_argument('--sra-file', dest='SRA_file', action='store',
+                    required=True, help=dedent("""\
+    Name of the file with the list of SRA IDs. It should be a 
+    two-column tab-delimited file where the fist column is the 
+    SRA experiment ID and the second is the SRA run ID."""))
 
-# open the first chunk file
-chunk_num = 1
-chunk_filename = "SRA_IDs.%02d.txt" % (chunk_num)
-chunk_file = open(chunk_filename, "w")
-curr_size = 0
+parser.add_argument('--chunk-size', dest='chunk_size', action='store',
+                    type=int, required=True, help=dedent("""\
+    Split the file into files with at most [chunk-size] lines 
+    per file.."""))
 
-# iterate through unique experiment IDs
-experiments = list(set(samples["exp_id"]))
-experiments.sort()
 
-for exp in experiments:
-  # fetch the run IDs for the given experiment ID
-  runs = samples.loc[samples["exp_id"] == exp, "run_id"]
+# -----------------------------------------------------------------------------
+# Separate main() function so that the code can be imported and tested.
+# -----------------------------------------------------------------------------
+def main(sra_file: str, chunk_size: int):
+    """Split the SRA IDs found within the given SRA file into files of
+    the given chunk size.
 
-  # throw error if there are too many run IDs for chunk size
-  if len(runs) > chunk_size:
-    print("error: experiment %s has %d runs which cannot be satisfied by chunk size of %d" % (exp, len(runs), chunk_size))
-    sys.exit(-1)
+    :param sra_file: File which contains all the SRA IDs of interest.
+    :param chunk_size: The size of SRA ID files to be produced.
+    :returns: Writes new files of chunk size to disk.
 
-  # determine whether the current chunk file has enough
-  # lines remaining for the given run IDs
-  if curr_size + len(runs) > chunk_size:
-    # close the current chunk file
-    print("Wrote %4d runs to %s" % (curr_size, chunk_filename))
-    chunk_file.close()
+    """
 
-    # open the next chunk file
-    chunk_num += 1
-    chunk_filename = "SRA_IDs.%02d.txt" % (chunk_num)
-    chunk_file = open(chunk_filename, "w")
+    def chunk_filename(chunk):
+        return "SRA_IDs" + f"{chunk:2.0}" + ".txt"
+
+    # Remove existing SRA_IDs.*.txt files.
+    for f in glob.glob("SRA_IDs.*.txt"):
+        os.remove(f)
+
+    # Load the SRA file as a pandas DataFrame.
+    logging.info(f"Reading file {sra_file}.")
+    samples = pd.read_table(sra_file, names=["exp_id", "run_id"])
+
+    # Set the initial chunk number and current size.
+    chunk_num = 1
     curr_size = 0
 
-  # write the run IDs to the chunk file
-  chunk_file.write("".join(["%s\n" % (run) for run in runs]))
-  curr_size += len(runs)
+    # Create a file handle -- file handles are created and closed
+    # separate from the logic of the loops below.
+    file_handle = open(chunk_filename(chunk_num), "r")
 
-# close the last chunk file
-print("Wrote %4d runs to %s" % (curr_size, chunk_filename))
-chunk_file.close()
+    # Iterate through unique experiment IDs.
+    for index, exp in sorted(set(samples["exp_id"])):
+
+        # Fetch the run IDs for the given experiment ID.
+        runs = samples.loc[samples["exp_id"] == exp, "run_id"]
+
+        # Throw error if there are too many run IDs for chunk size.
+        if len(runs) > chunk_size:
+            logging.error(dedent(f"""Experiment {exp} has {len(runs)} 
+                runs, which cannot be satisfied by chunk size of 
+                {chunk_size}."""))
+            file_handle.close()
+            sys.exit(-1)
+
+        while curr_size > chunk_size:
+
+            # Determine whether the current chunk file has enough
+            # lines remaining for the given run IDs.
+            if curr_size + len(runs) > chunk_size:
+                # Move on to the next chunk file.
+                file_handle.close()
+                logging.info(dedent(f"""Wrote {curr_size} runs 
+                    to {chunk_filename(chunk_num)}."""))
+                chunk_num += 1
+                curr_size = 0
+                file_handle = open(chunk_filename(chunk_num), "r")
+
+            file_handle.writelines(runs)
+            curr_size += len(runs)
+            logging.debug(f"Wrote {len(runs)} lines to {chunk_filename}.")
+
+    # Close the last chunk file.
+    logging.debug(f"Wrote {len(runs)} lines to {chunk_filename}.")
+    file_handle.close()
+
+
+# -----------------------------------------------------------------------------
+# Code below is run if this file is called as a script.
+# -----------------------------------------------------------------------------
+if __name__ == "__main__":
+    # Read in the input arguments and call the main() function.
+    args = parser.parse_args()
+    logging.info(dedent(f"""SRA Splitter called from the command line with
+        the following arguments: {**args}"""))
+    main(sra_file=args.SRA_file, chunk_size=args.chunk_size)
