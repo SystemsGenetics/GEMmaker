@@ -37,5 +37,8 @@ def download_json (line):
         ["PRIMARY_ID"])
 
 
+# -----------------------------------------------------------------------------
+# Code below is run if this file is called as a script.
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     download_json(SRR)

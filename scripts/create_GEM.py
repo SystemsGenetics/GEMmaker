@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 
-"""A Python script for creating gene expression matrix (GEM) files
+"""
 
+A Python script for creating gene expression matrix (GEM) files.
 
-.. module:: GEMmaker
-  :platform: Unix, Windows
-  :synopsis: The Gene expression matrix (GEM) file can be created after a
-    successful run of GEMmaker.  It can be used to create GEM files containing
-    either FPKM or TPM values.  It can also be used to combine the results
-    from multiple GEMmaker directories into a single GEM file.
-
-.. moduleauthor:: John Hadish & Stephen Ficklin
+.. topic:: Overview
+    :platform: Unix, Windows
+    :synopsis: The Gene expression matrix (GEM) file can be created after a
+        successful run of GEMmaker.  It can be used to create GEM files
+        containing either FPKM or TPM values.  It can also be used to
+        combine the results from multiple GEMmaker directories into
+        a single GEM file.
+    :authors: John Hadish & Stephen Ficklin
 
 """
 
@@ -18,6 +19,7 @@ import argparse
 import logging
 import pandas as pd
 import glob
+import sys
 import os
 import re
 from textwrap import dedent
@@ -25,18 +27,12 @@ from textwrap import dedent
 # -----------------------------------------------------------------------------
 # Log configuration.
 # -----------------------------------------------------------------------------
-logging.basicConfig(level=logging.INFO, filemode="a",
-                    filename="create_GEM.log")
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 # -----------------------------------------------------------------------------
 # Specify the arguments that are allowed by this script
 # -----------------------------------------------------------------------------
-parser = argparse.ArgumentParser(description=dedent("""\
-    The Gene expression matrix (GEM) file can be created after a
-    successful run of GEMmaker.  It can be used to create GEM
-    files containing either FPKM or TPM values.  It can also be 
-    used to combine the results from multiple GEMmaker directories
-    into a single GEM file."""))
+parser = argparse.ArgumentParser(description=__doc__)
 
 parser.add_argument('--sources', dest='path', action='store', required=True,
                     nargs='*', help=dedent(""" One or more GEMmaker directory
@@ -69,39 +65,46 @@ def main(prefix, data_type, path_list):
     """
 
     # Set the name of the output GEM file.
-    ematrix_name = prefix + ".GEM." + data_type + '.txt'
+    gem_name = prefix + ".GEM." + data_type + '.txt'
 
     # Iterate through the GEMmaker directories to find the FPKM and TPM files.
     result_files = []
 
     for source_dir in path_list:
-
-        # Build the source directory glob.
-        sra_glob = os.path.join(source_dir, "[SED]RX*", "*",
-                                data_type.lower())
-
-        logging.info(dedent(f"""Finding {data_type} files in {source_dir}.
-            with {sra_glob}"""))
-
         # Check for NCBI SRA files.
+        # Build the source directory glob.
+        sra_glob = os.path.join(
+            source_dir,
+            "[SED]RX*",
+            "**",
+            "*." + data_type.lower())
+
+        logging.info(dedent(f"""\
+            Finding {data_type} files in {source_dir}, with {sra_glob}"""))
+
         for filename in glob.iglob(sra_glob, recursive=True):
             result_files.append(filename)
 
-        # Build a glob for non-SRA files.
-        non_sra_glob = os.path.join(source_dir, "Sample_*",
-                                    "*", data_type.lower())
-
-        logging.info(dedent(f"""Finding {data_type} files in {source_dir}.
-            with {non_sra_glob}"""))
-
         # Check for local non SRA files
+        # Build a glob for non-SRA files.
+        non_sra_glob = os.path.join(
+            source_dir,
+            "Sample_*",
+            "**", "*." + data_type.lower())
+
+        logging.info(dedent(f"""\
+            Finding {data_type} files with glob: {non_sra_glob}"""))
+
         for filename in glob.iglob(non_sra_glob, recursive=True):
             result_files.append(filename)
+
+    # Convert symbolic paths to real paths.
+    result_files = [os.path.realpath(path) for path in result_files]
 
     logging.info(dedent(f"""Found {len(result_files)} sample files."""))
 
     # Initialize the expression matrix by reading in the
-    ematrix = pd.DataFrame({'gene': []})
+    gem_matrix = pd.DataFrame({'gene': []})
 
     for result in result_files:
         # Get the sample name from the file name.
@@ -110,9 +113,6 @@ def main(prefix, data_type, path_list):
 
         # Remove the Sample_ from local file names.
         sample_name = re.sub(r'^Sample_', '', str(sample_name))
-
-        logging.info(dedent(f"""Adding results for sample: {sample_name}"""))
-
         df = pd.read_csv(result, header=None, sep='\t',
                          names=["gene", sample_name])
 
@@ -121,19 +121,28 @@ def main(prefix, data_type, path_list):
         # we need to remove the duplicates but keep the first occurrence.
         df.drop_duplicates(['gene'], keep='first', inplace=True)
 
+        logging.info(dedent(f"""Adding results for sample: {sample_name}"""))
+
         # Now merge in this sample to the expression matrix.
-        ematrix = ematrix.merge(df.iloc[:, [0, 1]], on='gene', how='outer')
+        gem_matrix = gem_matrix.merge(df, on='gene', how='outer')
 
     # Set the gene names as the data frame indexes.
-    ematrix = ematrix.set_index('gene', drop=True)
-
+    gem_matrix = gem_matrix.set_index('gene', drop=True)
     # Write out our expression matrix.
-    logging.info(dedent(f"""Writing {ematrix_name}."""))
+    gem_matrix.to_csv(gem_name, sep='\t', na_rep="NA", index_label=False)
+    logging.info(dedent(f"""Wrote {gem_name}."""))
 
-    ematrix.to_csv(ematrix_name, sep='\t', na_rep="NA", index_label=False)
 
-
+# -----------------------------------------------------------------------------
+# Code below is run if this file is called as a script.
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     # Read in the input arguments and call the main() function.
     args = parser.parse_args()
+
+    logging.info(dedent(f"""\
+        {'=' * 80}
+        {__name__} called from the command line with the following arguments:
+        {vars(args)}"""))
+
     main(path_list=args.path, prefix=args.prefix, data_type=args.data_type)
