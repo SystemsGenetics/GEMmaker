@@ -92,14 +92,14 @@ params {
     // one place. To fix this you can assign a glob pattern to organize the
     // results into a cascading file system. For example, the following:
     //
-    //   sample_dir = { "${params.output.dir}/${sample_id[0..2]}/${sample_id[3..4]}/${sample_id[5..6]}/${sample_id.drop(7)}/${sample_id}" }
+    //   sample_dir = { "${params.output.dir}/${sample_id[0..2]}/${sample_id[3..4]}/${sample_id.drop(5)}/${sample_id}" }
     //
     // Will organize files downloaded from NCBI in a nesting fashion. The
     // output of the sample_id "SRX0123456" would be put in the directory
     // "/SRX/12/34/56/SRX123456/". You can modify the above glob patterns for
     // your needs.
     //
-    sample_dir = { "${params.output.dir}/${sample_id[0..2]}/${sample_id[3..4]}/${sample_id[5..6]}/${sample_id.drop(7)}/${sample_id}" }
+    sample_dir = { "${params.output.dir}/${sample_id[0..2]}/${sample_id[3..4]}/${sample_id[5..6]}/${sample_id}" }
 
     //
     // publish mode for publishDir
