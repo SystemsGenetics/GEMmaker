@@ -37,7 +37,7 @@ params {
     // "_1.fastq" or "_2.fastq" in the subdirectories of the folder "Sample".
     // If no local files are to be used, set parameter as "none"
     //
-    local_samples_path = "${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq"
+    local_samples_path = ""${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq""
 
     //
     // The full file system path of the directory containing the genome reference
@@ -99,7 +99,7 @@ params {
     // "/SRX/12/34/56/SRX123456/". You can modify the above glob patterns for
     // your needs.
     //
-    sample_dir = { "${params.output.dir}/${sample_id[0..2]}/${sample_id[3..4]}/${sample_id[5..6]}/${sample_id}" }
+    sample_dir = { "${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq" }
 
     //
     // publish mode for publishDir
@@ -403,7 +403,7 @@ profiles {
       maxRetries = "${params.execution.max_retries}"
 
       withLabel: "multithreaded" {
-        cpus = ${params.execution.threads}
+        cpus = "${params.execution.threads}"
       }
       withLabel: "!multithreaded" {
         cpus = 1
