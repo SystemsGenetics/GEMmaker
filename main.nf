@@ -136,7 +136,6 @@ GROUPED_BY_SAMPLE_ID
  * This process merges the fastq files based on their sample_id number.
  */
 process SRR_combine {
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
   tag { sample_id }
 
   input:
@@ -168,7 +167,7 @@ process SRR_combine {
 process fastqc_1 {
   module "fastQC"
   time params.software.fastqc_1.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
 
   input:
@@ -199,7 +198,7 @@ process fastqc_1 {
 process trimmomatic {
    module "trimmomatic"
    time params.software.trimmomatic.time
-   publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
    tag { sample_id }
    label "multithreaded"
 
@@ -260,7 +259,7 @@ process trimmomatic {
 process fastqc_2 {
   module "fastQC"
   time params.software.fastqc_2.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
 
   input:
@@ -285,7 +284,7 @@ process fastqc_2 {
 process hisat2 {
   module "hisat2"
   time params.software.hisat2.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
   tag { sample_id }
   label "multithreaded"
 
@@ -341,7 +340,7 @@ process hisat2 {
 process samtools_sort {
   module "samtools"
   time params.software.samtools_sort.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.bam"
   tag { sample_id }
 
   input:
@@ -366,7 +365,7 @@ process samtools_sort {
 process samtools_index {
   module "samtools"
   time params.software.samtools_index.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode, pattern: "*.bam.log"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
   tag { sample_id }
 
   input:
@@ -393,7 +392,6 @@ process samtools_index {
 process stringtie {
   module "stringtie"
   time params.software.stringtie.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
   tag { sample_id }
   label "multithreaded"
 
@@ -425,7 +423,7 @@ process stringtie {
  * Generates the final FPKM file
  */
 process fpkm_or_tpm {
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
 
   input:
