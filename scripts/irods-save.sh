@@ -23,7 +23,3 @@ iput -bPr $LOCAL_PATH $REMOTE_PATH
 
 # exit iRODS
 iexit
-
-# remove all intermediate data and output data from local directory
-# rm -rf $LOCAL_DIR
-# rm -rf [DES]RX* work
