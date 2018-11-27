@@ -339,6 +339,21 @@ trace {
 
 
 /**
+ * Process
+ *
+ * The process scope allows you to define settings for all processes. These
+ * settings can be overridden by the profiles specified below or individual
+ * processes defined in the workflow.
+ */
+process {
+  errorStrategy = { "${task.attempt}" <= "${params.execution.max_retries}" ? "retry" : "ignore" }
+  maxRetries = "${params.execution.max_retries}"
+  // maxErrors = 1000
+}
+
+
+
+/**
  * Nextflow can be executed on any number of high-performance computing
  * infrastructures.  The profile section allows you to customize execution
  * of this workflow for any number of systems.  Please see the Nextflow
@@ -372,8 +387,6 @@ profiles {
     process {
       executor = "pbs"
       time = "8h"
-      errorStrategy = "retry"
-      maxRetries = "${params.execution.max_retries}"
       scratch = true
       stageInMode = "copy"
 
@@ -399,8 +412,6 @@ profiles {
       executor = "slurm"
       queue = {users queue}
       time = "4h"
-      errorStrategy = "retry"
-      maxRetries = "${params.execution.max_retries}"
 
       withLabel: "multithreaded" {
         cpus = "${params.execution.threads}"
