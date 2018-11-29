@@ -8,7 +8,7 @@ if [[ $# != 2 ]]; then
 fi
 
 REMOTE_PATH="$1"
-LOCAL_PATH="$2"
+LOCAL_PATH="$(realpath $2)"
 
 # load iRODS module
 shopt -s expand_aliases

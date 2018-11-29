@@ -7,7 +7,7 @@ if [[ $# != 2 ]]; then
         exit -1
 fi
 
-LOCAL_PATH="$1"
+LOCAL_PATH="$(realpath $1)"
 REMOTE_PATH="$2"
 
 # load iRODS module
