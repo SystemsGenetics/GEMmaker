@@ -136,6 +136,12 @@ params {
     //  the entire workflow
     //
     max_retries = 2
+
+    //
+    //  Error strategy for when a process fails `max_retries` times. Can
+    //  be "terminate", "finish", or "ignore".
+    //
+    error_strategy = "ignore"
   }
 
   /**
@@ -346,7 +352,7 @@ trace {
  * processes defined in the workflow.
  */
 process {
-  errorStrategy = { "${task.attempt}" <= "${params.execution.max_retries}" ? "retry" : "ignore" }
+  errorStrategy = { "${task.attempt}" <= "${params.execution.max_retries}" ? "retry" : "${params.execution.error_strategy}" }
   maxRetries = "${params.execution.max_retries}"
   // maxErrors = 1000
 }
