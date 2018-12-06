@@ -86,6 +86,29 @@ RUN apt-get -y install libssl-dev \
   && /usr/local/Python-3.6.5/bin/pip3 install pandas numpy matplotlib xmltodict \
   && /usr/local/Python-3.6.5/bin/pip3 install multiqc
 
+# Install R
+RUN apt-get -y install apt-utils apt-transport-https \
+  && apt-get -y install software-properties-common \
+  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
+  && add-apt-repository 'deb [arch=amd64,i386] https://cran.rstudio.com/bin/linux/ubuntu xenial/' \
+  && apt-get update \
+  && apt-get -y install r-base
+
+# Add the module files for all of the installed tools
+ADD modulefiles/. /usr/local/modulefiles/Linux
+
+# Install Nextflow
+RUN wget -qO- get.nextflow.io | bash \
+  && mv nextflow /usr/local/bin \
+  && chmod 755 /usr/local/bin/nextflow \
+  && rm -rf ~/.nextflow
+
+# Install IRODs
+ADD scripts/. /usr/local/share
+RUN apt-get -y install libfuse2 expect \
+  && wget ftp://ftp.renci.org/pub/irods/releases/4.1.11/ubuntu14/irods-icommands-4.1.11-ubuntu14-x86_64.deb \
+  && dpkg -i irods-icommands-4.1.11-ubuntu14-x86_64.deb \
+  && chmod 755 /usr/local/share/*
 
 #
 # Declare the active user and set the working directory.
