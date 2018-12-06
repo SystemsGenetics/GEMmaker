@@ -1,0 +1,21 @@
+branches:
+    only:
+        - issue_38_docker_integration
+
+sudo: required
+
+language: python
+
+services:
+    - docker
+
+script:
+    # Build the local docker image (from the local git repository).
+    - docker build -t tylerbiggs/gemmaker:latest .
+    # Run a test of the pipeline using the local image.
+    - cp nextflow.config.example nextflow.config
+    - nextflow run main.nf -with-docker .
+    # Login to Docker hub.
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    # Push the build to docker hub.
+    - docker push tylerbiggs/chemmd:latest
