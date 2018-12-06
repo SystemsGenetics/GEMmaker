@@ -10,6 +10,8 @@ services:
 script:
     # Build the local docker image (from the local git repository).
     - docker build -t tylerbiggs/gemmaker:latest .
+    # Download nextflow.
+    - curl -s https://get.nextflow.io | bash
     # Prepare the nextflow.config file for use in testing.
     - cp nextflow.config.example nextflow.config
     # Run a test of the pipeline using the local image.
