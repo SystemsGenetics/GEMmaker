@@ -12,7 +12,7 @@ services:
 
 # Commands which must be executed before installing dependencies.
 before_install:
-  - docker pull systemsgenetics/gemmaker-docker:latest
+  - docker pull systemsgenetics/gemmaker-docker:development
 
 
 # Install all dependencies here.
@@ -30,4 +30,4 @@ before_script:
 
 # Commands here should determine whether the build fails or not.
 script:
-  - nextflow run main.nf -with-docker systemsgenetics/gemmaker-docker:latest
+  - nextflow run main.nf -with-docker systemsgenetics/gemmaker-docker:development

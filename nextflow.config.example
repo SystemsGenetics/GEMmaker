@@ -373,7 +373,10 @@ profiles {
   // each process as a literal process on the machine.
   //
   standard {
-    process.executor = "local"
+    // process.executor = "local",
+    process.container = 'systemsgenetics/gemmaker-docker:development'
+    docker.enabled = true
+    docker.fixOwnership = true
   }
 
   //
