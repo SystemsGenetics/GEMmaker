@@ -377,6 +377,7 @@ profiles {
     process.container = 'systemsgenetics/gemmaker-docker:development'
     docker.enabled = true
     docker.fixOwnership = true
+    process.errorStrategy = 'terminate'
   }
 
   //

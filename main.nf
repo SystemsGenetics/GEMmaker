@@ -21,6 +21,9 @@ println """\
  G E M M A K E R   P I P E L I N E
 ===================================
 
+Profile: ${workflow.profile}
+
+
 Parameters:
   + Remote fastq list path:     ${params.input.remote_list_path}
   + Local sample glob:          ${params.input.local_samples_path}
@@ -28,6 +31,7 @@ Parameters:
   + Reference genome prefix:    ${params.input.reference_prefix}
   + Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
   + Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}
+
 """
 
 
