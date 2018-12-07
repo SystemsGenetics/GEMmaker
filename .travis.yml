@@ -21,6 +21,8 @@ install:
   - sudo apt-get -qq -y install graphviz realpath
   - curl -fsSL get.nextflow.io | bash
   - mkdir -p ~/bin; cp nextflow ~/bin
+  - mkdir work/
+  - chmod -R 777 work/
 
 
 # Commands that must run before any tests are executed.
