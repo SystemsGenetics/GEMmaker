@@ -160,6 +160,7 @@ params {
       //  Time allowed for fastq_dump
       //
       time = "48h"
+      docker.container = "gemmaker-docker:sratoolkit.2.8.2"
     }
 
     /**
@@ -174,6 +175,8 @@ params {
       //  Time allowed for fastqc_1 (fastqc prior to trimmomatic)
       //
       time = "24h"
+      docker.enabled = true
+      docker.container = "biocontainers/fastqc:v0.11.5_cv3"
     }
 
     /**
@@ -183,6 +186,9 @@ params {
      * from sequence data.
      */
     trimmomatic {
+      docker.container = "biocontainers/trimmomatic:0.36dfsg-1-deb"
+      docker.enabled = true
+
       //
       //  Time allowed for trimmomatic
       //
@@ -234,6 +240,8 @@ params {
       //  Time allowed for fastqc_2 (fastqc after trimmomatic)
       //
       time = "48h"
+      docker.enabled = true
+      docker.container = "biocontainers/fastqc:v0.11.5_cv3"
     }
 
     /**
@@ -246,6 +254,9 @@ params {
       //  Time allowed for hisat2
       //
       time = "48h"
+      docker.container = "biocontainers/hisat2:2.0.5-1-deb"
+      docker.enabled = true
+
     }
 
     /**
@@ -258,6 +269,9 @@ params {
       //
       //  Time allowed for samtools_sort
       //
+      docker.container = "biocontainers/samtools"
+      docker.enabled = true
+
       time = "48h"
     }
 
@@ -271,6 +285,8 @@ params {
       //  Time allowed for samtools_index
       //
       time = "12h"
+      docker.container = "biocontainers/samtools"
+      docker.enabled = true
     }
 
     /**
@@ -355,6 +371,12 @@ process {
   errorStrategy = { "${task.attempt}" <= "${params.execution.max_retries}" ? "retry" : "${params.execution.error_strategy}" }
   maxRetries = "${params.execution.max_retries}"
   // maxErrors = 1000
+  withLabel:sratoolkit {
+    container = 'gemmaker-docker:sratoolkit.2.8.2'
+  }
+  withLabel:python3 {
+    container = 'gemmaker-docker:python3scripts'
+  }
 }
 
 
@@ -374,7 +396,7 @@ profiles {
   //
   standard {
     // process.executor = "local",
-    process.container = 'systemsgenetics/gemmaker-docker:development'
+    // process.container = 'systemsgenetics/gemmaker-docker:development'
     docker.enabled = true
     docker.fixOwnership = true
     process.errorStrategy = 'terminate'

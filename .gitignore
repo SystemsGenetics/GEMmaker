@@ -5,3 +5,6 @@ timeline.html
 trace.txt
 work
 .idea
+.nextflow/
+output/
+.nextflow.l*

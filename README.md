@@ -4,7 +4,7 @@
 ![GEMmaker Logo](images/GEMmaker-logo-sm.png)
 
 
-GEMmaker is a [Nextflow](https://www.nextflow.io/) workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression (DGE) and gene co-expression network (GCN) analyses. This report is the MultiQC summary of the GEMmaker workflow results. The GEMmaker workflow currently supports Illumina RNA-seq datasets. 
+GEMmaker is a [Nextflow](https://www.nextflow.io/) workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression (DGE) and gene co-expression network (GCN) analyses. This report is the MultiQC summary of the GEMmaker workflow results. The GEMmaker workflow currently supports Illumina RNA-seq datasets.
 
 The following flowchart describes the workflow that GEMmaker provides:
 
@@ -50,14 +50,14 @@ To execute GEMmaker on an HPC cluster you must do __only one__ of the following:
 
 ## Preparing the Workflow
 
-After ensuring that all necessary software prerequisites are available, clone GEMmaker into a working directory.  
+After ensuring that all necessary software prerequisites are available, clone GEMmaker into a working directory.
 
 To clone the workflow into a directory:
 ```bash
 nextflow clone SystemsGenetics/GEMmaker target-dir
 ```
 
-As with all Nextflow workflows, you can configure the behavior of the workflow by creating a `nextflow.config` file.  The GEMmaker workflow provides an example file (`nextflow.config.example`) which you can copy to get started. 
+As with all Nextflow workflows, you can configure the behavior of the workflow by creating a `nextflow.config` file.  The GEMmaker workflow provides an example file (`nextflow.config.example`) which you can copy to get started.
 ```bash
 cp nextflow.config.example nextflow.config
 ```
@@ -68,9 +68,9 @@ Edit `nextflow.config` according to the inline instructions. At the very least, 
 
 ### Sample Files
 
-GEMmaker supports processing of sample files that are already present on your local computer or samples that are already stored in the [NCBI SRA repository](https://www.ncbi.nlm.nih.gov/sra). 
+GEMmaker supports processing of sample files that are already present on your local computer or samples that are already stored in the [NCBI SRA repository](https://www.ncbi.nlm.nih.gov/sra).
 
-- For local sample files, identify a [glob pattern](https://en.wikipedia.org/wiki/Glob_(programming)) that finds these files.  
+- For local sample files, identify a [glob pattern](https://en.wikipedia.org/wiki/Glob_(programming)) that finds these files.
 - For samples on NCBI, identify the NCBI SRA run IDs of the samples you want to analyze. The Run IDs typically start with an SRR, ERR or DRR prefix. hese sample run IDs must be placed, one per line, in a file and the filename should be set in the `remote_list_path` of `nextflow.config`.
 
 __NOTE__: The SRA Toolkit caches SRA files in your home directory by default. For large experiments this cache can become quite large, which may become an issue on some HPC clusters where each user is given a disk quota for their home directory. You can change the location of the cache by running `vdb-config -i` (see [SRA Toolkit Configuration](https://github.com/ncbi/sra-tools/wiki/Toolkit-Configuration)).
@@ -141,3 +141,13 @@ python ./scripts/create_GEM.py --source ./ --type TPM --prefix my_project
 The script will produce a GEM file called `my_project.GEM.TPM.txt`. Be sure to change `my_project` to a meaningful prefix for your project.
 
 You can combine the results of multiple GEMmaker runs into a single GEM by providing a list of directories to the `--source` argument. This feature may be useful if you split a set of input files into several GEMmaker runs and now you need to combine then. The script will produce a file named `GEM.txt` in the working directory.
+
+
+
+## Running with the Dockerfile
+
+```bash
+nextflow run main.nf \
+  -with-docker systemsgenetics/gemmaker-docker:development
+    # --mount type=bind,source="$(pwd)"/work,target=/app \
+```

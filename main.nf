@@ -72,9 +72,10 @@ if (params.input.remote_list_path == "none") {
  * current working directory.
  */
 process fastq_dump {
-  module "sratoolkit"
+  // module "sratoolkit"
   time params.software.fastq_dump.time
   tag { fastq_run_id }
+  label "sratoolkit"
 
   input:
     val fastq_run_id from REMOTE_FASTQ_RUNS
@@ -83,7 +84,7 @@ process fastq_dump {
     set val(fastq_run_id), file("${fastq_run_id}_?.fastq") into DOWNLOADED_FASTQ_RUNS
 
   """
-    fastq-dump --split-files $fastq_run_id
+  fastq-dump --split-files $fastq_run_id
   """
 }
 
@@ -105,9 +106,10 @@ COMBINED_SAMPLES = DOWNLOADED_FASTQ_RUNS.mix( LOCAL_SAMPLES )
  * The next step combines them
  */
 process SRR_to_sample_id {
-  module "anaconda3"
-  module "python3"
+  // module "anaconda3"
+  // module "python3"
   tag { fastq_run_id }
+  label "python3scripts"
 
   input:
     set val(fastq_run_id), file(pass_files) from COMBINED_SAMPLES
