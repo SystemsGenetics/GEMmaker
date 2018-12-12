@@ -93,7 +93,7 @@ process {
     time = "48h"
   }
   withLabel:samtools {
-    container = 'biocontainers/samtools:v1.2_cv3'
+    container = 'systemsgenetics/samtools:v1.9'
     time = "48h"
   }
   withLabel:stringtie {
