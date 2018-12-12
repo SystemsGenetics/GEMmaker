@@ -17,20 +17,35 @@
 
 
 println """\
+
 ===================================
  G E M M A K E R   P I P E L I N E
 ===================================
 
-Profile: ${workflow.profile}
+General Information:
+--------------------
+  Profile(s):         ${workflow.profile}
+  Container Engine:   ${workflow.containerEngine}
 
 
-Parameters:
-  + Remote fastq list path:     ${params.input.remote_list_path}
-  + Local sample glob:          ${params.input.local_samples_path}
-  + Reference genome path:      ${params.input.reference_path}
-  + Reference genome prefix:    ${params.input.reference_prefix}
-  + Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
-  + Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}
+Input Parameters:
+-----------------
+  Remote fastq list path:     ${params.input.remote_list_path}
+  Local sample glob:          ${params.input.local_samples_path}
+  Reference genome path:      ${params.input.reference_path}
+  Reference genome prefix:    ${params.input.reference_prefix}
+
+
+Output Parameters:
+------------------
+  Output directory:           ${params.output.dir}
+  Publishing mode:            ${params.output.publish_mode}
+
+
+Software Parameters:
+--------------------
+  Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
+  Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}
 
 """
 
@@ -76,9 +91,10 @@ if (params.input.remote_list_path == "none") {
  */
 process fastq_dump {
   // module "sratoolkit"
-  time params.software.fastq_dump.time
+  // time params.software.fastq_dump.time
   tag { fastq_run_id }
   label "sratoolkit"
+  label "retry"
 
   input:
     val fastq_run_id from REMOTE_FASTQ_RUNS
@@ -176,7 +192,7 @@ process SRR_combine {
  */
 process fastqc_1 {
   // module "fastQC"
-  time params.software.fastqc_1.time
+  // time params.software.fastqc_1.time
   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
@@ -208,7 +224,7 @@ process fastqc_1 {
  */
 process trimmomatic {
    // module "trimmomatic"
-   time params.software.trimmomatic.time
+   // time params.software.trimmomatic.time
    publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
    tag { sample_id }
    label "multithreaded"
@@ -295,7 +311,7 @@ process trimmomatic {
  */
 process fastqc_2 {
   // module "fastQC"
-  time params.software.fastqc_2.time
+  // time params.software.fastqc_2.time
   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
@@ -321,7 +337,7 @@ process fastqc_2 {
  */
 process hisat2 {
   // module "hisat2"
-  time params.software.hisat2.time
+  // time params.software.hisat2.time
   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
   tag { sample_id }
   label "multithreaded"
@@ -379,7 +395,7 @@ process hisat2 {
  */
 process samtools_sort {
   // module "samtools"
-  time params.software.samtools_sort.time
+  // time params.software.samtools_sort.time
   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.bam"
   tag { sample_id }
   label "samtools"
@@ -407,8 +423,8 @@ process samtools_sort {
  * depends: samtools_index
  */
 process samtools_index {
-  module "samtools"
-  time params.software.samtools_index.time
+  // module "samtools"
+  // time params.software.samtools_index.time
   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
   tag { sample_id }
   label "samtools"
@@ -436,7 +452,7 @@ process samtools_index {
  */
 process stringtie {
   // module "stringtie"
-  time params.software.stringtie.time
+  // time params.software.stringtie.time
   tag { sample_id }
   label "multithreaded"
   label "stringtie"
