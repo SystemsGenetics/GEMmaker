@@ -160,7 +160,6 @@ params {
       //  Time allowed for fastq_dump
       //
       time = "48h"
-      docker.container = "gemmaker-docker:sratoolkit.2.8.2"
     }
 
     /**
@@ -175,8 +174,6 @@ params {
       //  Time allowed for fastqc_1 (fastqc prior to trimmomatic)
       //
       time = "24h"
-      docker.enabled = true
-      docker.container = "biocontainers/fastqc:v0.11.5_cv3"
     }
 
     /**
@@ -186,9 +183,6 @@ params {
      * from sequence data.
      */
     trimmomatic {
-      docker.container = "biocontainers/trimmomatic:0.36dfsg-1-deb"
-      docker.enabled = true
-
       //
       //  Time allowed for trimmomatic
       //
@@ -240,8 +234,6 @@ params {
       //  Time allowed for fastqc_2 (fastqc after trimmomatic)
       //
       time = "48h"
-      docker.enabled = true
-      docker.container = "biocontainers/fastqc:v0.11.5_cv3"
     }
 
     /**
@@ -254,9 +246,6 @@ params {
       //  Time allowed for hisat2
       //
       time = "48h"
-      docker.container = "biocontainers/hisat2:2.0.5-1-deb"
-      docker.enabled = true
-
     }
 
     /**
@@ -269,9 +258,6 @@ params {
       //
       //  Time allowed for samtools_sort
       //
-      docker.container = "biocontainers/samtools"
-      docker.enabled = true
-
       time = "48h"
     }
 
@@ -285,8 +271,6 @@ params {
       //  Time allowed for samtools_index
       //
       time = "12h"
-      docker.container = "biocontainers/samtools"
-      docker.enabled = true
     }
 
     /**
@@ -359,7 +343,6 @@ trace {
 }
 
 
-
 /**
  * Process
  *
@@ -368,14 +351,33 @@ trace {
  * processes defined in the workflow.
  */
 process {
-  errorStrategy = { "${task.attempt}" <= "${params.execution.max_retries}" ? "retry" : "${params.execution.error_strategy}" }
   maxRetries = "${params.execution.max_retries}"
+  errorStrategy = { "${task.attempt}" <= "${execution.max_retries}" ? "retry" : "${execution.error_strategy}" }
+
   // maxErrors = 1000
   withLabel:sratoolkit {
     container = 'gemmaker-docker:sratoolkit.2.8.2'
   }
-  withLabel:python3 {
-    container = 'gemmaker-docker:python3scripts'
+  withLabel:python3scripts {
+    container = 'gemmaker-docker:python3scripts.development'
+  }
+  withLabel:fastqc {
+    container = 'biocontainers/fastqc:v0.11.5_cv3'
+  }
+  withLabel:trimmomatic {
+    container = 'gemmaker-docker/trimmomatic:development'
+  }
+  withLabel:hisat2 {
+    container = 'gemmaker-docker/hisat2:development'
+  }
+  withLabel:samtools {
+    container = 'biocontainers/samtools:v1.2_cv3'
+  }
+  withLabel:stringtie {
+    container = 'gemmaker-docker/stringtie:1.3.4d'
+  }
+  withLabel:rate_limit {
+    maxForks = 1
   }
 }
 
@@ -395,11 +397,26 @@ profiles {
   // each process as a literal process on the machine.
   //
   standard {
-    // process.executor = "local",
-    // process.container = 'systemsgenetics/gemmaker-docker:development'
-    docker.enabled = true
-    docker.fixOwnership = true
-    process.errorStrategy = 'terminate'
+    process.executor = "local"
+  }
+
+  testing {
+    execution.error_strategy = "terminate"
+    execution.max_retries = 1
+  }
+
+  inDocker {
+    docker {
+        enabled = true
+        fixOwnership = true
+        runOptions = '-u $(id -u):$(id -g)'
+    }
+  }
+
+  inSingularity {
+    singularity {
+        enabled = true
+    }
   }
 
   //
