@@ -25,12 +25,13 @@ params {
     publish_mode = "link"
   }
 
-  // TODO: Consider moving these to profiles.
+  // TODO: Consider moving to profiles.
   execution {
     queue_size = 100
     threads = 1
   }
 
+  // TODO: Consider moving to profiles.
   software {
     trimmomatic {
       clip_path = "${PWD}/files/fasta_adapter.txt"
@@ -73,6 +74,7 @@ process {
   withLabel:sratoolkit {
     container = 'systemsgenetics/sratoolkit:0.38'
     time = "48h"
+    module = false
   }
   withLabel:python3scripts {
     container = 'systemsgenetics/python3scripts:1.0.0'
@@ -106,7 +108,9 @@ process {
 
 profiles {
   standard {
-    process.executor = "local"
+    process {
+      executor = "local"
+    }
   }
 
   testing {
@@ -143,6 +147,28 @@ profiles {
   //
   pbs {
     process {
+      withLabel:sratoolkit {
+        module = "sratoolkit"
+      }
+      withLabel:python3scripts {
+        module = "python3"
+      }
+      withLabel:fastqc {
+        module = "fastQC"
+      }
+      withLabel:trimmomatic {
+        module = "trimmomatic"
+      }
+      withLabel:hisat2 {
+        module = "hisat2"
+      }
+      withLabel:samtools {
+        module = "samtools"
+      }
+      withLabel:stringtie {
+        module = "stringtie"
+      }
+
       executor = "pbs"
       time = "8h"
       scratch = true
