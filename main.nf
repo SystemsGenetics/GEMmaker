@@ -49,9 +49,6 @@ Software Parameters:
 
 """
 
-reference_files = file("${params.input.reference_path}*").collect()
-
-genome_file = file("${params.input.reference_path}${params.input.reference_prefix}.gtf")
 
 /**
  * Local Sample Input.
@@ -344,12 +341,11 @@ process hisat2 {
 
   input:
    set val(sample_id), file(input_files) from TRIMMED_FASTQC_SAMPLES
-   file "*" from reference_files
+   file reference from Channel.fromPath("${params.input.reference_path}*").toList()
 
   output:
    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES
    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam.log") into INDEXED_SAMPLES_LOG
-   // export HISAT2_INDEXES=tmp/${params.input.reference_path}
 
   script:
    """
@@ -461,7 +457,7 @@ process stringtie {
     // this process runs after the samtools_index step so we
     // require it as an input file.
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") from BAM_INDEXED_FOR_STRINGTIE
-    file genome_file
+    file gtf_file from Channel.fromPath("${params.input.reference_path}*.gtf").first()
 
 
   output:
