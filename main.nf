@@ -49,8 +49,7 @@ Software Parameters:
 
 """
 
-reference_files = Channel
-  .fromPath("${params.input.reference_path}/*")
+reference_files = file("${params.input.reference_path}*").collect()
 
 genome_file = file("${params.input.reference_path}${params.input.reference_prefix}.gtf")
 
@@ -345,7 +344,7 @@ process hisat2 {
 
   input:
    set val(sample_id), file(input_files) from TRIMMED_FASTQC_SAMPLES
-   file hisat2_indexes from reference_files.collect()
+   file "*" from reference_files
 
   output:
    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES
