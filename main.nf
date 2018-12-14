@@ -17,19 +17,37 @@
 
 
 println """\
+
 ===================================
  G E M M A K E R   P I P E L I N E
 ===================================
 
-Parameters:
-  + Remote fastq list path:     ${params.input.remote_list_path}
-  + Local sample glob:          ${params.input.local_samples_path}
-  + Reference genome path:      ${params.input.reference_path}
-  + Reference genome prefix:    ${params.input.reference_prefix}
-  + Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
-  + Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}
-"""
+General Information:
+--------------------
+  Profile(s):         ${workflow.profile}
+  Container Engine:   ${workflow.containerEngine}
 
+
+Input Parameters:
+-----------------
+  Remote fastq list path:     ${params.input.remote_list_path}
+  Local sample glob:          ${params.input.local_samples_path}
+  Reference genome path:      ${params.input.reference_path}
+  Reference genome prefix:    ${params.input.reference_prefix}
+
+
+Output Parameters:
+------------------
+  Output directory:           ${params.output.dir}
+  Publishing mode:            ${params.output.publish_mode}
+
+
+Software Parameters:
+--------------------
+  Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
+  Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}
+
+"""
 
 
 /**
@@ -68,9 +86,11 @@ if (params.input.remote_list_path == "none") {
  * current working directory.
  */
 process fastq_dump {
-  module "sratoolkit"
-  time params.software.fastq_dump.time
+  // module "sratoolkit"
+  // time params.software.fastq_dump.time
   tag { fastq_run_id }
+  label "sratoolkit"
+  label "retry"
 
   input:
     val fastq_run_id from REMOTE_FASTQ_RUNS
@@ -79,7 +99,7 @@ process fastq_dump {
     set val(fastq_run_id), file("${fastq_run_id}_?.fastq") into DOWNLOADED_FASTQ_RUNS
 
   """
-    fastq-dump --split-files $fastq_run_id
+  fastq-dump --split-files $fastq_run_id
   """
 }
 
@@ -101,9 +121,11 @@ COMBINED_SAMPLES = DOWNLOADED_FASTQ_RUNS.mix( LOCAL_SAMPLES )
  * The next step combines them
  */
 process SRR_to_sample_id {
-  module "anaconda3"
-  module "python3"
+  // module "anaconda3"
+  // module "python3"
   tag { fastq_run_id }
+  label "python3scripts"
+  label "rate_limit"
 
   input:
     set val(fastq_run_id), file(pass_files) from COMBINED_SAMPLES
@@ -136,7 +158,6 @@ GROUPED_BY_SAMPLE_ID
  * This process merges the fastq files based on their sample_id number.
  */
 process SRR_combine {
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
   tag { sample_id }
 
   input:
@@ -166,10 +187,11 @@ process SRR_combine {
  * Performs fastqc on fastq files prior to trimmomatic
  */
 process fastqc_1 {
-  module "fastQC"
-  time params.software.fastqc_1.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+  // module "fastQC"
+  // time params.software.fastqc_1.time
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
+  label "fastqc"
 
   input:
     set val(sample_id), file(pass_files) from MERGED_SAMPLES
@@ -336,11 +358,14 @@ process fastqc_1 {
  * "nextflow.config" file
  */
 process trimmomatic {
-   module "trimmomatic"
-   time params.software.trimmomatic.time
-   publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+   // module "trimmomatic"
+   // time params.software.trimmomatic.time
+   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
    tag { sample_id }
-   //label "multithreaded"
+
+   label "multithreaded"
+   label "trimmomatic"
+
 
    input:
      set val(sample_id), file("${sample_id}_?.fastq") from HISAT2_CHANNEL
@@ -351,8 +376,33 @@ process trimmomatic {
 
    script:
      """
-     minlen=`'${PWD}/scripts/Mean_length.sh' '${sample_id}' '${params.software.trimmomatic.MINLEN}'`
+     #This script calculates average length of fastq files.
+      total=0
+
+      #This if statement checks if the data is single or paired data, and checks length accordingly
+      #This script returns 1 number, which can be used for the minlen in trimmomatic
+      if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
+        for fastq in ${sample_id}_1.fastq ${sample_id}_2.fastq; do
+          a=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' \$fastq \
+          | sort \
+          | awk '{ print \$0, \$1*\$2}' \
+          | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
+        total=(\$a + \$total)
+        done
+        total=( \$total / 2 )
+        minlen=`\$total`
+
+      elif [ -e ${sample_id}_1.fastq ]; then
+        minlen=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' ${sample_id}_1.fastq \
+          | sort \
+          | awk '{ print \$0, \$1*\$2}' \
+          | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
+      fi
+
+
+
      if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
+     // java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
       java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
         PE \
         -threads ${params.execution.threads} \
@@ -397,10 +447,11 @@ process trimmomatic {
  * Files are stored to an independent folder
  */
 process fastqc_2 {
-  module "fastQC"
-  time params.software.fastqc_2.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+  // module "fastQC"
+  // time params.software.fastqc_2.time
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
+  label "fastqc"
 
   input:
     set val(sample_id), file(pass_files) from TRIMMED_SAMPLES
@@ -420,14 +471,17 @@ process fastqc_2 {
  * depends: trimmomatic
  */
 process hisat2 {
-  module "hisat2"
-  time params.software.hisat2.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+  // module "hisat2"
+  // time params.software.hisat2.time
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
   tag { sample_id }
-  //label "multithreaded"
+
+  label "multithreaded"
+  label "hisat2"
 
   input:
    set val(sample_id), file(input_files) from TRIMMED_FASTQC_SAMPLES
+   file reference from Channel.fromPath("${params.input.reference_path}*").toList()
 
   output:
    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES
@@ -435,7 +489,6 @@ process hisat2 {
 
   script:
    """
-     export HISAT2_INDEXES=${params.input.reference_path}
      if [ -e ${sample_id}_2p_trim.fastq ]; then
        hisat2 \
          -x ${params.input.reference_prefix} \
@@ -476,10 +529,12 @@ process hisat2 {
  * depends: hisat2
  */
 process samtools_sort {
-  module "samtools"
-  time params.software.samtools_sort.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+  // module "samtools"
+  // time params.software.samtools_sort.time
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.bam"
   tag { sample_id }
+  label "samtools"
+
 
   input:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") from INDEXED_SAMPLES
@@ -487,9 +542,11 @@ process samtools_sort {
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") into SORTED_FOR_INDEX
 
+    // samtools sort -o ${sample_id}_vs_${params.input.reference_prefix}.bam -O bam ${sample_id}_vs_${params.input.reference_prefix}.sam
+
   script:
     """
-    samtools sort -o ${sample_id}_vs_${params.input.reference_prefix}.bam -O bam ${sample_id}_vs_${params.input.reference_prefix}.sam
+    samtools sort -o ${sample_id}_vs_${params.input.reference_prefix}.bam -O bam ${sample_id}_vs_${params.input.reference_prefix}.sam -T temp
     """
 }
 
@@ -501,10 +558,11 @@ process samtools_sort {
  * depends: samtools_index
  */
 process samtools_index {
-  module "samtools"
-  time params.software.samtools_index.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode, pattern: "*.bam.log"
+  // module "samtools"
+  // time params.software.samtools_index.time
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
   tag { sample_id }
+  label "samtools"
 
   input:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") from SORTED_FOR_INDEX
@@ -528,17 +586,21 @@ process samtools_index {
  * depends: samtools_index
  */
 process stringtie {
-  module "stringtie"
-  time params.software.stringtie.time
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+  // module "stringtie"
+  // time params.software.stringtie.time
   tag { sample_id }
-  //label "multithreaded"
+
+  label "multithreaded"
+  label "stringtie"
+
 
   input:
     // We don't really need the .bam file, but we want to ensure
     // this process runs after the samtools_index step so we
     // require it as an input file.
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") from BAM_INDEXED_FOR_STRINGTIE
+    file gtf_file from Channel.fromPath("${params.input.reference_path}*.gtf").first()
+
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into STRINGTIE_GTF
@@ -550,7 +612,7 @@ process stringtie {
     -p ${params.execution.threads} \
     -e \
     -o ${sample_id}_vs_${params.input.reference_prefix}.gtf \
-    -G ${params.input.reference_path}/${params.input.reference_prefix}.gtf \
+    -G ${genome_file} \
     -A ${sample_id}_vs_${params.input.reference_prefix}.ga \
     -l ${sample_id} ${sample_id}_vs_${params.input.reference_prefix}.bam
     """
@@ -561,8 +623,8 @@ process stringtie {
 /**
  * Generates the final FPKM file
  */
-process hisat_fpkm_or_tpm {
-  publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+process fpkm_or_tpm {
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
 
   input:

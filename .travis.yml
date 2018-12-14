@@ -1,0 +1,35 @@
+branches:
+  only:
+    - issue_38_docker_integration
+
+
+sudo: required
+jdk: openjdk8
+
+services:
+  - docker
+
+
+# Commands which must be executed before installing dependencies.
+before_install:
+  - docker pull systemsgenetics/gemmaker-docker:development
+
+
+# Install all dependencies here.
+install:
+  - sudo apt-get -qq update
+  - sudo apt-get -qq -y install graphviz realpath
+  - curl -fsSL get.nextflow.io | bash
+  - mkdir -p ~/bin; cp nextflow ~/bin
+  - mkdir work/
+  - chmod -R 777 work/
+
+
+# Commands that must run before any tests are executed.
+before_script:
+  - cp nextflow.config.example nextflow.config
+
+
+# Commands here should determine whether the build fails or not.
+script:
+  - nextflow run main.nf -with-docker systemsgenetics/gemmaker-docker:development

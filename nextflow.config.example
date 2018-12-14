@@ -11,190 +11,39 @@ defaultBranch = "master"
 nextflowVersion = ">=0.32.0"
 }
 
-/**
-* Parameters
-*/
-params
-{
 
-  /**
-  * Input
-  *
-  * Parameters for input files and directories.
-  */
-  input
-  {
-    //
-    // The path (full or relative) to the list of fastq_ids to be downloaded
-    // from NCBI. This must be a text file with one SRR/DRR/ERR number per line.
-    // No blank lines are allowed
-    // If no remote files are to be downloaded, set parameter as "none"
-    // "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
-    remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
-
-    //
-    // The glob that retrieves locally stored "fastq" files
-    // An example of a proper glob to retreive files can be seen below as the
-    // default. This glob pattern will find all files that have an ending of
-    // "_1.fastq" or "_2.fastq" in the subdirectories of the folder "Sample".
-    // If no local files are to be used, set parameter as "none"
-    //"${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
-    local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
-
-    //
-    // The full file system path of the directory containing the genome reference
-    // files. The reference genome is provided to this workflow via a set of files
-    // in a single directory. The list of files includes:
-    //
-    // 1) A FASTA file containing the genomic sequence
-    // 2) Hisat2 index files for the reference, which must be created with bisat2-bulid
-    // 3) A GTF file containing the genes annotated within hte genome
-    //
-    // All files for the reference genome must begin with the same file prefix. For
-    // example, if the prefix is TAIR10_Araport11 then the following files should be
-    // present all with "TAIR10_Araport11" as the file prefix:
-    // TAIR10_Araport11.fna, TAIR10_Araport11.1.ht2, TAIR10_Araport11.2.ht2, (with
-    // potentially more hisat2 index files), and TAIR10_Araport11.gtf.
-    // "${PWD}/examples/reference/"
-
-    reference_path = "${PWD}/examples/reference/"
-    //
-    // The prefix (used by hisat2-build) for the genome reference files. Note:
-    // all files in the reference directory must have this prefix as well.
-    // "GCA_002793175.1_ASM279317v1_genomic"
+params {
+  input {
+    remote_list_path = "none"
+    local_samples_path = "${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq"
+    reference_path = "${PWD}/examples/LocalRunExample/reference/"
     reference_prefix = "CORG"
   }
 
-  /**
-  * Output
-  *
-  * Parameters for output files and directories.
-  */
-  output
-  {
-    outputdir_sample_id = { "${PWD}/${sample_id}" }
+  output {
+    dir = "${PWD}/output"
+    sample_dir = { "${params.output.dir}/${sample_id}" }
     publish_mode = "link"
   }
 
-  /**
-  * Execution
-  *
-  * Parameters for the executor, primarily for non-local executors.
-  */
-  execution
-  {
-    //
-    //  Maximum number of processes to execute at once
-    //
+  // TODO: Consider moving to profiles.
+  execution {
+
     queue_size = 100
-
-    //
-    //  Number of threads for multi-threaded processes
-    //
     threads = 1
-
-    //
-    //  Number of times to resubmit a failed process before terminating
-    //  the entire workflow
-    //
-    max_retries = 2
   }
 
-  /**
-  * Software
-  *
-  * Parameters specific to each process in the workflow.
-  */
-  software
-  {
-    /**
-    * fastq_dump
-    *
-    * retreives fastq files from NCBI
-    */
-    fastq_dump
-    {
-      //
-      //  Time allowed for fastq_dump
-      //
-      time = "48h"
-    }
 
-    /**
-    * fastqc_1
-    *
-    * FASTQC is a software that generates reports on read data. It looks at
-    * quality, GC content, and much more. This nextflow pipeline runs fastQC
-    * two times, once before Trimmomatic, and once after.
-    */
-    fastqc_1
-    {
-      //
-      //  Time allowed for fastqc_1 (fastqc prior to trimmomatic)
-      //
-      time = "24h"
-    }
+  // TODO: Consider moving to profiles.
+  software {
+    trimmomatic {
 
-    /**
-    * Parameters for the trimmomatic software.
-    *
-    * Trimmomatic is used to clean low quality ends and adapters
-    * from sequence data.
-    */
-    trimmomatic
-    {
-      //
-      //  Time allowed for trimmomatic
-      //
-      time = "72h"
-
-      //
-      // The location of the trimmomatic clipping files.
-      //
       clip_path = "${PWD}/files/fasta_adapter.txt"
-
-      //
-      // The minimum read length to be used taken as a percentage of the mean of
-      // each sample. This is different than how Trimmomatic normally does this
-      // step. This is so that many samples of different length reads can be
-      // processed at the same time.
-      //
       MINLEN = "0.7"
-
-      //
-      // Quality score, can be "-phred33", "-phred64" or empty "".
-      //
-      // Leaving this option empty will cause different behavior depending on
-      // your version of Trimmomatic. Prior to v0.32, phred64 is used by default.
-      // Since v0.32, the quality encoding is determined automatically if left blank.
-      //
-      // The recommended method is to use trimmomatic v0.32 or newer and leave this
-      // option blank, in case you have samples with both types of encoding.
-      //
       quality = ""
-
-      //
-      // Trimmomatic options for how to process each read. See documentation at:
-      // http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf
-      //
       SLIDINGWINDOW = "4:15"
       LEADING = "3"
       TRAILING = "6"
-    }
-
-    /**
-    * fastqc_2
-    *
-    * FASTQC is a software that generates reports on read data. It looks at
-    * quality, GC content, and much more. This nextflow pipeline runs fastQC
-    * two times, once before Trimmomatic, and once after.
-    */
-    fastqc_2
-    {
-      //
-      //  Time allowed for fastqc_2 (fastqc after trimmomatic)
-      //
-      time = "48h"
     }
 
 
@@ -217,66 +66,8 @@ params
     }
 
 
+    fpkm_or_tpm {
 
-
-    hisat2
-    {
-      //
-      //  Time allowed for hisat2
-      //
-      time = "48h"
-    }
-
-    /**
-    * samtools_sort
-    *
-    * Sorts the SAM alignment file from hisat2 and converts it to a binary BAM
-    * file
-    */
-    samtools_sort
-    {
-      //
-      //  Time allowed for samtools_sort
-      //
-      time = "48h"
-    }
-
-    /**
-    * samtools_index
-    *
-    * Indexes the BAM alignment file
-    */
-    samtools_index
-    {
-      //
-      //  Time allowed for samtools_index
-      //
-      time = "12h"
-    }
-
-    /**
-    * stringtie
-    *
-    * Generates expression level transcript abundance.
-    */
-    stringtie
-    {
-      //
-      //  Time allowed for stringtie
-      //
-      time = "12h"
-    }
-
-    /**
-    * fpkm_or_tpm
-    *
-    * Creates fpkm and/or tpm file from stringtie *.ga
-    */
-    fpkm_or_tpm
-    {
-      //
-      //  Should this workflow output fpkm and/or tpm?
-      //
       fpkm = true
       tpm = true
     }
@@ -284,41 +75,90 @@ params
 }
 
 
+report {
+  file = "${params.output.dir}/report.html"
+}
 
-/**
-* Trace
-*
-* The following instructs nextflow to collect performance data. You can use
-* this data to generate trace reports. See the Tracing and Visualization section
-* of the Nextflow Documentation for more information.
-*
-* Most likely you do not need to change these settings unless you are familiar
-* with how Nextflow collects trace data and you specifically want to tweak it.
-*/
-trace
-{
-  fields = "task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes"
-  raw = true
+timeline {
+  file = "${params.output.dir}/timeline.html"
 }
 
 
+trace {
 
-/**
-* Nextflow can be executed on any number of high-performance computing
-* infrastructures.  The profile section allows you to customize execution
-* of this workflow for any number of systems.  Please see the Nextflow
-* documentation for a complete list of settings.  Here we provide a few
-* critical settings as well as some examples.
-*/
-profiles
-{
-  //
-  // The standard profile is for use on a local machine. It will run
-  // each process as a literal process on the machine.
-  //
-  standard
-  {
-    process.executor = "local"
+  fields = "task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes"
+  file = "${params.output.dir}/trace.txt"
+  raw = true
+}
+
+process {
+
+  withLabel:retry {
+    process.maxRetries = 3
+    process.error_strategy = "ignore"
+    errorStrategy = { "${task.attempt}" == "${task.max_retries}" ? "retry" : "${task.error_strategy}" }
+  }
+
+
+  withLabel:sratoolkit {
+    container = 'systemsgenetics/sratoolkit:0.38'
+    time = "48h"
+    module = false
+  }
+  withLabel:python3scripts {
+    container = 'systemsgenetics/python3scripts:1.0.0'
+    time = "1h"
+  }
+  withLabel:fastqc {
+    container = 'systemsgenetics/fastqc:0.11.7'
+    time = "24h"
+  }
+  withLabel:trimmomatic {
+    container = 'systemsgenetics/trimmomatic:0.38'
+    time = "72h"
+  }
+  withLabel:hisat2 {
+    container = 'systemsgenetics/hisat2:2.1.0'
+    time = "48h"
+  }
+  withLabel:samtools {
+    container = 'systemsgenetics/samtools:v1.9'
+    time = "48h"
+  }
+  withLabel:stringtie {
+    container = 'systemsgenetics/stringtie:1.3.4d'
+    time = "48h"
+  }
+  withLabel:rate_limit {
+    maxForks = 1
+  }
+}
+
+
+profiles {
+  standard {
+    process {
+      executor = "local"
+    }
+  }
+
+  testing {
+    process.error_strategy = "terminate"
+    process.max_retries = 1
+  }
+
+  inDocker {
+    docker {
+        enabled = true
+        fixOwnership = true
+        runOptions = '-u $(id -u):$(id -g)'
+    }
+  }
+
+  inSingularity {
+    singularity {
+        enabled = true
+    }
   }
 
   //
@@ -334,14 +174,33 @@ profiles
   // and "mem" options in PBS Professional, so we must specify these resources
   // using "clusterOptions" instead of the "cpus" and "mem" directives.
   //
-  pbs
-  {
-    process
-    {
+
+  pbs {
+    process {
+      withLabel:sratoolkit {
+        module = "sratoolkit"
+      }
+      withLabel:python3scripts {
+        module = "python3"
+      }
+      withLabel:fastqc {
+        module = "fastQC"
+      }
+      withLabel:trimmomatic {
+        module = "trimmomatic"
+      }
+      withLabel:hisat2 {
+        module = "hisat2"
+      }
+      withLabel:samtools {
+        module = "samtools"
+      }
+      withLabel:stringtie {
+        module = "stringtie"
+      }
+      
       executor = "pbs"
       time = "8h"
-      errorStrategy = "retry"
-      maxRetries = "${params.execution.max_retries}"
       scratch = true
       stageInMode = "copy"
 
@@ -372,8 +231,14 @@ profiles
       executor = "slurm"
       queue = "ficklin"
       time = "4h"
-      errorStrategy = "retry"
-      maxRetries = "${params.execution.max_retries}"
+
+
+      withLabel: "multithreaded" {
+        cpus = "${params.execution.threads}"
+      }
+      withLabel: "!multithreaded" {
+        cpus = 1
+      }
 
     }
     executor
