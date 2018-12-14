@@ -1,15 +1,16 @@
 /**
- * ===========================
- * GEMmaker Configuration File
- * ===========================
- *
- * This file provides the configuration settings for the GEMmaker workflow.
- */
+* ===========================
+* GEMmaker Configuration File
+* ===========================
+*
+* This file provides the configuration settings for the GEMmaker workflow.
+*/
 manifest {
-  mainScript = "main.nf"
-  defaultBranch = "master"
-  nextflowVersion = ">=0.32.0"
+mainScript = "main.nf"
+defaultBranch = "master"
+nextflowVersion = ">=0.32.0"
 }
+
 
 params {
   input {
@@ -27,13 +28,16 @@ params {
 
   // TODO: Consider moving to profiles.
   execution {
+
     queue_size = 100
     threads = 1
   }
 
+
   // TODO: Consider moving to profiles.
   software {
     trimmomatic {
+
       clip_path = "${PWD}/files/fasta_adapter.txt"
       MINLEN = "0.7"
       quality = ""
@@ -41,7 +45,29 @@ params {
       LEADING = "3"
       TRAILING = "6"
     }
+
+
+    /**
+    * Alignment
+    *
+    * User Chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
+    * processes "samtools_sort", "samtools_index" and "stringtie" will also be
+    * done. All processes will end with a gene abundance file.
+    * Aligns reads to the reference genome.
+    */
+    alignment
+    {
+      //
+      // hisat2 = 0
+      // Kallisto = 1
+      // Salmon = 2
+      //
+      which_alignment = 0
+    }
+
+
     fpkm_or_tpm {
+
       fpkm = true
       tpm = true
     }
@@ -57,7 +83,9 @@ timeline {
   file = "${params.output.dir}/timeline.html"
 }
 
+
 trace {
+
   fields = "task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes"
   file = "${params.output.dir}/trace.txt"
   raw = true
@@ -70,6 +98,7 @@ process {
     process.error_strategy = "ignore"
     errorStrategy = { "${task.attempt}" == "${task.max_retries}" ? "retry" : "${task.error_strategy}" }
   }
+
 
   withLabel:sratoolkit {
     container = 'systemsgenetics/sratoolkit:0.38'
@@ -145,6 +174,7 @@ profiles {
   // and "mem" options in PBS Professional, so we must specify these resources
   // using "clusterOptions" instead of the "cpus" and "mem" directives.
   //
+
   pbs {
     process {
       withLabel:sratoolkit {
@@ -168,20 +198,23 @@ profiles {
       withLabel:stringtie {
         module = "stringtie"
       }
-
+      
       executor = "pbs"
       time = "8h"
       scratch = true
       stageInMode = "copy"
 
-      withLabel: "multithreaded" {
+      withLabel: "multithreaded"
+      {
         clusterOptions = "-l select=1:phase=4:mem=8gb:ncpus=${params.execution.threads}"
       }
-      withLabel: "!multithreaded" {
+      withLabel: "!multithreaded"
+      {
         clusterOptions = "-l select=1:phase=4:mem=2gb:ncpus=2"
       }
     }
-    executor {
+    executor
+    {
       queueSize = "${params.execution.queue_size}"
     }
   }
@@ -191,11 +224,14 @@ profiles {
   // an example for execution of this workflow on Kamiak with some
   // defaults for all steps of the workflow.
   //
-  slurm {
-    process {
+  slurm
+  {
+    process
+    {
       executor = "slurm"
-      queue = {users queue}
+      queue = "ficklin"
       time = "4h"
+
 
       withLabel: "multithreaded" {
         cpus = "${params.execution.threads}"
@@ -203,8 +239,10 @@ profiles {
       withLabel: "!multithreaded" {
         cpus = 1
       }
+
     }
-    executor {
+    executor
+    {
       queueSize = "${params.execution.queue_size}"
     }
   }
