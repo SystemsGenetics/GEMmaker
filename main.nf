@@ -183,6 +183,145 @@ process fastqc_1 {
   """
 }
 
+/**
+  * THIS IS WHERE THE SPLIT HAPPENS FOR hisat2 vs Kallisto vs Salmon
+  *
+  * Information about "choice" split operator (to be deleted before final
+  * GEMmaker release)
+ */
+
+ HISAT2_CHANNEL = Channel.create()
+ KALLISTO_CHANNEL = Channel.create()
+ SALMON_CHANNEL  = Channel.create()
+ MERGED_FASTQC_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment.which_alignment }
+
+/**
+ * Performs KALLISTO alignemnt of fastq files
+ *
+ *
+ */
+ process kallisto {
+   module "kallisto"
+   // time params.software.hisat2.time
+   publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+   tag { sample_id }
+
+   input:
+     set val(sample_id), file(pass_files) from KALLISTO_CHANNEL
+
+   output:
+     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
+
+   script:
+   """
+   if [ -e ${sample_id}_2.fastq ]; then
+    kallisto quant \
+      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Kallisto.indexed \
+      -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
+      ${sample_id}_1.fastq \
+      ${sample_id}_2.fastq
+
+
+
+   else
+     kallisto quant \
+      --single \
+      -l 70 \
+      -s .0000001 \
+      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Kallisto.indexed \
+      -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
+      ${sample_id}_1.fastq
+
+   fi
+
+   """
+ }
+
+ /**
+  * Generates the final TPM file for Kallisto
+  */
+ process kallisto_tpm {
+   publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+   tag { sample_id }
+
+   input:
+     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from KALLISTO_GA
+
+   output:
+     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into KALLISTO_TPM
+
+   script:
+     """
+     awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+     """
+ }
+
+
+
+
+ /**
+  * Performs SALMON alignemnt of fastq files
+  *
+  *
+  */
+  process salmon {
+    module "salmon"
+    // time params.software.hisat2.time
+    publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+    tag { sample_id }
+
+    input:
+      set val(sample_id), file(pass_files) from SALMON_CHANNEL
+
+    output:
+      set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into SALMON_GA
+
+    script:
+    """
+    if [ -e ${sample_id}_2.fastq ]; then
+      salmon quant \
+      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Salmon.indexed \
+      -l A \
+      -1 ${sample_id}_1.fastq \
+      -2 ${sample_id}_2.fastq \
+      -p 8 \
+      -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
+      --minAssignedFrags 1
+
+
+    else
+      salmon quant \
+      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Salmon.indexed \
+      -l A \
+      -r ${sample_id}_1.fastq \
+      -p 8 \
+      -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
+      --minAssignedFrags 1
+
+    fi
+
+    """
+  }
+
+  /**
+   * Generates the final TPM file for Salmon
+   */
+  process salmon_tpm {
+    publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+    tag { sample_id }
+
+    input:
+      set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from SALMON_GA
+
+    output:
+      file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into SALMON_TPM
+
+    script:
+      """
+      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+      """
+  }
+
 
 
 /**
@@ -204,7 +343,7 @@ process trimmomatic {
    //label "multithreaded"
 
    input:
-     set val(sample_id), file("${sample_id}_?.fastq") from MERGED_FASTQC_SAMPLES
+     set val(sample_id), file("${sample_id}_?.fastq") from HISAT2_CHANNEL
 
    output:
      set val(sample_id), file("${sample_id}_??_trim.fastq") into TRIMMED_SAMPLES
@@ -276,143 +415,6 @@ process fastqc_2 {
 }
 
 /**
-  * THIS IS WHERE THE SPLIT HAPPENS FOR hisat2 vs Kallisto vs Salmon
-  *
-  * Information about "choice" split operator (to be deleted before final
-  * GEMmaker release)
- */
-
- HISAT2_CHANNEL = Channel.create()
- KALLISTO_CHANNEL = Channel.create()
- SALMON_CHANNEL  = Channel.create()
- TRIMMED_FASTQC_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment.which_alignment }
-
-/**
- * Performs KALLISTO alignemnt of fastq files
- *
- *
- */
- process kallisto {
-   module "kallisto"
-   // time params.software.hisat2.time
-   publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
-   tag { sample_id }
-
-   input:
-     set val(sample_id), file(pass_files) from KALLISTO_CHANNEL
-
-   output:
-     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
-
-   script:
-   """
-   if [ -e ${sample_id}_2p_trim.fastq ]; then
-    kallisto quant \
-      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Kalisto.indexed \
-      -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
-      ${sample_id}_1p_trim.fastq \
-      ${sample_id}_2p_trim.fastq
-
-
-   else
-     kallisto quant \
-      --single \
-      -l 70 \
-      -s .0000001 \
-      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Kalisto.indexed \
-      -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
-      ${sample_id}_1u_trim.fastq
-
-   fi
-
-   """
- }
-
- /**
-  * Generates the final TPM file for Kallisto
-  */
- process kallisto_tpm {
-   publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
-   tag { sample_id }
-
-   input:
-     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from KALLISTO_GA
-
-   output:
-     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into KALLISTO_TPM
-
-   script:
-     """
-     awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
-     """
- }
-
-
-
-
- /**
-  * Performs SALMON alignemnt of fastq files
-  *
-  *
-  */
-  process salmon {
-    module "salmon"
-    // time params.software.hisat2.time
-    publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
-    tag { sample_id }
-
-    input:
-      set val(sample_id), file(pass_files) from SALMON_CHANNEL
-
-    output:
-      set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into SALMON_GA
-
-    script:
-    """
-    if [ -e ${sample_id}_2p_trim.fastq ]; then
-      salmon quant \
-      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Salmon.indexed \
-      -l A \
-      -1 ${sample_id}_1p_trim.fastq \
-      -2 ${sample_id}_2p_trim.fastq \
-      -p 8 \
-      -o ${sample_id}_vs_${params.input.reference_prefix}.ga
-
-
-    else
-      salmon quant \
-      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Salmon.indexed \
-      -l A \
-      -r ${sample_id}_1u_trim.fastq \
-      -p 8 \
-      -o ${sample_id}_vs_${params.input.reference_prefix}.ga
-
-    fi
-
-    """
-  }
-
-  /**
-   * Generates the final TPM file for Salmon
-   */
-  process salmon_tpm {
-    publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
-    tag { sample_id }
-
-    input:
-      set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from SALMON_GA
-
-    output:
-      file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into SALMON_TPM
-
-    script:
-      """
-      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.tpm
-      """
-  }
-
-
-/**
  * Performs hisat2 alignment of fastq files to a genome reference
  *
  * depends: trimmomatic
@@ -425,7 +427,7 @@ process hisat2 {
   //label "multithreaded"
 
   input:
-   set val(sample_id), file(input_files) from HISAT2_CHANNEL
+   set val(sample_id), file(input_files) from TRIMMED_FASTQC_SAMPLES
 
   output:
    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES

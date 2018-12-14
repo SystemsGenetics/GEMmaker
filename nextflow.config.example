@@ -30,7 +30,7 @@ params
     // No blank lines are allowed
     // If no remote files are to be downloaded, set parameter as "none"
     // "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
-    remote_list_path = "none"
+    remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
 
     //
     // The glob that retrieves locally stored "fastq" files
@@ -38,8 +38,8 @@ params
     // default. This glob pattern will find all files that have an ending of
     // "_1.fastq" or "_2.fastq" in the subdirectories of the folder "Sample".
     // If no local files are to be used, set parameter as "none"
-    //
-    local_samples_path = "${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq"
+    //"${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq"
+    local_samples_path = ${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq"
 
     //
     // The full file system path of the directory containing the genome reference
@@ -55,9 +55,9 @@ params
     // present all with "TAIR10_Araport11" as the file prefix:
     // TAIR10_Araport11.fna, TAIR10_Araport11.1.ht2, TAIR10_Araport11.2.ht2, (with
     // potentially more hisat2 index files), and TAIR10_Araport11.gtf.
-    // "${PWD}/examples/RemoteRunExample/reference/"
+    // "${PWD}/examples/reference/"
 
-    reference_path = "${PWD}/examples/LocalRunExample/reference/"
+    reference_path = "${PWD}/examples/reference/"
     //
     // The prefix (used by hisat2-build) for the genome reference files. Note:
     // all files in the reference directory must have this prefix as well.
@@ -248,7 +248,7 @@ params
       // Kallisto = 1
       // Salmon = 2
       //
-      which_alignment = 1
+      which_alignment = 0
     }
 
 
@@ -405,19 +405,11 @@ profiles
     process
     {
       executor = "slurm"
-      queue = "test"
+      queue = "ficklin"
       time = "4h"
       errorStrategy = "retry"
       maxRetries = "${params.execution.max_retries}"
 
-      withLabel: "multithreaded"
-      {
-        cpus = ${params.execution.threads}
-      }
-      withLabel: "!multithreaded"
-      {
-        cpus = 1
-      }
     }
     executor
     {
