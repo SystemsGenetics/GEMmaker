@@ -261,6 +261,14 @@ gene_Alpha increased.</p>
 located on NCBI, and is unusually small, which makes it useful as an
 example. This datasset was selected as an example because of it’s small
 size which can be run on a desktop computer.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">NCBI has all RNA-seq quality score data stored as Phred 33, and by default.
+<a class="reference external" href="https://ncbi.github.io/sra-tools/fastq-dump.html">fastq-dump</a> will download
+it this way. This is preferable, as Phred33 is the current standard. This
+workflow, however, is set up to automatically detect if data is Phred 33 or
+64, so it should not matter how quality scores are stored.</p>
+</div>
 <div class="section" id="id1">
 <h3>Reference directory<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>The reference directory containing the genome data for the this example

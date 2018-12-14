@@ -110,6 +110,14 @@ located on NCBI, and is unusually small, which makes it useful as an
 example. This datasset was selected as an example because of it's small
 size which can be run on a desktop computer.
 
+.. note::
+
+  NCBI has all RNA-seq quality score data stored as Phred 33, and by default.
+  `fastq-dump <https://ncbi.github.io/sra-tools/fastq-dump.html>`__ will download
+  it this way. This is preferable, as Phred33 is the current standard. This
+  workflow, however, is set up to automatically detect if data is Phred 33 or
+  64, so it should not matter how quality scores are stored.
+
 Reference directory
 ===================
 
