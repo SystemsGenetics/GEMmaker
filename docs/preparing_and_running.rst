@@ -67,24 +67,24 @@ Additional considerations:
 
    .. code:: bash
 
-   hisat2-build -f YourFastaFile.fna YourPrefix | tee > hisat2-build.log
+    hisat2-build -f YourFastaFile.fna YourPrefix | tee > hisat2-build.log
 
 -  The GTF file and the hisat2 index files must have the same prefix and
    this prefix must be identified in ``nextflow.config`` using the
    ``prefix`` parameter for ``hisat2-build``.
 
-   .. code:: bash
+    .. code:: bash
 
-   CORG.1.ht2
-CORG.2.ht2
-CORG.3.ht2
-CORG.4.ht2
-CORG.5.ht2
-CORG.6.ht2
-CORG.7.ht2
-CORG.8.ht2
-CORG.fna
-CORG.gtf
+      CORG.1.ht2
+      CORG.2.ht2
+      CORG.3.ht2
+      CORG.4.ht2
+      CORG.5.ht2
+      CORG.6.ht2
+      CORG.7.ht2
+      CORG.8.ht2
+      CORG.fna
+      CORG.gtf
 
 
 -  All of the genome annotation files must be in a directory and this
