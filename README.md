@@ -22,7 +22,7 @@ GEMmaker uses the following tools:
 - [MultiQC](http://multiqc.info/) (optional) v1.5:  Generate a full summary report for the entire workflow.
 
 ## Installation 
-See the online GEMmaker [Documentation](https://gemmaker.readthedocs.io/en/34-docs/)
+See the online GEMmaker [Documentation](https://gemmaker.readthedocs.io/en/latest/)
 
 ## Execution 
-See the online GEMmaker [Documentation](https://gemmaker.readthedocs.io/en/34-docs/)
+See the online GEMmaker [Documentation](https://gemmaker.readthedocs.io/en/latest/)
