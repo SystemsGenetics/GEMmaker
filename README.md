@@ -7,7 +7,7 @@
 GEMmaker is a [Nextflow](https://www.nextflow.io/) workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression (DGE) and gene co-expression network (GCN) analyses. This report is the MultiQC summary of the GEMmaker workflow results. The GEMmaker workflow currently supports Illumina RNA-seq datasets.
 
 
-## Software
+## Tools
 
 GEMmaker uses the following tools:
 
@@ -21,4 +21,8 @@ GEMmaker uses the following tools:
 - [stringTie](http://www.ccb.jhu.edu/software/stringtie/) v1.3.4d:  Performs gene expression quantification.
 - [MultiQC](http://multiqc.info/) (optional) v1.5:  Generate a full summary report for the entire workflow.
 
-Read the complete GEMmaker [Documentation](https://gemmaker.readthedocs.io/en/34-docs/)
+## Installation 
+See the online GEMmaker [Documentation](https://gemmaker.readthedocs.io/en/34-docs/)
+
+## Execution 
+See the online GEMmaker [Documentation](https://gemmaker.readthedocs.io/en/34-docs/)
