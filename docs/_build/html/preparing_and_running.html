@@ -84,12 +84,17 @@
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Running the Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nextflow_config.html">Customizing the Workflow</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Running your Data</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#sample-files">Sample Files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#reference-genome-files">Reference Genome Files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#executing-the-workflow">Executing the Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-1-rna-seq-sample-location">Step 1) RNA-seq sample location</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-2-aquire-reference-genome-files">Step 2) Aquire Reference Genome Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-3-executing-the-workflow">Step 3) Executing the Workflow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#performance-considerations">Performance Considerations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#generating-a-summary-report">Generating a Summary Report</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#generating-the-gene-expression-matrix-gem">Generating the Gene Expression Matrix (GEM)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-the-gem-in-other-analysis">Using the GEM in other Analysis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dge-analysis">DGE Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#network-analysis">Network Analysis</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -158,10 +163,10 @@
             
   <div class="section" id="running-your-data">
 <h1>Running your Data<a class="headerlink" href="#running-your-data" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="sample-files">
-<h2>Sample Files<a class="headerlink" href="#sample-files" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="step-1-rna-seq-sample-location">
+<h2>Step 1) RNA-seq sample location<a class="headerlink" href="#step-1-rna-seq-sample-location" title="Permalink to this headline">¶</a></h2>
 <p>GEMmaker supports processing of sample files that are already present on
-your local computer or samples that are already stored in the <a class="reference external" href="https://www.ncbi.nlm.nih.gov/sra">NCBI SRA
+your local computer or samples that are stored in the <a class="reference external" href="https://www.ncbi.nlm.nih.gov/sra">NCBI SRA
 repository</a>.</p>
 <ul class="simple">
 <li>For local sample files, identify a <a class="reference external" href="https://en.wikipedia.org/wiki/Glob_(programming)">glob
@@ -183,9 +188,10 @@ by running <code class="docutils literal"><span class="pre">vdb-config</span> <s
 Configuration</a>).</p>
 </div>
 </div>
-<div class="section" id="reference-genome-files">
-<h2>Reference Genome Files<a class="headerlink" href="#reference-genome-files" title="Permalink to this headline">¶</a></h2>
-<p>Download the genome annotation/reference files. You must have the
+<div class="section" id="step-2-aquire-reference-genome-files">
+<h2>Step 2) Aquire Reference Genome Files<a class="headerlink" href="#step-2-aquire-reference-genome-files" title="Permalink to this headline">¶</a></h2>
+<p>Download the genome annotation/reference files. These will differ depending on
+your organism that you are performing the analysis on. You must have the
 following:</p>
 <ul>
 <li><p class="first">A FASTA file containing the full genomic sequence (either
@@ -195,7 +201,10 @@ to reduce the size of the FASTA file to contain only those
 contigs/scaffolds with predicted annotated genes.</p>
 </li>
 <li><p class="first">A <a class="reference external" href="https://uswest.ensembl.org/info/website/upload/gff.html">GTF</a>
-file containing the gene models. Sometimes a genome assembly does not
+file containing the gene models.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>Sometimes a genome assembly does not
 provide a GTF file, but rather provides a
 <a class="reference external" href="https://uswest.ensembl.org/info/website/upload/gff.html">GFF3</a>
 file. You can convert the GFF file to a GTF file using the
@@ -206,17 +215,33 @@ convert a GFF3 to GTF is</p>
 <div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">gffread</span> <span class="p">[</span><span class="n">gff_file</span><span class="p">]</span> <span class="o">-</span><span class="n">T</span> <span class="o">-</span><span class="n">o</span> <span class="p">[</span><span class="n">gtf_file</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>where <code class="docutils literal"><span class="pre">[gff_file]</span></code> and <code class="docutils literal"><span class="pre">[gtf_file]</span></code> should be substituted for the
+<p class="last">where <code class="docutils literal"><span class="pre">[gff_file]</span></code> and <code class="docutils literal"><span class="pre">[gtf_file]</span></code> should be substituted for the
 names of your GFF3 and desired GTF file respectively.</p>
+</div>
 </li>
 </ul>
 <p>Additional considerations:</p>
-<ul class="simple">
-<li>You must have hisat2 index files of your genome sequence. These are
-constructed by using the <code class="docutils literal"><span class="pre">hisat2-build</span></code> command.</li>
-<li>The GTF file and the hisat2 index files must have the same prefix and
+<ul>
+<li><p class="first">You must have hisat2 index files of your genome sequence. These are
+constructed by using the <code class="docutils literal"><span class="pre">hisat2-build</span></code> command.</p>
+<p>hisat2-build -f YourFastaFile.fna YourPrefix | tee &gt; hisat2-build.log</p>
+</li>
+<li><p class="first">The GTF file and the hisat2 index files must have the same prefix and
 this prefix must be identified in <code class="docutils literal"><span class="pre">nextflow.config</span></code> using the
-<code class="docutils literal"><span class="pre">prefix</span></code> parameter for <code class="docutils literal"><span class="pre">hisat2-build</span></code>.</li>
+<code class="docutils literal"><span class="pre">prefix</span></code> parameter for <code class="docutils literal"><span class="pre">hisat2-build</span></code>.</p>
+<p>CORG.1.ht2</p>
+</li>
+</ul>
+<p>CORG.2.ht2
+CORG.3.ht2
+CORG.4.ht2
+CORG.5.ht2
+CORG.6.ht2
+CORG.7.ht2
+CORG.8.ht2
+CORG.fna
+CORG.gtf</p>
+<ul class="simple">
 <li>All of the genome annotation files must be in a directory and this
 directory must be identified in <code class="docutils literal"><span class="pre">nextflow.config</span></code> using the
 <code class="docutils literal"><span class="pre">ref</span> <span class="pre">&gt;</span> <span class="pre">path</span></code> paramter.</li>
@@ -229,8 +254,8 @@ This prefix is set for the <code class="docutils literal"><span class="pre">pref
 <code class="docutils literal"><span class="pre">SRA_IDS.txt</span></code> file which contains a list of SRA fastq_run_IDs to
 download from NCBI.</p>
 </div>
-<div class="section" id="executing-the-workflow">
-<h2>Executing the Workflow<a class="headerlink" href="#executing-the-workflow" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="step-3-executing-the-workflow">
+<h2>Step 3) Executing the Workflow<a class="headerlink" href="#step-3-executing-the-workflow" title="Permalink to this headline">¶</a></h2>
 <p>To execute the workflow on a local machine:</p>
 <div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">nextflow</span> <span class="n">run</span> <span class="n">main</span><span class="o">.</span><span class="n">nf</span> <span class="o">-</span><span class="n">profile</span> <span class="n">standard</span>
 </pre></div>
@@ -308,6 +333,22 @@ by providing a list of directories to the <code class="docutils literal"><span c
 feature may be useful if you split a set of input files into several
 GEMmaker runs and now you need to combine then. The script will produce
 a file named <code class="docutils literal"><span class="pre">GEM.txt</span></code> in the working directory.</p>
+</div>
+<div class="section" id="using-the-gem-in-other-analysis">
+<h2>Using the GEM in other Analysis<a class="headerlink" href="#using-the-gem-in-other-analysis" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="dge-analysis">
+<h3>DGE Analysis<a class="headerlink" href="#dge-analysis" title="Permalink to this headline">¶</a></h3>
+<p>Need to do research on:</p>
+</div>
+<div class="section" id="network-analysis">
+<h3>Network Analysis<a class="headerlink" href="#network-analysis" title="Permalink to this headline">¶</a></h3>
+<p>After construction of the GEM, network analysis can be performed.
+<a class="reference external" href="https://github.com/SystemsGenetics/KINC">KINC</a> (Knowledge Independent
+Network Construction) is a high performance gene co-expression  that can perform
+Pearson’s or Spearman’s correlation with K-means or Gaussian mixture models. KINC
+is a Qt/<a class="reference external" href="https://github.com/SystemsGenetics/ACE">ACE</a> application that is
+capable of running on GPU’s, making it fast and efficient.</p>
+</div>
 </div>
 </div>
 

@@ -2,11 +2,11 @@ Running your Data
 -----------------
 
 
-Sample Files
-~~~~~~~~~~~~
+Step 1) RNA-seq sample location
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 GEMmaker supports processing of sample files that are already present on
-your local computer or samples that are already stored in the `NCBI SRA
+your local computer or samples that are stored in the `NCBI SRA
 repository <https://www.ncbi.nlm.nih.gov/sra>`__.
 
 -  For local sample files, identify a `glob
@@ -27,10 +27,11 @@ repository <https://www.ncbi.nlm.nih.gov/sra>`__.
   by running ``vdb-config -i`` (see `SRA Toolkit
   Configuration <https://github.com/ncbi/sra-tools/wiki/Toolkit-Configuration>`__).
 
-Reference Genome Files
-~~~~~~~~~~~~~~~~~~~~~~
+Step 2) Aquire Reference Genome Files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Download the genome annotation/reference files. You must have the
+Download the genome annotation/reference files. These will differ depending on
+your organism that you are performing the analysis on. You must have the
 following:
 
 -  A FASTA file containing the full genomic sequence (either
@@ -39,29 +40,53 @@ following:
    to reduce the size of the FASTA file to contain only those
    contigs/scaffolds with predicted annotated genes.
 -  A `GTF <https://uswest.ensembl.org/info/website/upload/gff.html>`__
-   file containing the gene models. Sometimes a genome assembly does not
-   provide a GTF file, but rather provides a
-   `GFF3 <https://uswest.ensembl.org/info/website/upload/gff.html>`__
-   file. You can convert the GFF file to a GTF file using the
-   ``gffread`` program of
-   `cufflinks <http://cole-trapnell-lab.github.io/cufflinks/file_formats/>`__,
-   which you may have to download separately. An example command-line to
-   convert a GFF3 to GTF is
+   file containing the gene models.
 
-   .. code:: bash
+   .. note::
 
-    gffread [gff_file] -T -o [gtf_file]
+     Sometimes a genome assembly does not
+     provide a GTF file, but rather provides a
+     `GFF3 <https://uswest.ensembl.org/info/website/upload/gff.html>`__
+     file. You can convert the GFF file to a GTF file using the
+     ``gffread`` program of
+     `cufflinks <http://cole-trapnell-lab.github.io/cufflinks/file_formats/>`__,
+     which you may have to download separately. An example command-line to
+     convert a GFF3 to GTF is
 
-   where ``[gff_file]`` and ``[gtf_file]`` should be substituted for the
-   names of your GFF3 and desired GTF file respectively.
+     .. code:: bash
+
+      gffread [gff_file] -T -o [gtf_file]
+
+     where ``[gff_file]`` and ``[gtf_file]`` should be substituted for the
+     names of your GFF3 and desired GTF file respectively.
 
 Additional considerations:
 
 -  You must have hisat2 index files of your genome sequence. These are
    constructed by using the ``hisat2-build`` command.
+
+   .. code:: bash
+
+   hisat2-build -f YourFastaFile.fna YourPrefix | tee > hisat2-build.log
+
 -  The GTF file and the hisat2 index files must have the same prefix and
    this prefix must be identified in ``nextflow.config`` using the
    ``prefix`` parameter for ``hisat2-build``.
+
+   .. code:: bash
+
+   CORG.1.ht2
+CORG.2.ht2
+CORG.3.ht2
+CORG.4.ht2
+CORG.5.ht2
+CORG.6.ht2
+CORG.7.ht2
+CORG.8.ht2
+CORG.fna
+CORG.gtf
+
+
 -  All of the genome annotation files must be in a directory and this
    directory must be identified in ``nextflow.config`` using the
    ``ref > path`` paramter.
@@ -74,8 +99,8 @@ This prefix is set for the ``prefix`` parameter in
 ``SRA_IDS.txt`` file which contains a list of SRA fastq\_run\_IDs to
 download from NCBI.
 
-Executing the Workflow
-~~~~~~~~~~~~~~~~~~~~~~
+Step 3) Executing the Workflow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To execute the workflow on a local machine:
 
@@ -170,6 +195,23 @@ by providing a list of directories to the ``--source`` argument. This
 feature may be useful if you split a set of input files into several
 GEMmaker runs and now you need to combine then. The script will produce
 a file named ``GEM.txt`` in the working directory.
+
+Using the GEM in other Analysis
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+DGE Analysis
+============
+Need to do research on:
+
+Network Analysis
+================
+
+After construction of the GEM, network analysis can be performed.
+`KINC <https://github.com/SystemsGenetics/KINC>`__ (Knowledge Independent
+Network Construction) is a high performance gene co-expression  that can perform
+Pearson's or Spearman's correlation with K-means or Gaussian mixture models. KINC
+is a Qt/`ACE <https://github.com/SystemsGenetics/ACE>`__ application that is
+capable of running on GPU's, making it fast and efficient.
 
 .. |DOI| image:: https://zenodo.org/badge/114067776.svg
    :target: https://zenodo.org/badge/latestdoi/114067776
