@@ -470,7 +470,7 @@ process stringtie {
     -p ${params.execution.threads} \
     -e \
     -o ${sample_id}_vs_${params.input.reference_prefix}.gtf \
-    -G ${genome_file} \
+    -G ${gtf_file} \
     -A ${sample_id}_vs_${params.input.reference_prefix}.ga \
     -l ${sample_id} ${sample_id}_vs_${params.input.reference_prefix}.bam
     """
