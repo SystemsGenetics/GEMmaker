@@ -34,5 +34,17 @@ services:
 # Commands here should determine whether the build fails or not.
 script:
   # - nextflow run main.nf -with-docker systemsgenetics/gemmaker-docker:development
-  - docker build -t systemsgenetics/gemmaker:latest DockerFiles/base/1.0/
-  - docker build -t systemsgenetics/fastqc:0.11.7   DockerFiles/fastqc/0.11.7
+  - docker build -t systemsgenetics/gemmaker:latest       DockerFiles/base/1.0/
+  - docker build -t systemsgenetics/fastqc:0.11.7         DockerFiles/fastqc/0.11.7
+  - docker build -t systemsgenetics/hisat2:2.1.0          DockerFiles/hisat2/2.1.0/
+  - docker build -t systemsgenetics/python3scripts:1.0.0  DockerFiles/python3scripts/1.0.0
+  - docker build -t systemsgenetics/samtools:1.9          DockerFiles/samtools/1.9
+
+  # Run the workflow.
+
+  # Push the images.
+  - docker push systemsgenetics/gemmaker:latest
+  - docker push systemsgenetics/fastqc:latest
+  - docker push systemsgenetics/hisat2:2.1.0
+  - docker push systemsgenetics/python3scripts:1.0.0
+  - docker push systemsgenetics/samtools:1.9
