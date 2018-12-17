@@ -134,22 +134,16 @@ Performance Considerations
 For large experiments on an HPC system, it is important to make sure
 that you are effectively utilizing the resources of the system. There
 are a number of parameters in ``nextflow.config`` which can be used to
-increase performance based on the capabilities of your system: -
-``params.execution.threads``: All processes which support multithreading
+increase performance based on the capabilities of your system:
+
+- ``params.execution.threads``: All processes which support multithreading
 (such as trimmomatic) will use this number of threads. This setting
 should be determined by the number of cores per node on your system; for
 example, if your system has nodes with 16 cores per node then you could
-set the number of threads to 16 to make full use of those nodes. -
-``params.execution.queue_size``: Nextflow will only run 100 processes at
+set the number of threads to 16 to make full use of those nodes.
+- ``params.execution.queue_size``: Nextflow will only run 100 processes at
 a time by default, but you may be able to increase this value based on
-the queue limits of your system. - ``scratch``: If this directive is
-enabled in your profile, each process will attempt to use its own local
-disk space instead of the main working directory. If you are running the
-workflow from NFS storage then you may benefit greatly from this option,
-if the nodes on your system have sufficient local storage. This option
-can significantly reduce the amount of disk I/O on your NFS storage,
-since each process will only interact with the NFS storage at the
-beginning and end to transfer input and output files.
+the queue limits of your system.
 
 Generating a Summary Report
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

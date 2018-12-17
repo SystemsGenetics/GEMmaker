@@ -140,13 +140,13 @@ publish_mode
 ============
 
 publish mode for publishDir
-Options are the standard nextflow stage options. These are:
 
-- ``"link"``     Reccomended, this creates a hardlink of all files that should be published
-- ``"symlink"``  Use when hardlink is not possible.
-- ``"copy"``     Not recommended. This copies all files to desired publshdir
-  after they are created in the pipeline. Takes alot of memory and
-  will slow down pipeline drastically
+Options are the standard nextflow stage options:
+- ``"link"``     Recommended, creates a hardlink for each published file
+- ``"rellink"``  Use when hardlink is not possible.
+- ``"symlink"``  Use when hardlink is not possible (currently not compatible with iRODS).
+- ``"copy"``     Not recommended, copies each published file to publshDir after it is
+                 created in the pipeline. This option may slow the pipeline significantly.
 
 Default:
 
@@ -160,7 +160,7 @@ Execution
 queue_size
 ==========
 
-Maximum number of processes to execute at once
+Maximum number of processes to execute at once.
 
 Default:
 
@@ -171,7 +171,7 @@ Default:
 threads
 =======
 
-Number of threads for multi-threaded processes
+Number of threads for multi-threaded processes.
 
 Default:
 
@@ -181,11 +181,20 @@ Default:
 
 max_retries
 ===========
-Error strategy for when a process fails `max_retries` times. Can
-be ``"terminate"``, ``"finish"``, or ``"ignore"``.
+Number of times to resubmit a failed process before invoking the error strategy defined by ``error_strategy``.
 
 Default:
 
 .. code:: bash
 
-  max_retries = "ignore"
+  max_retries = "2"
+
+error_strategy
+==============
+Error strategy for when a process fails ``max_retries`` times. Can be ``"terminate"``, ``"finish"``, or ``"ignore"``.
+
+Default:
+
+.. code:: bash
+
+  error_strategy = "ignore"
