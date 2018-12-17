@@ -141,6 +141,7 @@ increase performance based on the capabilities of your system:
 should be determined by the number of cores per node on your system; for
 example, if your system has nodes with 16 cores per node then you could
 set the number of threads to 16 to make full use of those nodes.
+
 - ``params.execution.queue_size``: Nextflow will only run 100 processes at
 a time by default, but you may be able to increase this value based on
 the queue limits of your system.
