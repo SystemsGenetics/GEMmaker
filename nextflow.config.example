@@ -4,6 +4,11 @@
  * ===========================
  *
  * This file provides the configuration settings for the GEMmaker workflow.
+ *
+ * See the online GEMmaker documentation to learn how to set the parameters in this file at:
+ *
+ * https://gemmaker.readthedocs.io/en/latest/nextflow_config.html
+
  */
 manifest {
   mainScript = "main.nf"
@@ -15,7 +20,7 @@ params {
   input {
     remote_list_path = "none"
     local_samples_path = "${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq"
-    reference_path = "${PWD}/examples/LocalRunExample/reference/"
+    reference_path = "${PWD}/examples/LocalRunExample/reference"
     reference_prefix = "CORG"
   }
 
@@ -193,8 +198,9 @@ profiles {
   //
   slurm {
     process {
+      module = "singularity/2.4.2"
       executor = "slurm"
-      queue = {users queue}
+      queue = "default"
       time = "4h"
 
       withLabel: "multithreaded" {
@@ -206,6 +212,9 @@ profiles {
     }
     executor {
       queueSize = "${params.execution.queue_size}"
+    }
+    singularity {
+        enabled = true
     }
   }
 }

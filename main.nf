@@ -457,7 +457,7 @@ process stringtie {
     // this process runs after the samtools_index step so we
     // require it as an input file.
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") from BAM_INDEXED_FOR_STRINGTIE
-    file gtf_file from Channel.fromPath("${params.input.reference_path}*.gtf").first()
+    //file gtf_file from Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf")
 
 
   output:
