@@ -1,0 +1,11 @@
+# most gff files will have a bunch of lines up there
+# That is why I have put these here.
+# These lines are for our use only.
+# This is for an imaginary organism
+# That has but 6 genes.
+Chr1	Imagination_database	exon	1	100	.	.	.	transcript_id "Alpha.1"; gene_id "gene_Alpha"; gene_name "Alpha_encoder";
+Chr1	Imagination_database	exon	140	239	.	.	.	transcript_id "Beta.1"; gene_id "gene_Beta"; gene_name "Beta_transcription_factor";
+Chr2	Imagination_database	exon	1	100	.	.	.	transcript_id "Zeta.1"; gene_id "gene_Zeta"; gene_name "Zeta_chloroplasts";
+Chr3	Imagination_database	exon	1	101	.	.	.	transcript_id "Gamma.1"; gene_id "gene_Gamma"; gene_name "Gamma_rubisco";
+Chr3	Imagination_database	exon	102	203	.	.	.	transcript_id "Delta.1"; gene_id "gene_Delta"; gene_name "Delta_rubisco";
+Chr3	Imagination_database	exon	204	305	.	.	.	transcript_id "Epsilon.1"; gene_id "gene_Epsilon"; gene_name "Epsilon_rubisco";
