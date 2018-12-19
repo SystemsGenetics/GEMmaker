@@ -335,13 +335,14 @@ process hisat2 {
   // module "hisat2"
   // time params.software.hisat2.time
   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
+  stageInMode "link" 
   tag { sample_id }
   label "multithreaded"
   label "hisat2"
 
   input:
    set val(sample_id), file(input_files) from TRIMMED_FASTQC_SAMPLES
-   file reference from Channel.fromPath("${params.input.reference_path}*").toList()
+   file reference from Channel.fromPath("${params.input.reference_path}/*").toList()
 
   output:
    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES
@@ -349,6 +350,7 @@ process hisat2 {
 
   script:
    """
+     export HISAT2_INDEXES=${PWD}
      if [ -e ${sample_id}_2p_trim.fastq ]; then
        hisat2 \
          -x ${params.input.reference_prefix} \
@@ -448,6 +450,7 @@ process samtools_index {
 process stringtie {
   // module "stringtie"
   // time params.software.stringtie.time
+  stageInMode "link"
   tag { sample_id }
   label "multithreaded"
   label "stringtie"
@@ -457,7 +460,7 @@ process stringtie {
     // this process runs after the samtools_index step so we
     // require it as an input file.
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") from BAM_INDEXED_FOR_STRINGTIE
-    //file gtf_file from Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf")
+    file gtf_file from Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf")
 
 
   output:
