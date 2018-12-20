@@ -9,9 +9,11 @@
  *  + John Hadish
  *  + Tyler Biggs
  *  + Stephen Ficklin
+ *  + Ben Shealy
+ *  + Connor Wytko
  *
  * Summary:
- *   A workflow for processing a large amount of fastq_run_id data...
+ *   A workflow for processing a large amount of RNA-seq data
  */
 
 
@@ -39,7 +41,6 @@ Input Parameters:
 Output Parameters:
 ------------------
   Output directory:           ${params.output.dir}
-  Publishing mode:            ${params.output.publish_mode}
 
 
 Software Parameters:
@@ -47,7 +48,19 @@ Software Parameters:
   Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
   Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}
 
+
+Publishing Files:
+-----------------
+  Trimmed FASTQ files:  ${params.publish.keep_trimmed_fastq}
+  BAM Alignment files:  ${params.publish.keep_alignment_bam}
+
 """
+
+/**
+ * Create value channels that can be reused
+ */
+HISAT2_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}*.ht2*").collect()
+GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf").collect()
 
 
 /**
@@ -64,7 +77,25 @@ if (params.input.local_samples_path == "none") {
     .set { LOCAL_SAMPLES }
 }
 
+/**
+ * Set the pattern for publishing trimmed files
+ */
+trimmomatic_publish_pattern = "*.trim.log";
+if (params.publish.keep_trimmed_fastq == true) {
+  trimmomatic_publish_pattern = "{*.trim.log,*_trim.fastq}";
+}
 
+/**
+ * Set the pattern for publishing BAM files
+ */
+samtools_sort_publish_pattern = "*.log";
+if (params.publish.keep_alignment_bam == true) {
+  samtools_sort_publish_pattern = "*.bam";
+}
+samtools_index_publish_pattern = "*.log";
+if (params.publish.keep_alignment_bam == true) {
+  samtools_index_publish_pattern = "{*.log,*.bam.bai}";
+}
 
 /**
  * Remote fastq_run_id Input.
@@ -103,13 +134,10 @@ process fastq_dump {
   """
 }
 
-
-
 /**
  * Combine the remote and local samples into the same channel.
  */
 COMBINED_SAMPLES = DOWNLOADED_FASTQ_RUNS.mix( LOCAL_SAMPLES )
-
 
 
 /**
@@ -189,7 +217,7 @@ process SRR_combine {
 process fastqc_1 {
   // module "fastQC"
   // time params.software.fastqc_1.time
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
+  publishDir params.output.sample_dir, mode: 'symlink', pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -225,16 +253,14 @@ MERGED_FASTQC_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) 
  */
  process kallisto {
    // module "kallisto"
-   // time params.software.hisat2.time
-   publishDir params.output.sample_dir, mode: params.output.publish_mode
+   publishDir params.output.sample_dir, mode: 'symlink'
    tag { sample_id }
    label "kallisto"
-   stageInMode "link"
 
    input:
      set val(sample_id), file(pass_files) from KALLISTO_CHANNEL
-     //file reference from Channel.fromPath("${params.input.reference_path}/*").toList()
-     file kallisto_index from Channel.fromPath("${params.input.reference_path}${params.input.reference_prefix}.transcripts.Kallisto.indexed")
+     //file reference from file("${params.input.reference_path}/*").toList()
+     file kallisto_index from file("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Kallisto.indexed")
 
    output:
      set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
@@ -268,7 +294,7 @@ MERGED_FASTQC_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) 
   * Generates the final TPM file for Kallisto
   */
  process kallisto_tpm {
-   publishDir params.output.sample_dir, mode: params.output.publish_mode
+   publishDir params.output.sample_dir, mode: 'symlink'
    tag { sample_id }
 
    input:
@@ -293,11 +319,9 @@ MERGED_FASTQC_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) 
   */
   process salmon {
     // module "salmon"
-    // time params.software.hisat2.time
-    publishDir params.output.sample_dir, mode: params.output.publish_mode
+    publishDir params.output.sample_dir, mode: 'symlink'
     tag { sample_id }
     label "salmon"
-    stageInMode "link"
 
     input:
       set val(sample_id), file(pass_files) from SALMON_CHANNEL
@@ -341,7 +365,7 @@ MERGED_FASTQC_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) 
    * Generates the final TPM file for Salmon
    */
   process salmon_tpm {
-    publishDir params.output.sample_dir, mode: params.output.publish_mode
+    publishDir params.output.sample_dir, mode: 'symlink'
     tag { sample_id }
 
     input:
@@ -372,7 +396,7 @@ MERGED_FASTQC_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) 
 process trimmomatic {
    // module "trimmomatic"
    // time params.software.trimmomatic.time
-   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
+   publishDir params.output.sample_dir, mode: 'symlink', pattern: trimmomatic_publish_pattern
    tag { sample_id }
 
    label "multithreaded"
@@ -462,7 +486,7 @@ process trimmomatic {
 process fastqc_2 {
   // module "fastQC"
   // time params.software.fastqc_2.time
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
+  publishDir params.output.sample_dir, mode: 'symlink', pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -478,29 +502,31 @@ process fastqc_2 {
   """
 }
 
+
+
 /**
  * Performs hisat2 alignment of fastq files to a genome reference
  *
  * depends: trimmomatic
  */
 process hisat2 {
-  // module "hisat2"
   // time params.software.hisat2.time
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
+  publishDir params.output.sample_dir, mode: 'symlink', pattern: "*.log"
   tag { sample_id }
 
   label "multithreaded"
   label "hisat2"
-  stageInMode "link"
 
   input:
    set val(sample_id), file(input_files) from TRIMMED_FASTQC_SAMPLES
-   file reference from Channel.fromPath("${params.input.reference_path}*").toList()
+   file indexes from HISAT2_INDEXES
+   file gtf_file from GTF_FILE
 
   output:
    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES
    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam.log") into INDEXED_SAMPLES_LOG
-   set val(sample_id), file(input_files) into HISAT2_DONE_SAMPLES
+   set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into HISAT2_SAM_2_CLEAN
+   set val(sample_id), val(1) into HISAT2_DONE_SAMPLES
 
   script:
    """
@@ -546,7 +572,7 @@ process hisat2 {
 process samtools_sort {
   // module "samtools"
   // time params.software.samtools_sort.time
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.bam"
+  publishDir params.output.sample_dir, mode: 'symlink', pattern: samtools_sort_publish_pattern
   tag { sample_id }
   label "samtools"
 
@@ -556,6 +582,8 @@ process samtools_sort {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") into SORTED_FOR_INDEX
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") into SAMTOOLS_SORT_BAM_2_CLEAN
+    set val(sample_id), val(1) into SAMTOOLS_SORT_DONE_SAMPLES
 
     // samtools sort -o ${sample_id}_vs_${params.input.reference_prefix}.bam -O bam ${sample_id}_vs_${params.input.reference_prefix}.sam
 
@@ -575,7 +603,7 @@ process samtools_sort {
 process samtools_index {
   // module "samtools"
   // time params.software.samtools_index.time
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
+  publishDir params.output.sample_dir, mode: 'symlink', pattern: samtools_index_publish_pattern
   tag { sample_id }
   label "samtools"
 
@@ -584,6 +612,7 @@ process samtools_index {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") into BAM_INDEXED_FOR_STRINGTIE
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam.bai") into BAI_INDEXED_FILE
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam.log") into BAM_INDEXED_LOG
 
   script:
@@ -607,18 +636,18 @@ process stringtie {
 
   label "multithreaded"
   label "stringtie"
-  stageInMode "link"
 
   input:
     // We don't really need the .bam file, but we want to ensure
     // this process runs after the samtools_index step so we
     // require it as an input file.
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") from BAM_INDEXED_FOR_STRINGTIE
-    file gtf_file from Channel.fromPath("${params.input.reference_path}*.gtf").first()
+    file gtf_file from GTF_FILE
 
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into STRINGTIE_GTF
+    set val(sample_id), val(1) into STRINGTIE_DONE_SAMPLES
 
   script:
     """
@@ -627,7 +656,7 @@ process stringtie {
     -p ${params.execution.threads} \
     -e \
     -o ${sample_id}_vs_${params.input.reference_prefix}.gtf \
-    -G ${params.input.reference_path}${params.input.reference_prefix}.gtf \
+    -G $gtf_file \
     -A ${sample_id}_vs_${params.input.reference_prefix}.ga \
     -l ${sample_id} ${sample_id}_vs_${params.input.reference_prefix}.bam
     """
@@ -639,7 +668,7 @@ process stringtie {
  * Generates the final FPKM file
  */
 process fpkm_or_tpm {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: 'symlink'
   tag { sample_id }
 
   input:
@@ -669,23 +698,129 @@ process fpkm_or_tpm {
 
 // Merge the Trimmomatic samples with Hisat's signal that it is 
 // done so that we can remove these files.  
-// TRIMMED_SAMPLES_2_CLEAN.subscribe { println "Got: $it" }
 TRHIMIX = TRIMMED_SAMPLES_2_CLEAN.mix( HISAT2_DONE_SAMPLES )
-TRHIMIX.groupTuple(size: 2)
+TRHIMIX
+  .groupTuple(size: 2)
   .set { TRIMMED_CLEANUP_READY }
-//TRIMMED_CLEANUP_READY.subscribe { println "Got: $it" }
 
 /**
- * Removes trimmed fastq reads
+ * Cleans up trimmed fastq files. 
+ *
+ * Nextflow doesn't allow files to be removed from the 
+ * work directories that are used in Channels.  If it
+ * detects a different timestamp or change in file
+ * size than what was cached it will rerun the process.
+ * To trick Nextflow we will truncate the file to a 
+ * sparce file of size zero but masquerading as its 
+ * original size, we will also reset the original modify
+ * and access times.
  */
 process clean_trimmed {
   input:
-    set val(sample_id), file(fastq_files) from TRIMMED_CLEANUP_READY
+    // We input fastq_files as a file because we need the full path.
+    set val(sample_id), val(fastq_files) from TRIMMED_CLEANUP_READY
 
   script:
     """
-      for file in ${fastq_files}; do
-        echo "rm ${work_dir}/\${file}"
-      done
+    for file in ${fastq_files}
+    do
+      file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'` 
+      if [ ${params.publish.keep_trimmed_fastq} = false ]; then
+        if [ -e \$file ]; then
+          # Log some info about the file for debugging purposes
+          echo "cleaning \$file"
+          stat \$file
+          # Get file info: size, access and modify times 
+          size=`stat --printf="%s" \$file`
+          atime=`stat --printf="%X" \$file`
+          mtime=`stat --printf="%Y" \$file`
+          # Make the file size 0 and set as a sparse file
+          > \$file
+          truncate -s \$size \$file
+          # Reset the timestamps on the file
+          touch -a -d @\$atime \$file
+          touch -m -d @\$mtime \$file
+        fi
+      fi
+    done
     """
 }
+
+// Merge the HISAT sam file with samtools_sort signal that it is 
+// done so that we can remove these files.  
+HISSMIX = HISAT2_SAM_2_CLEAN.mix( SAMTOOLS_SORT_DONE_SAMPLES )
+HISSMIX
+  .groupTuple(size: 2)
+  .set { SAM_CLEANUP_READY }
+
+/**
+ * Clean up SAM files
+ */
+process clean_sam {
+  input:
+    // We input sam_files as a file because we need the full path.
+    set val(sample_id), val(sam_files) from SAM_CLEANUP_READY
+
+  script:
+    """
+    for file in ${sam_files}
+    do
+      file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'` 
+      if [ -e \$file ]; then
+        # Log some info about the file for debugging purposes
+        echo "cleaning \$file"
+        stat \$file
+        # Get file info: size, access and modify times 
+        size=`stat --printf="%s" \$file`
+        atime=`stat --printf="%X" \$file`
+        mtime=`stat --printf="%Y" \$file`
+        # Make the file size 0 and set as a sparse file
+        > \$file
+        truncate -s \$size \$file
+        # Reset the timestamps on the file
+        touch -a -d @\$atime \$file
+        touch -m -d @\$mtime \$file
+      fi
+    done
+    """
+}
+
+// Merge the samtools_sort bam file with stringtie signal that it is 
+// done so that we can remove these files.  
+SSSTMIX = SAMTOOLS_SORT_BAM_2_CLEAN.mix( STRINGTIE_DONE_SAMPLES )
+SSSTMIX
+  .groupTuple(size: 2)
+  .set { BAM_CLEANUP_READY }
+
+/**
+ * Clean up BAM files
+ */
+process clean_bam {
+  input:
+    // We input sam_files as a file because we need the full path.
+    set val(sample_id), val(bam_files) from BAM_CLEANUP_READY
+
+  script:
+    """
+    for file in ${bam_files}
+    do
+      file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
+      if [ -e \$file ]; then
+        # Log some info about the file for debugging purposes
+        echo "cleaning \$file"
+        stat \$file
+        # Get file info: size, access and modify times 
+        size=`stat --printf="%s" \$file`
+        atime=`stat --printf="%X" \$file`
+        mtime=`stat --printf="%Y" \$file`
+        # Make the file size 0 and set as a sparse file
+        > \$file
+        truncate -s \$size \$file
+        # Reset the timestamps on the file
+        touch -a -d @\$atime \$file
+        touch -m -d @\$mtime \$file
+      fi
+    done
+    """
+}
+
