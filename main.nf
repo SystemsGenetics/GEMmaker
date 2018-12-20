@@ -61,8 +61,7 @@ Publishing Files:
  */
 HISAT2_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}*.ht2*").collect()
 GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Kallisto.indexed").collect()
-SALMON_INDEXES = Channel.fromPath("${params.input.reference_path}${params.input.reference_prefix}*/*").collect()
+
 
 /**
  * Local Sample Input.
@@ -162,14 +161,26 @@ process SRR_to_sample_id {
   output:
     set stdout, file(pass_files) into GROUPED_BY_SAMPLE_ID mode flatten
 
+  script:
+
+  if( "$fastq_run_id".matches("[SDE]RR*") )
   """
-  if [[ "$fastq_run_id" == [SDE]RR* ]]; then
-    python3 ${PWD}/scripts/retrieve_sample_metadata.py $fastq_run_id
+  python3 retrieve_sample_metadata.py $fastq_run_id
+  """
 
   else
-    echo -n "Sample_$fastq_run_id"
-  fi
   """
+  echo -n "Sample_$fastq_run_id"
+  """
+
+  // """
+  // if [[ "$fastq_run_id" == [SDE]RR* ]]; then
+  //   python3 ${PWD}/scripts/retrieve_sample_metadata.py $fastq_run_id
+  //
+  //   echo -n "Sample_$fastq_run_id"
+  // else
+  // fi
+  // """
 }
 
 
@@ -260,8 +271,8 @@ MERGED_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { param
 
    input:
      set val(sample_id), file(pass_files) from KALLISTO_CHANNEL
-     file index from KALLISTO_INDEX
-
+     //file reference from file("${params.input.reference_path}/*").toList()
+     file kallisto_index from file("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Kallisto.indexed")
 
    output:
      set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
@@ -326,7 +337,7 @@ MERGED_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { param
 
     input:
       set val(sample_id), file(pass_files) from SALMON_CHANNEL
-      file indexes from SALMON_INDEXES
+      file salmon_index from Channel.fromPath("${params.input.reference_path}${params.input.reference_prefix}*/*").toList()
 
 
     output:

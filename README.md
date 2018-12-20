@@ -147,7 +147,5 @@ You can combine the results of multiple GEMmaker runs into a single GEM by provi
 ## Running with the Dockerfile
 
 ```bash
-nextflow run main.nf \
-  -with-docker systemsgenetics/gemmaker-docker:development
-    # --mount type=bind,source="$(pwd)"/work,target=/app \
+nextflow run main.nf -profile inDocker
 ```
