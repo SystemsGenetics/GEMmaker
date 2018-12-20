@@ -1,21 +1,22 @@
 /**
- * ===========================
- * GEMmaker Configuration File
- * ===========================
- *
- * This file provides the configuration settings for the GEMmaker workflow.
- */
+* ===========================
+* GEMmaker Configuration File
+* ===========================
+*
+* This file provides the configuration settings for the GEMmaker workflow.
+*/
 manifest {
-  mainScript = "main.nf"
-  defaultBranch = "master"
-  nextflowVersion = ">=0.32.0"
+mainScript = "main.nf"
+defaultBranch = "master"
+nextflowVersion = ">=0.32.0"
 }
+
 
 params {
   input {
-    remote_list_path = "none"
-    local_samples_path = "${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq"
-    reference_path = "${PWD}/examples/LocalRunExample/reference/"
+    remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
+    local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
+    reference_path = "${PWD}/examples/reference/"
     reference_prefix = "CORG"
   }
 
@@ -27,13 +28,16 @@ params {
 
   // TODO: Consider moving to profiles.
   execution {
+
     queue_size = 100
     threads = 1
   }
 
+
   // TODO: Consider moving to profiles.
   software {
     trimmomatic {
+
       clip_path = "${PWD}/files/fasta_adapter.txt"
       MINLEN = "0.7"
       quality = ""
@@ -41,7 +45,29 @@ params {
       LEADING = "3"
       TRAILING = "6"
     }
+
+
+    /**
+    * Alignment
+    *
+    * User Chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
+    * processes "samtools_sort", "samtools_index" and "stringtie" will also be
+    * done. All processes will end with a gene abundance file.
+    * Aligns reads to the reference genome.
+    */
+    alignment
+    {
+      //
+      // hisat2 = 0
+      // Kallisto = 1
+      // Salmon = 2
+      //
+      which_alignment = 1
+    }
+
+
     fpkm_or_tpm {
+
       fpkm = true
       tpm = true
     }
@@ -57,7 +83,9 @@ timeline {
   file = "${params.output.dir}/timeline.html"
 }
 
+
 trace {
+
   fields = "task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes"
   file = "${params.output.dir}/trace.txt"
   raw = true
@@ -71,8 +99,9 @@ process {
     errorStrategy = { "${task.attempt}" == "${task.max_retries}" ? "retry" : "${task.error_strategy}" }
   }
 
+
   withLabel:sratoolkit {
-    container = 'systemsgenetics/sratoolkit:0.38'
+    container = 'systemsgenetics/sratoolkit:2.8.2'
     time = "48h"
     module = false
   }
@@ -84,6 +113,13 @@ process {
     container = 'systemsgenetics/fastqc:0.11.7'
     time = "24h"
   }
+  withLabel:kallisto {
+    container = 'systemsgenetics/kallisto:0.45.0'
+  }
+  withLabel:salmon {
+    container = 'systemsgenetics/salmon:0.12.0'
+    time = "24h"
+  }
   withLabel:trimmomatic {
     container = 'systemsgenetics/trimmomatic:0.38'
     time = "72h"
@@ -93,7 +129,7 @@ process {
     time = "48h"
   }
   withLabel:samtools {
-    container = 'systemsgenetics/samtools:v1.9'
+    container = 'systemsgenetics/samtools:1.9'
     time = "48h"
   }
   withLabel:stringtie {
@@ -145,6 +181,7 @@ profiles {
   // and "mem" options in PBS Professional, so we must specify these resources
   // using "clusterOptions" instead of the "cpus" and "mem" directives.
   //
+
   pbs {
     process {
       withLabel:sratoolkit {
@@ -174,14 +211,17 @@ profiles {
       scratch = true
       stageInMode = "copy"
 
-      withLabel: "multithreaded" {
+      withLabel: "multithreaded"
+      {
         clusterOptions = "-l select=1:phase=4:mem=8gb:ncpus=${params.execution.threads}"
       }
-      withLabel: "!multithreaded" {
+      withLabel: "!multithreaded"
+      {
         clusterOptions = "-l select=1:phase=4:mem=2gb:ncpus=2"
       }
     }
-    executor {
+    executor
+    {
       queueSize = "${params.execution.queue_size}"
     }
   }
@@ -191,11 +231,14 @@ profiles {
   // an example for execution of this workflow on Kamiak with some
   // defaults for all steps of the workflow.
   //
-  slurm {
-    process {
+  slurm
+  {
+    process
+    {
       executor = "slurm"
-      queue = {users queue}
+      queue = "ficklin"
       time = "4h"
+
 
       withLabel: "multithreaded" {
         cpus = "${params.execution.threads}"
@@ -203,8 +246,10 @@ profiles {
       withLabel: "!multithreaded" {
         cpus = 1
       }
+
     }
-    executor {
+    executor
+    {
       queueSize = "${params.execution.queue_size}"
     }
   }

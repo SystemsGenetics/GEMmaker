@@ -33,7 +33,7 @@ RUN chmod +x /tini
 
 # Create a non-root user that will run the called programs.
 RUN groupadd -g 61000 gemdocker \
-  && useradd -g 61000 --no-log-init --no-create-home --shell /bin/false -u 61000 gemdocker
+  && useradd -g 61000 --no-log-init --no-create-home --shell /bin/bash -u 61000 gemdocker
 
 # Change the active user.
 USER gemdocker

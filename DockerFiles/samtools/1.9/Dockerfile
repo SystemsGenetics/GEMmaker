@@ -12,5 +12,8 @@ RUN wget https://github.com/samtools/samtools/releases/download/1.9/samtools-1.9
   && cd samtools-1.9 \
   && ./configure --prefix=/usr/local/samtools-1.9 --without-curses \
   && make install
+# Add those tools to the path variable.
+ENV PATH="/usr/local/samtools-1.9/bin:${PATH}"
+
 
 USER gemdocker
