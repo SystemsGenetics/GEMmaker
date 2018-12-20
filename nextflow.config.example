@@ -61,7 +61,7 @@ params {
       // Kallisto = 1
       // Salmon = 2
       //
-      which_alignment = 1
+      which_alignment = 0
     }
 
 
