@@ -4,7 +4,8 @@ FROM systemsgenetics/gemmaker:latest
 USER root
 
 RUN apt-get update \
-  && apt-get -y install perl
+  && apt-get -y install perl \
+  && apt-get -y install default-jre
 
 # Install FastQC
 RUN wget https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.7.zip \
