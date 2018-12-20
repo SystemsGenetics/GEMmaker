@@ -212,10 +212,11 @@ process fastqc_1 {
   * GEMmaker release)
  */
 
- HISAT2_CHANNEL = Channel.create()
- KALLISTO_CHANNEL = Channel.create()
- SALMON_CHANNEL  = Channel.create()
- MERGED_FASTQC_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment.which_alignment }
+HISAT2_CHANNEL = Channel.create()
+KALLISTO_CHANNEL = Channel.create()
+SALMON_CHANNEL  = Channel.create()
+MERGED_FASTQC_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment.which_alignment }
+
 
 /**
  * Performs KALLISTO alignemnt of fastq files
@@ -223,13 +224,17 @@ process fastqc_1 {
  *
  */
  process kallisto {
-   module "kallisto"
+   // module "kallisto"
    // time params.software.hisat2.time
-   publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+   publishDir params.output.sample_dir, mode: params.output.publish_mode
    tag { sample_id }
+   label "kallisto"
+   stageInMode "link"
 
    input:
      set val(sample_id), file(pass_files) from KALLISTO_CHANNEL
+     //file reference from Channel.fromPath("${params.input.reference_path}/*").toList()
+     file kallisto_index from Channel.fromPath("${params.input.reference_path}${params.input.reference_prefix}.transcripts.Kallisto.indexed")
 
    output:
      set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
@@ -238,7 +243,7 @@ process fastqc_1 {
    """
    if [ -e ${sample_id}_2.fastq ]; then
     kallisto quant \
-      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Kallisto.indexed \
+      -i  ${params.input.reference_prefix}.transcripts.Kallisto.indexed \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       ${sample_id}_1.fastq \
       ${sample_id}_2.fastq
@@ -250,7 +255,7 @@ process fastqc_1 {
       --single \
       -l 70 \
       -s .0000001 \
-      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Kallisto.indexed \
+      -i ${params.input.reference_prefix}.transcripts.Kallisto.indexed \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       ${sample_id}_1.fastq
 
@@ -263,7 +268,7 @@ process fastqc_1 {
   * Generates the final TPM file for Kallisto
   */
  process kallisto_tpm {
-   publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+   publishDir params.output.sample_dir, mode: params.output.publish_mode
    tag { sample_id }
 
    input:
@@ -287,22 +292,29 @@ process fastqc_1 {
   *
   */
   process salmon {
-    module "salmon"
+    // module "salmon"
     // time params.software.hisat2.time
-    publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+    publishDir params.output.sample_dir, mode: params.output.publish_mode
     tag { sample_id }
+    label "salmon"
+    stageInMode "link"
 
     input:
       set val(sample_id), file(pass_files) from SALMON_CHANNEL
+      file salmon_index from Channel.fromPath("${params.input.reference_path}${params.input.reference_prefix}*/*").toList()
+
 
     output:
       set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into SALMON_GA
 
     script:
     """
+
+
+
     if [ -e ${sample_id}_2.fastq ]; then
       salmon quant \
-      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Salmon.indexed \
+      -i . \
       -l A \
       -1 ${sample_id}_1.fastq \
       -2 ${sample_id}_2.fastq \
@@ -313,7 +325,7 @@ process fastqc_1 {
 
     else
       salmon quant \
-      -i ${params.input.reference_path}${params.input.reference_prefix}.transcripts.Salmon.indexed \
+      -i . \
       -l A \
       -r ${sample_id}_1.fastq \
       -p 8 \
@@ -329,7 +341,7 @@ process fastqc_1 {
    * Generates the final TPM file for Salmon
    */
   process salmon_tpm {
-    publishDir params.output.outputdir_sample_id, mode: params.output.publish_mode
+    publishDir params.output.sample_dir, mode: params.output.publish_mode
     tag { sample_id }
 
     input:
@@ -475,16 +487,15 @@ process hisat2 {
   // module "hisat2"
   // time params.software.hisat2.time
   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
-  stageInMode "link" 
   tag { sample_id }
 
   label "multithreaded"
   label "hisat2"
+  stageInMode "link"
 
   input:
    set val(sample_id), file(input_files) from TRIMMED_FASTQC_SAMPLES
-   file indexes from Channel.fromPath("${params.input.reference_path}/*.ht2*").toList()
-   file gtf_file from file("${params.input.reference_path}/${params.input.reference_prefix}.gtf")
+   file reference from Channel.fromPath("${params.input.reference_path}*").toList()
 
   output:
    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES
@@ -493,7 +504,6 @@ process hisat2 {
 
   script:
    """
-     export HISAT2_INDEXES=${PWD}
      if [ -e ${sample_id}_2p_trim.fastq ]; then
        hisat2 \
          -x ${params.input.reference_prefix} \
@@ -593,19 +603,18 @@ process samtools_index {
 process stringtie {
   // module "stringtie"
   // time params.software.stringtie.time
-  stageInMode "link"
   tag { sample_id }
 
   label "multithreaded"
   label "stringtie"
-
+  stageInMode "link"
 
   input:
     // We don't really need the .bam file, but we want to ensure
     // this process runs after the samtools_index step so we
     // require it as an input file.
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") from BAM_INDEXED_FOR_STRINGTIE
-    file gtf_file from file("${params.input.reference_path}/${params.input.reference_prefix}.gtf")
+    file gtf_file from Channel.fromPath("${params.input.reference_path}*.gtf").first()
 
 
   output:
@@ -618,7 +627,7 @@ process stringtie {
     -p ${params.execution.threads} \
     -e \
     -o ${sample_id}_vs_${params.input.reference_prefix}.gtf \
-    -G ${gtf_file} \
+    -G ${params.input.reference_path}${params.input.reference_prefix}.gtf \
     -A ${sample_id}_vs_${params.input.reference_prefix}.ga \
     -l ${sample_id} ${sample_id}_vs_${params.input.reference_prefix}.bam
     """
