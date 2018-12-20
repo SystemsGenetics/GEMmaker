@@ -407,7 +407,8 @@ process trimmomatic {
      set val(sample_id), file("${sample_id}_?.fastq") from HISAT2_CHANNEL
 
    output:
-     set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES
+     set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_FOR_FASTQC
+     set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_FOR_HISAT2
      set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_2_CLEAN
      set val(sample_id), file("${sample_id}.trim.log") into TRIMMED_SAMPLE_LOG
 
@@ -427,7 +428,7 @@ process trimmomatic {
         total=(\$a + \$total)
         done
         total=( \$total / 2 )
-        minlen=`\$total`
+        minlen=\$total
 
       elif [ -e ${sample_id}_1.fastq ]; then
         minlen=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' ${sample_id}_1.fastq \
@@ -491,7 +492,7 @@ process fastqc_2 {
   label "fastqc"
 
   input:
-    set val(sample_id), file(pass_files) from TRIMMED_SAMPLES
+    set val(sample_id), file(pass_files) from TRIMMED_SAMPLES_FOR_FASTQC
 
   output:
     set val(sample_id), file(pass_files) into TRIMMED_FASTQC_SAMPLES
@@ -518,7 +519,7 @@ process hisat2 {
   label "hisat2"
 
   input:
-   set val(sample_id), file(input_files) from TRIMMED_FASTQC_SAMPLES
+   set val(sample_id), file(input_files) from TRIMMED_SAMPLES_FOR_HISAT2
    file indexes from HISAT2_INDEXES
    file gtf_file from GTF_FILE
 
