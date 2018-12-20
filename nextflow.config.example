@@ -77,8 +77,8 @@ params {
   }
 
   publish {
-    keep_trimmed_fastq = false
-    keep_alignment_bam = false
+    keep_trimmed_fastq = true
+    keep_alignment_bam = true
   }
 }
 
