@@ -192,6 +192,7 @@ process SRR_combine {
     set val(sample_id), file(grouped) from GROUPED_SAMPLE_ID
   output:
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES
+    set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_FASTQC_1
 
   /**
    * This command tests to see if ls produces a 0 or not by checking
@@ -222,10 +223,9 @@ process fastqc_1 {
   label "fastqc"
 
   input:
-    set val(sample_id), file(pass_files) from MERGED_SAMPLES
+    set val(sample_id), file(pass_files) from MERGED_SAMPLES_FOR_FASTQC_1
 
   output:
-    set val(sample_id), file(pass_files) into MERGED_FASTQC_SAMPLES
     set file("${sample_id}_?_fastqc.html") , file("${sample_id}_?_fastqc.zip") optional true into FASTQC_1_OUTPUT
 
   """
@@ -243,7 +243,7 @@ process fastqc_1 {
 HISAT2_CHANNEL = Channel.create()
 KALLISTO_CHANNEL = Channel.create()
 SALMON_CHANNEL  = Channel.create()
-MERGED_FASTQC_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment.which_alignment }
+MERGED_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment.which_alignment }
 
 
 /**
@@ -407,8 +407,8 @@ process trimmomatic {
      set val(sample_id), file("${sample_id}_?.fastq") from HISAT2_CHANNEL
 
    output:
-     set val(sample_id), file("${sample_id}_??_trim.fastq") into TRIMMED_SAMPLES
-     set val(sample_id), file("${sample_id}_??_trim.fastq") into TRIMMED_SAMPLES_2_CLEAN
+     set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES
+     set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_2_CLEAN
      set val(sample_id), file("${sample_id}.trim.log") into TRIMMED_SAMPLE_LOG
 
    script:
