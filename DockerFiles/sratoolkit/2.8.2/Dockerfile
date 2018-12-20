@@ -3,7 +3,7 @@ FROM systemsgenetics/gemmaker:latest
 
 USER root
 
-ENV SRA_VERSION 2.8.2
+ENV SRA_VERSION=2.8.2
 
 # Install the SRA toolkit.
 RUN wget -q https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/$SRA_VERSION/sratoolkit.$SRA_VERSION-ubuntu64.tar.gz \
