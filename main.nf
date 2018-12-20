@@ -61,7 +61,8 @@ Publishing Files:
  */
 HISAT2_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}*.ht2*").collect()
 GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf").collect()
-
+KALLISTO_INDEX = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Kallisto.indexed").collect()
+SALMON_INDEXES = Channel.fromPath("${params.input.reference_path}${params.input.reference_prefix}*/*").collect()
 
 /**
  * Local Sample Input.
@@ -259,8 +260,8 @@ MERGED_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { param
 
    input:
      set val(sample_id), file(pass_files) from KALLISTO_CHANNEL
-     //file reference from file("${params.input.reference_path}/*").toList()
-     file kallisto_index from file("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Kallisto.indexed")
+     file index from KALLISTO_INDEX
+
 
    output:
      set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
@@ -325,7 +326,7 @@ MERGED_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { param
 
     input:
       set val(sample_id), file(pass_files) from SALMON_CHANNEL
-      file salmon_index from Channel.fromPath("${params.input.reference_path}${params.input.reference_prefix}*/*").toList()
+      file indexes from SALMON_INDEXES
 
 
     output:
@@ -699,15 +700,15 @@ process fpkm_or_tpm {
 /**
  * PROCESSES FOR CLEANING LARGE FILES
  *
- * Nextflow doesn't allow files to be removed from the 
+ * Nextflow doesn't allow files to be removed from the
  * work directories that are used in Channels.  If it
  * detects a different timestamp or change in file
  * size than what was cached it will rerun the process.
- * To trick Nextflow we will truncate the file to a 
- * sparce file of size zero but masquerading as its 
+ * To trick Nextflow we will truncate the file to a
+ * sparce file of size zero but masquerading as its
  * original size, we will also reset the original modify
  * and access times.
- * 
+ *
  */
 
 /**
@@ -715,11 +716,11 @@ process fpkm_or_tpm {
  */
 
 /**
- * Cleans up trimmed fastq files. 
+ * Cleans up trimmed fastq files.
  */
 
-// Merge the Trimmomatic samples with Hisat's signal that it is 
-// done so that we can remove these files.  
+// Merge the Trimmomatic samples with Hisat's signal that it is
+// done so that we can remove these files.
 TRHIMIX = TRIMMED_SAMPLES_2_CLEAN.mix( HISAT2_DONE_SAMPLES )
 TRHIMIX
   .groupTuple(size: 2)
@@ -734,13 +735,13 @@ process clean_trimmed {
     """
     for file in ${fastq_files}
     do
-      file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'` 
+      file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
       if [ ${params.publish.keep_trimmed_fastq} = false ]; then
         if [ -e \$file ]; then
           # Log some info about the file for debugging purposes
           echo "cleaning \$file"
           stat \$file
-          # Get file info: size, access and modify times 
+          # Get file info: size, access and modify times
           size=`stat --printf="%s" \$file`
           atime=`stat --printf="%X" \$file`
           mtime=`stat --printf="%Y" \$file`
@@ -760,8 +761,8 @@ process clean_trimmed {
  * Clean up SAM files
  */
 
-// Merge the HISAT sam file with samtools_sort signal that it is 
-// done so that we can remove these files.  
+// Merge the HISAT sam file with samtools_sort signal that it is
+// done so that we can remove these files.
 HISSMIX = HISAT2_SAM_2_CLEAN.mix( SAMTOOLS_SORT_DONE_SAMPLES )
 HISSMIX
   .groupTuple(size: 2)
@@ -776,12 +777,12 @@ process clean_sam {
     """
     for file in ${sam_files}
     do
-      file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'` 
+      file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
       if [ -e \$file ]; then
         # Log some info about the file for debugging purposes
         echo "cleaning \$file"
         stat \$file
-        # Get file info: size, access and modify times 
+        # Get file info: size, access and modify times
         size=`stat --printf="%s" \$file`
         atime=`stat --printf="%X" \$file`
         mtime=`stat --printf="%Y" \$file`
@@ -800,8 +801,8 @@ process clean_sam {
  * Clean up BAM files
  */
 
-// Merge the samtools_sort bam file with stringtie signal that it is 
-// done so that we can remove these files.  
+// Merge the samtools_sort bam file with stringtie signal that it is
+// done so that we can remove these files.
 SSSTMIX = SAMTOOLS_SORT_BAM_2_CLEAN.mix( STRINGTIE_DONE_SAMPLES )
 SSSTMIX
   .groupTuple(size: 2)
@@ -821,7 +822,7 @@ process clean_bam {
         # Log some info about the file for debugging purposes
         echo "cleaning \$file"
         stat \$file
-        # Get file info: size, access and modify times 
+        # Get file info: size, access and modify times
         size=`stat --printf="%s" \$file`
         atime=`stat --printf="%X" \$file`
         mtime=`stat --printf="%Y" \$file`
@@ -835,4 +836,3 @@ process clean_bam {
     done
     """
 }
-
