@@ -23,7 +23,6 @@ params {
   output {
     dir = "${PWD}/output"
     sample_dir = { "${params.output.dir}/${sample_id}" }
-    publish_mode = "link"
   }
 
   // TODO: Consider moving to profiles.
@@ -67,10 +66,14 @@ params {
 
 
     fpkm_or_tpm {
-
       fpkm = true
       tpm = true
     }
+  }
+
+  publish {
+    keep_trimmed_fastq = true
+    keep_alignment_bam = true
   }
 }
 
