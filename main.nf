@@ -372,6 +372,7 @@ process trimmomatic {
 
    output:
      set val(sample_id), file("${sample_id}_??_trim.fastq") into TRIMMED_SAMPLES
+     set val(sample_id), file("${sample_id}_??_trim.fastq") into TRIMMED_SAMPLES_2_CLEAN
      set val(sample_id), file("${sample_id}.trim.log") into TRIMMED_SAMPLE_LOG
 
    script:
@@ -488,6 +489,7 @@ process hisat2 {
   output:
    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES
    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam.log") into INDEXED_SAMPLES_LOG
+   set val(sample_id), file(input_files) into HISAT2_DONE_SAMPLES
 
   script:
    """
@@ -654,4 +656,27 @@ process fpkm_or_tpm {
     """
   else
     error "Please choose at least one output and resume GEMmaker"
+}
+
+// Merge the Trimmomatic samples with Hisat's signal that it is 
+// done so that we can remove these files.  
+// TRIMMED_SAMPLES_2_CLEAN.subscribe { println "Got: $it" }
+TRHIMIX = TRIMMED_SAMPLES_2_CLEAN.mix( HISAT2_DONE_SAMPLES )
+TRHIMIX.groupTuple(size: 2)
+  .set { TRIMMED_CLEANUP_READY }
+//TRIMMED_CLEANUP_READY.subscribe { println "Got: $it" }
+
+/**
+ * Removes trimmed fastq reads
+ */
+process clean_trimmed {
+  input:
+    set val(sample_id), file(fastq_files) from TRIMMED_CLEANUP_READY
+
+  script:
+    """
+      for file in ${fastq_files}; do
+        echo "rm ${work_dir}/\${file}"
+      done
+    """
 }

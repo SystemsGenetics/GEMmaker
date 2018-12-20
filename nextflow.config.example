@@ -106,7 +106,7 @@ process {
 
 
   withLabel:sratoolkit {
-    container = 'systemsgenetics/sratoolkit:0.38'
+    container = 'systemsgenetics/sratoolkit:2.8.2'
     time = "48h"
     module = false
   }
