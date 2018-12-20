@@ -696,15 +696,8 @@ process fpkm_or_tpm {
     error "Please choose at least one output and resume GEMmaker"
 }
 
-// Merge the Trimmomatic samples with Hisat's signal that it is 
-// done so that we can remove these files.  
-TRHIMIX = TRIMMED_SAMPLES_2_CLEAN.mix( HISAT2_DONE_SAMPLES )
-TRHIMIX
-  .groupTuple(size: 2)
-  .set { TRIMMED_CLEANUP_READY }
-
 /**
- * Cleans up trimmed fastq files. 
+ * PROCESSES FOR CLEANING LARGE FILES
  *
  * Nextflow doesn't allow files to be removed from the 
  * work directories that are used in Channels.  If it
@@ -714,7 +707,24 @@ TRHIMIX
  * sparce file of size zero but masquerading as its 
  * original size, we will also reset the original modify
  * and access times.
+ * 
  */
+
+/**
+ * Cleans downloaded fastq files
+ */
+
+/**
+ * Cleans up trimmed fastq files. 
+ */
+
+// Merge the Trimmomatic samples with Hisat's signal that it is 
+// done so that we can remove these files.  
+TRHIMIX = TRIMMED_SAMPLES_2_CLEAN.mix( HISAT2_DONE_SAMPLES )
+TRHIMIX
+  .groupTuple(size: 2)
+  .set { TRIMMED_CLEANUP_READY }
+
 process clean_trimmed {
   input:
     // We input fastq_files as a file because we need the full path.
@@ -746,6 +756,10 @@ process clean_trimmed {
     """
 }
 
+/**
+ * Clean up SAM files
+ */
+
 // Merge the HISAT sam file with samtools_sort signal that it is 
 // done so that we can remove these files.  
 HISSMIX = HISAT2_SAM_2_CLEAN.mix( SAMTOOLS_SORT_DONE_SAMPLES )
@@ -753,9 +767,6 @@ HISSMIX
   .groupTuple(size: 2)
   .set { SAM_CLEANUP_READY }
 
-/**
- * Clean up SAM files
- */
 process clean_sam {
   input:
     // We input sam_files as a file because we need the full path.
@@ -785,6 +796,10 @@ process clean_sam {
     """
 }
 
+/**
+ * Clean up BAM files
+ */
+
 // Merge the samtools_sort bam file with stringtie signal that it is 
 // done so that we can remove these files.  
 SSSTMIX = SAMTOOLS_SORT_BAM_2_CLEAN.mix( STRINGTIE_DONE_SAMPLES )
@@ -792,9 +807,6 @@ SSSTMIX
   .groupTuple(size: 2)
   .set { BAM_CLEANUP_READY }
 
-/**
- * Clean up BAM files
- */
 process clean_bam {
   input:
     // We input sam_files as a file because we need the full path.
