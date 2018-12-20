@@ -440,7 +440,6 @@ process trimmomatic {
 
 
      if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
-     // java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
       java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
         PE \
         -threads ${params.execution.threads} \
