@@ -1,15 +1,10 @@
 /**
- * ===========================
- * GEMmaker Configuration File
- * ===========================
- *
- * This file provides the configuration settings for the GEMmaker workflow.
- *
- * See the online GEMmaker documentation to learn how to set the parameters in this file at:
- *
- * https://gemmaker.readthedocs.io/en/latest/nextflow_config.html
-
- */
+* ===========================
+* GEMmaker Configuration File
+* ===========================
+*
+* This file provides the configuration settings for the GEMmaker workflow.
+*/
 manifest {
 mainScript = "main.nf"
 defaultBranch = "master"
@@ -19,9 +14,9 @@ nextflowVersion = ">=0.32.0"
 
 params {
   input {
-    remote_list_path = "none"
-    local_samples_path = "${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq"
-    reference_path = "${PWD}/examples/LocalRunExample/reference"
+    remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
+    local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
+    reference_path = "${PWD}/examples/reference/"
     reference_prefix = "CORG"
   }
 
@@ -67,7 +62,7 @@ params {
       // Kallisto = 1
       // Salmon = 2
       //
-      which_alignment = 0
+      which_alignment = 1
     }
 
 
@@ -106,7 +101,7 @@ process {
 
 
   withLabel:sratoolkit {
-    container = 'systemsgenetics/sratoolkit:0.38'
+    container = 'systemsgenetics/sratoolkit:2.8.2'
     time = "48h"
     module = false
   }
@@ -116,6 +111,13 @@ process {
   }
   withLabel:fastqc {
     container = 'systemsgenetics/fastqc:0.11.7'
+    time = "24h"
+  }
+  withLabel:kallisto {
+    container = 'systemsgenetics/kallisto:0.45.0'
+  }
+  withLabel:salmon {
+    container = 'systemsgenetics/salmon:0.12.0'
     time = "24h"
   }
   withLabel:trimmomatic {
@@ -203,7 +205,7 @@ profiles {
       withLabel:stringtie {
         module = "stringtie"
       }
-      
+
       executor = "pbs"
       time = "8h"
       scratch = true
@@ -229,13 +231,12 @@ profiles {
   // an example for execution of this workflow on Kamiak with some
   // defaults for all steps of the workflow.
   //
-
-  slurm {
-    process {
-      module = "singularity/2.4.2"
+  slurm
+  {
+    process
+    {
       executor = "slurm"
-      queue = "default"
-
+      queue = "ficklin"
       time = "4h"
 
 
@@ -250,9 +251,6 @@ profiles {
     executor
     {
       queueSize = "${params.execution.queue_size}"
-    }
-    singularity {
-        enabled = true
     }
   }
 }
