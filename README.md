@@ -142,10 +142,8 @@ The script will produce a GEM file called `my_project.GEM.TPM.txt`. Be sure to c
 
 You can combine the results of multiple GEMmaker runs into a single GEM by providing a list of directories to the `--source` argument. This feature may be useful if you split a set of input files into several GEMmaker runs and now you need to combine then. The script will produce a file named `GEM.txt` in the working directory.
 
-
-
 ## Running with the Dockerfile
 
 ```bash
-nextflow run main.nf -profile inDocker
+nextflow run main.nf -with-docker
 ```

@@ -96,7 +96,7 @@ trace {
 
 docker {
     fixOwnership = true
-    runOptions = '-u $(id -u):$(id -g)'
+    runOptions = "-u $(id -u):$(id -g)"
     sudo = true
 }
 
@@ -111,39 +111,38 @@ process {
   }
 
   withLabel:sratoolkit {
-    container = 'systemsgenetics/sratoolkit:2.8.2'
+    container = "systemsgenetics/sratoolkit:2.8.2"
     time = "48h"
-    module = false
   }
   withLabel:python3 {
-    container = 'systemsgenetics/python3:1.0.0'
+    container = "systemsgenetics/python3:1.0.0"
     time = "1h"
   }
   withLabel:fastqc {
-    container = 'systemsgenetics/fastqc:0.11.7'
+    container = "systemsgenetics/fastqc:0.11.7"
     time = "24h"
   }
   withLabel:kallisto {
-    container = 'systemsgenetics/kallisto:0.45.0'
+    container = "systemsgenetics/kallisto:0.45.0"
   }
   withLabel:salmon {
-    container = 'systemsgenetics/salmon:0.12.0'
+    container = "systemsgenetics/salmon:0.12.0"
     time = "24h"
   }
   withLabel:trimmomatic {
-    container = 'systemsgenetics/trimmomatic:0.38'
+    container = "systemsgenetics/trimmomatic:0.38"
     time = "72h"
   }
   withLabel:hisat2 {
-    container = 'systemsgenetics/hisat2:2.1.0'
+    container = "systemsgenetics/hisat2:2.1.0"
     time = "48h"
   }
   withLabel:samtools {
-    container = 'systemsgenetics/samtools:1.9'
+    container = "systemsgenetics/samtools:1.9"
     time = "48h"
   }
   withLabel:stringtie {
-    container = 'systemsgenetics/stringtie:1.3.4d'
+    container = "systemsgenetics/stringtie:1.3.4d"
     time = "48h"
   }
 }
@@ -176,25 +175,25 @@ profiles {
   pbs {
     process {
       withLabel:sratoolkit {
-        module = "sratoolkit"
+        module "sratoolkit"
       }
       withLabel:python3 {
-        module = "anaconda3"
+        module "anaconda3"
       }
       withLabel:fastqc {
-        module = "fastQC"
+        module "fastQC"
       }
       withLabel:trimmomatic {
-        module = "trimmomatic"
+        module "trimmomatic"
       }
       withLabel:hisat2 {
-        module = "hisat2"
+        module "hisat2"
       }
       withLabel:samtools {
-        module = "samtools"
+        module "samtools"
       }
       withLabel:stringtie {
-        module = "stringtie"
+        module "stringtie"
       }
 
       executor = "pbs"
