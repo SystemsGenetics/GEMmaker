@@ -24,6 +24,7 @@ params {
   output {
     dir = "${PWD}/output"
     sample_dir = { "${params.output.dir}/${sample_id}" }
+    publish_mode = "link"
   }
 
   execution {
@@ -124,6 +125,7 @@ process {
   }
   withLabel:kallisto {
     container = "systemsgenetics/kallisto:0.45.0"
+    time = "24h"
   }
   withLabel:salmon {
     container = "systemsgenetics/salmon:0.12.0"
@@ -174,6 +176,18 @@ profiles {
 
   pbs {
     process {
+      executor = "pbs"
+      time = "8h"
+      scratch = true
+      stageInMode = "copy"
+
+      withLabel: "multithreaded" {
+        clusterOptions = "-l select=1:phase=4:mem=8gb:ncpus=${params.execution.threads}"
+      }
+      withLabel: "!multithreaded" {
+        clusterOptions = "-l select=1:phase=4:mem=2gb:ncpus=2"
+      }
+
       withLabel:sratoolkit {
         module "sratoolkit"
       }
@@ -194,18 +208,6 @@ profiles {
       }
       withLabel:stringtie {
         module "stringtie"
-      }
-
-      executor = "pbs"
-      time = "8h"
-      scratch = true
-      stageInMode = "copy"
-
-      withLabel: "multithreaded" {
-        clusterOptions = "-l select=1:phase=4:mem=8gb:ncpus=${params.execution.threads}"
-      }
-      withLabel: "!multithreaded" {
-        clusterOptions = "-l select=1:phase=4:mem=2gb:ncpus=2"
       }
     }
     executor {

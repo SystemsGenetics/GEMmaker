@@ -41,6 +41,7 @@ Input Parameters:
 Output Parameters:
 ------------------
   Output directory:           ${params.output.dir}
+  Publish mode:               ${params.output.publish_mode}
 
 
 Execution Parameters:
@@ -238,7 +239,7 @@ process SRR_combine {
  * Performs fastqc on fastq files prior to trimmomatic
  */
 process fastqc_1 {
-  publishDir params.output.sample_dir, mode: 'symlink', pattern: "*_fastqc.*"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -273,7 +274,7 @@ MERGED_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { param
  * Performs KALLISTO alignemnt of fastq files
  */
 process kallisto {
-  publishDir params.output.sample_dir, mode: 'symlink'
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
   label "kallisto"
 
@@ -310,7 +311,7 @@ process kallisto {
   * Generates the final TPM file for Kallisto
   */
  process kallisto_tpm {
-   publishDir params.output.sample_dir, mode: 'symlink'
+   publishDir params.output.sample_dir, mode: params.output.publish_mode
    tag { sample_id }
 
    input:
@@ -332,7 +333,7 @@ process kallisto {
   * Performs SALMON alignemnt of fastq files
   */
 process salmon {
-  publishDir params.output.sample_dir, mode: 'symlink'
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
   label "salmon"
 
@@ -372,7 +373,7 @@ process salmon {
  * Generates the final TPM file for Salmon
  */
 process salmon_tpm {
-  publishDir params.output.sample_dir, mode: 'symlink'
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
 
   input:
@@ -401,7 +402,7 @@ process salmon_tpm {
  * "nextflow.config" file
  */
 process trimmomatic {
-  publishDir params.output.sample_dir, mode: 'symlink', pattern: trimmomatic_publish_pattern
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: trimmomatic_publish_pattern
   tag { sample_id }
   label "multithreaded"
   label "trimmomatic"
@@ -485,7 +486,7 @@ process trimmomatic {
  * Files are stored to an independent folder
  */
 process fastqc_2 {
-  publishDir params.output.sample_dir, mode: 'symlink', pattern: "*_fastqc.*"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -510,7 +511,7 @@ process fastqc_2 {
  * depends: trimmomatic
  */
 process hisat2 {
-  publishDir params.output.sample_dir, mode: 'symlink', pattern: "*.log"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
   tag { sample_id }
   label "multithreaded"
   label "hisat2"
@@ -568,7 +569,7 @@ process hisat2 {
  * depends: hisat2
  */
 process samtools_sort {
-  publishDir params.output.sample_dir, mode: 'symlink', pattern: samtools_sort_publish_pattern
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: samtools_sort_publish_pattern
   tag { sample_id }
   label "samtools"
 
@@ -594,7 +595,7 @@ process samtools_sort {
  * depends: samtools_index
  */
 process samtools_index {
-  publishDir params.output.sample_dir, mode: 'symlink', pattern: samtools_index_publish_pattern
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: samtools_index_publish_pattern
   tag { sample_id }
   label "samtools"
 
@@ -656,7 +657,7 @@ process stringtie {
  * Generates the final FPKM file
  */
 process fpkm_or_tpm {
-  publishDir params.output.sample_dir, mode: 'symlink'
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
 
   input:
