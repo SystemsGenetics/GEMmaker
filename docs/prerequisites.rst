@@ -14,6 +14,18 @@ from GEMmaker are useful for differential gene expression (DGE) and gene
 co-expression network (GCN) analyses. The GEMmaker workflow currently
 supports Illumina RNA-seq datasets.
 
+GEMmaker is compatible with `Docker <https://www.docker.com/>`__ and
+`Singularity <https://www.sylabs.io/docs/>`__. Running with either of
+these programs is the reccommended way to run GEMmaker, as GEMmaker will
+automatically pull each of the images that it needs to run. This means that
+no software instalation is required other than Docker and Sindularity.
+
+.. note::
+
+  Nextflow (The workflow language GEMmaker uses) does not support Singualrity
+  3.0 and higher as of yet. You must use a version of singularity that is
+  higher than 2.3.x, but less than 3.0.x
+
 Before execution of GEMmaker you must have the necessary software. The
 following list provides the set of tools and versions that have been
 verified to work with GEMmaker. NOTE: newer versions of these tools are
