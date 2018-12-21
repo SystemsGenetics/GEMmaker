@@ -98,7 +98,7 @@ else {
  * Set the pattern for publishing trimmed files
  */
 trimmomatic_publish_pattern = "*.trim.log";
-if (params.publish.keep_trimmed_fastq == true) {
+if (params.output.publish_trimmed_fastq == true) {
   trimmomatic_publish_pattern = "{*.trim.log,*_trim.fastq}";
 }
 
@@ -106,15 +106,30 @@ if (params.publish.keep_trimmed_fastq == true) {
  * Set the pattern for publishing BAM files
  */
 samtools_sort_publish_pattern = "*.log";
-if (params.publish.keep_alignment_bam == true) {
+if (params.output.publish_bam == true) {
   samtools_sort_publish_pattern = "*.bam";
 }
 samtools_index_publish_pattern = "*.log";
-if (params.publish.keep_alignment_bam == true) {
+if (params.output.publish_bam == true) {
   samtools_index_publish_pattern = "{*.log,*.bam.bai}";
 }
 
+process retrieve_sample_metadata {
+   //label "python3scripts"
+   module "python3"
+   //publishDir params.output.sample_dir, mode: 'symlink', pattern: "{*.meta.json,*.meta.tab}"
 
+   input:
+     val srr_file from SRR_FILE
+
+   output:
+     stdout SRR2SRX
+
+   script:
+     """
+     python3 ${PWD}/bin/retrieve_SRA_metadata.py $srr_file
+     """
+}
 
 /**
  * Split the SRR2SRX mapping file
@@ -307,11 +322,6 @@ process salmon {
   """
 }
 
-    fi
-
-    """
-  }
-
 /**
  * Generates the final TPM file for Salmon
  */
@@ -333,6 +343,7 @@ process salmon_tpm {
 
 
 
+
 /**
  * Performs Trimmomatic on all fastq files.
  *
@@ -345,7 +356,7 @@ process salmon_tpm {
  * "nextflow.config" file
  */
 process trimmomatic {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_trimmomatic
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: trimmomatic_publish_pattern
   tag { sample_id }
   label "multithreaded"
   label "trimmomatic"
@@ -377,12 +388,14 @@ process trimmomatic {
     total=( \$total / 2 )
     minlen=\$total
 
-   script:
-   """
-   #This script calculates average length of fastq files.
-   total=0
+  elif [ -e ${sample_id}_1.fastq ]; then
+    minlen=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' ${sample_id}_1.fastq \
+      | sort \
+      | awk '{ print \$0, \$1*\$2}' \
+      | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
+  fi
 
-   if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
+  if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
      java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
        PE \
        -threads ${params.execution.threads} \
@@ -510,7 +523,7 @@ process hisat2 {
  * depends: hisat2
  */
 process samtools_sort {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_samtools_sort
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: samtools_sort_publish_pattern
   tag { sample_id }
   label "samtools"
 
@@ -536,7 +549,7 @@ process samtools_sort {
  * depends: samtools_index
  */
 process samtools_index {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_samtools_index
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: samtools_index_publish_pattern
   tag { sample_id }
   label "samtools"
 
