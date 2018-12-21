@@ -1,11 +1,7 @@
-# Base image.
 FROM systemsgenetics/gemmaker:latest
 
-USER root
-
 RUN apt-get update \
-  && apt-get -y install perl \
-  && apt-get -y install default-jre
+  && apt-get -y install default-jre perl
 
 # Install FastQC
 RUN wget https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.7.zip \
@@ -13,5 +9,3 @@ RUN wget https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.
   && mv FastQC /usr/local/FastQC-0.11.7 \
   && chmod 755 /usr/local/FastQC-0.11.7/fastqc \
   && ln -sfn /usr/local/FastQC-0.11.7/fastqc /usr/bin/fastqc
-
-USER gemdocker

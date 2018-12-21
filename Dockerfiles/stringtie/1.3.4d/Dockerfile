@@ -1,7 +1,4 @@
-# Base image.
 FROM systemsgenetics/gemmaker:latest
-
-USER root
 
 # Install stringtie.
 RUN wget http://ccb.jhu.edu/software/stringtie/dl/stringtie-1.3.4d.Linux_x86_64.tar.gz \
@@ -9,5 +6,3 @@ RUN wget http://ccb.jhu.edu/software/stringtie/dl/stringtie-1.3.4d.Linux_x86_64.
   && mv stringtie-1.3.4d.Linux_x86_64 /usr/local/stringtie-1.3.4d
 
 ENV PATH "$PATH:/usr/local/stringtie-1.3.4d"
-
-USER gemdocker

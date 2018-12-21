@@ -97,7 +97,7 @@ trace {
 
 docker {
     fixOwnership = true
-    runOptions = "--init -u $(id -u):$(id -g)"
+    runOptions = "--init"
     sudo = true
 }
 
@@ -231,6 +231,28 @@ profiles {
       }
       withLabel: "!multithreaded" {
         cpus = 1
+      }
+
+      withLabel:sratoolkit {
+        module "sratoolkit"
+      }
+      withLabel:python3 {
+        module "python3"
+      }
+      withLabel:fastqc {
+        module "fastQC"
+      }
+      withLabel:trimmomatic {
+        module "trimmomatic"
+      }
+      withLabel:hisat2 {
+        module "hisat2"
+      }
+      withLabel:samtools {
+        module "samtools"
+      }
+      withLabel:stringtie {
+        module "stringtie"
       }
     }
     executor {

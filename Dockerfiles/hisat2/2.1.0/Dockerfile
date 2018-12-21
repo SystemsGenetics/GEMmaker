@@ -1,7 +1,4 @@
-# Base image.
 FROM systemsgenetics/gemmaker:latest
-
-USER root
 
 # Install hisat2
 RUN wget ftp://ftp.ccb.jhu.edu/pub/infphilo/hisat2/downloads/hisat2-2.1.0-Linux_x86_64.zip \
@@ -9,5 +6,3 @@ RUN wget ftp://ftp.ccb.jhu.edu/pub/infphilo/hisat2/downloads/hisat2-2.1.0-Linux_
   && mv hisat2-2.1.0 /usr/local
 
 ENV PATH "$PATH:/usr/local/hisat2-2.1.0"
-
-USER gemdocker
