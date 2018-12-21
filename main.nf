@@ -102,7 +102,7 @@ else {
 /**
  * Set the pattern for publishing trimmed files
  */
-publish_pattern_trimmomatic = "*.trim.log";
+publish_pattern_trimmomatic = "{*.trim.log}";
 if (params.output.publish_trimmed_fastq == true) {
   publish_pattern_trimmomatic = "{*.trim.log,*_trim.fastq}";
 }
@@ -112,11 +112,11 @@ if (params.output.publish_trimmed_fastq == true) {
 /**
  * Set the pattern for publishing BAM files
  */
-publish_pattern_samtools_sort = "*.log";
-publish_pattern_samtools_index = "*.log";
+publish_pattern_samtools_sort = "{*.log}";
+publish_pattern_samtools_index = "{*.log}";
 
 if (params.output.publish_bam == true) {
-  publish_pattern_samtools_sort = "*.bam";
+  publish_pattern_samtools_sort = "{*.log,*.bam}";
   publish_pattern_samtools_index = "{*.log,*.bam.bai}";
 }
 
@@ -230,7 +230,6 @@ process fastqc_1 {
 
 
 
-
 /**
  * THIS IS WHERE THE SPLIT HAPPENS FOR hisat2 vs Kallisto vs Salmon
  *
@@ -246,8 +245,6 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
 
 /**
  * Performs KALLISTO alignemnt of fastq files
- *
- *
  */
 process kallisto {
   publishDir params.output.sample_dir, mode: params.output.publish_mode
@@ -279,7 +276,7 @@ process kallisto {
       ${sample_id}_1.fastq
   fi
   """
- }
+}
 
 
 
@@ -362,7 +359,6 @@ process salmon_tpm {
   awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.tpm
   """
 }
-
 
 
 
@@ -771,6 +767,8 @@ process clean_sam {
     done
     """
 }
+
+
 
 /**
  * Merge the samtools_sort bam file with stringtie signal that it is
