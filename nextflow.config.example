@@ -96,7 +96,7 @@ trace {
 
 docker {
     fixOwnership = true
-    runOptions = "-u $(id -u):$(id -g)"
+    runOptions = "--init -u $(id -u):$(id -g)"
     sudo = true
 }
 
