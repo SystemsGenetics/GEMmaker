@@ -157,10 +157,21 @@ process {
 
 
 profiles {
+  //
+  // The standard profile uses the local executor, in which processes are simply
+  // launched as normal processes on the local machine. By default the local
+  // executor uses the number of CPU cores to limit how many processes are run
+  // in parallel.
+  //
   standard {
     process.executor = "local"
   }
 
+  //
+  // The testing profile is used to override the execution params and force the
+  // workflow to terminate immediately if any process fails, which is useful for
+  // debugging purposes.
+  //
   testing {
     process {
       withLabel:retry {

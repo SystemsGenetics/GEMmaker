@@ -7,16 +7,16 @@ the workflow can be customized.
 
 For GEMmaker, the ``nextflow.config`` file is in 3 main parts:
 
-- params - the largest section, contains information on the input files, output
-  files and software
-- performance - contains sections on the performance of the workflow
-- profiles - nextflow can run on multiple different HPC systems, this is
-  where you modify this parameter. Refer to the `Nextflow
-  documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__
-  to modify the profile for your system
+- Parameters: command-line parameters which are used by the rest of the config
+  file and the pipeline script to control input, output, execution, etc.
+- Configuration: default settings for various things including execution
+  reports, Docker / Singularity, and default process directives.
+- Profiles: settings that are specific to an environment, such as a particular
+  HPC system. nextflow can use a number of different HPC systems. Refer to the `Nextflow
+  documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`
+  to see what options are available for your system.
 
-The following gives detailed information on each parameter in the
-``nextflow.config`` file.
+The following gives detailed information on each parameter in the ``nextflow.config`` file.
 
 Input
 ~~~~~
@@ -187,7 +187,7 @@ Default:
 
 .. code:: bash
 
-  max_retries = "2"
+  max_retries = 2
 
 error_strategy
 ==============
@@ -198,3 +198,24 @@ Default:
 .. code:: bash
 
   error_strategy = "ignore"
+
+Software
+~~~~~~~~
+
+which_alignment
+===============
+
+User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
+processes "samtools_sort", "samtools_index" and "stringtie" will also be
+done. All processes will end with a gene abundance file. Aligns reads to
+the reference genome.
+
+- ``0``: hisat2
+- ``1``: kallisto
+- ``2``: salmon
+
+Default:
+
+.. code:: bash
+
+  which_alignment = 0
