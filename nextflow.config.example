@@ -64,11 +64,6 @@ params {
       //
       which_alignment = 0
     }
-
-    fpkm_or_tpm {
-      fpkm = true
-      tpm = true
-    }
   }
 }
 
