@@ -183,6 +183,7 @@ process SRR_combine {
   output:
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_COUNTING
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_FASTQC_1
+    set file("[SDE]RR*.fastq") into RUNS_FOR_CLEANING
 
   /**
    * This command tests to see if ls produces a 0 or not by checking
@@ -202,7 +203,9 @@ process SRR_combine {
 }
 
 
-
+/**
+ * This is where we combine samples from both local and remote sources.
+ */
 COMBINED_SAMPLES_FOR_FASTQC_1 = LOCAL_SAMPLES_FOR_FASTQC_1.mix(MERGED_SAMPLES_FOR_FASTQC_1)
 COMBINED_SAMPLES_FOR_COUNTING = LOCAL_SAMPLES_FOR_COUNTING.mix(MERGED_SAMPLES_FOR_COUNTING)
 
@@ -672,6 +675,19 @@ process fpkm_or_tpm {
  * and access times.
  */
 
+ /**
+  * Cleans downloaded fastq files
+  *
+ process clean_downloaded_fastq {
+   tag { sample_id }
+
+   input:
+     // We input fastq_files as a file because we need the full path.
+     set val(sample_id), val(files_list) from RUNS_FOR_CLEANING
+
+   script:
+     template "clean_work_files.sh"
+ }*/
 
 
 /**
@@ -686,39 +702,17 @@ TRHIMIX
 
 
 /**
- * Cleans downloaded and trimmed fastq files
+ * Cleans trimmed fastq files
  */
 process clean_trimmed {
   tag { sample_id }
 
   input:
     // We input fastq_files as a file because we need the full path.
-    set val(sample_id), val(fastq_files) from TRIMMED_CLEANUP_READY
+    set val(sample_id), val(files_list) from TRIMMED_CLEANUP_READY
 
   script:
-    """
-    for file in ${fastq_files}
-    do
-      file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
-      if [ ${params.output.publish_trimmed_fastq} = false ]; then
-        if [ -e \$file ]; then
-          # Log some info about the file for debugging purposes
-          echo "cleaning \$file"
-          stat \$file
-          # Get file info: size, access and modify times
-          size=`stat --printf="%s" \$file`
-          atime=`stat --printf="%X" \$file`
-          mtime=`stat --printf="%Y" \$file`
-          # Make the file size 0 and set as a sparse file
-          > \$file
-          truncate -s \$size \$file
-          # Reset the timestamps on the file
-          touch -a -d @\$atime \$file
-          touch -m -d @\$mtime \$file
-        fi
-      fi
-    done
-    """
+    template "clean_work_files.sh"
 }
 
 
@@ -742,30 +736,10 @@ process clean_sam {
 
   input:
     // We input sam_files as a file because we need the full path.
-    set val(sample_id), val(sam_files) from SAM_CLEANUP_READY
+    set val(sample_id), val(files_list) from SAM_CLEANUP_READY
 
   script:
-    """
-    for file in ${sam_files}
-    do
-      file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
-      if [ -e \$file ]; then
-        # Log some info about the file for debugging purposes
-        echo "cleaning \$file"
-        stat \$file
-        # Get file info: size, access and modify times
-        size=`stat --printf="%s" \$file`
-        atime=`stat --printf="%X" \$file`
-        mtime=`stat --printf="%Y" \$file`
-        # Make the file size 0 and set as a sparse file
-        > \$file
-        truncate -s \$size \$file
-        # Reset the timestamps on the file
-        touch -a -d @\$atime \$file
-        touch -m -d @\$mtime \$file
-      fi
-    done
-    """
+    template "clean_work_files.sh"
 }
 
 
@@ -789,30 +763,8 @@ process clean_bam {
 
   input:
     // We input sam_files as a file because we need the full path.
-    set val(sample_id), val(bam_files) from BAM_CLEANUP_READY
+    set val(sample_id), val(files_list) from BAM_CLEANUP_READY
 
   script:
-    """
-    for file in ${bam_files}
-    do
-      file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
-      if [ ${params.output.publish_bam} = false ]; then
-        if [ -e \$file ]; then
-          # Log some info about the file for debugging purposes
-          echo "cleaning \$file"
-          stat \$file
-          # Get file info: size, access and modify times
-          size=`stat --printf="%s" \$file`
-          atime=`stat --printf="%X" \$file`
-          mtime=`stat --printf="%Y" \$file`
-          # Make the file size 0 and set as a sparse file
-          > \$file
-          truncate -s \$size \$file
-          # Reset the timestamps on the file
-          touch -a -d @\$atime \$file
-          touch -m -d @\$mtime \$file
-        fi
-      fi
-    done
-    """
+    template "clean_work_files.sh"
 }
