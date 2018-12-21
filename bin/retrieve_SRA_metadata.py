@@ -75,7 +75,16 @@ def download_runs_meta(srr_file):
             response_xml = response_obj.read()
             response = xmltodict.parse(response_xml)
 
+            # Get the list of experiments from the query.
             experiments = response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]
+
+            # If we only have one experiment then we have to convert it to an 
+            # array for our for loop below.
+            if (isinstance(experiments, list) == False):
+              experiments = []
+              experiments.append(response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"])
+
+            # Now loop through the experiments to handle the metadata.
             for i in range(0, len(experiments)):
                 experiment = experiments[i]
                 run_id = srr_ids[page * page_size + i]
@@ -85,7 +94,7 @@ def download_runs_meta(srr_file):
                 else:
                   srx_ids[exp_id] = [run_id];
 
-                # Get the metadata for the sample
+                # Get the metadata for the sample.
                 sample = experiment["SAMPLE"]
 
                 # Get this run's metadata.
