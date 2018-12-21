@@ -112,7 +112,7 @@ process {
   }
 
   withLabel:sratoolkit {
-    container = "systemsgenetics/sratoolkit:2.8.2"
+    container = "systemsgenetics/sratoolkit:2.9.2"
     time = "48h"
   }
   withLabel:python3 {

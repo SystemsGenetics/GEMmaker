@@ -10,8 +10,8 @@ https://github.com/docker-library/official-images
 docker build -t {TAG NAME} {PATH TO DOCKERFILE}
 
 # example
-cd Dockerfiles/sratoolkit/2.8.2
-docker build -t systemsgenetics/sratoolkit:2.8.2 .
+cd Dockerfiles/sratoolkit/2.9.2
+docker build -t systemsgenetics/sratoolkit:2.9.2 .
 ```
 
 ## Get Shell into Docker Image
