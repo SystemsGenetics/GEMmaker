@@ -21,6 +21,12 @@ GEMmaker uses the following tools:
 - [stringTie](http://www.ccb.jhu.edu/software/stringtie/) v1.3.4d:  Performs gene expression quantification.
 - [MultiQC](http://multiqc.info/) (optional) v1.5:  Generate a full summary report for the entire workflow.
 
+## Running with the Dockerfile
+
+```bash
+nextflow run main.nf -with-docker
+```
+
 ## Installation 
 See the online GEMmaker [Documentation](https://gemmaker.readthedocs.io/en/latest/)
 

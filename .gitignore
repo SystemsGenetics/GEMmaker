@@ -1,6 +1,4 @@
-SRX*
+.nextflow*
 nextflow.config
-report.html
-timeline.html
-trace.txt
+output
 work
