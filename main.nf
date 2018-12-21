@@ -100,6 +100,15 @@ else {
 }
 
 
+/**
+ * Set the pattern for publishing downloaded files
+ */
+publish_pattern_fastq_dump = "{none}";
+if (params.output.publish_downloaded_fastq == true) {
+  publish_pattern_fastq_dump = "{*.fastq}";
+}
+
+
 
 /**
  * Set the pattern for publishing trimmed files
@@ -154,6 +163,7 @@ SRR2SRX.splitCsv().groupTuple(by: 1).set { SRR2SRX_TO_FASTQ_DUMP }
  * Downloads FASTQ files from the NCBI SRA.
  */
 process fastq_dump {
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${exp_id}/${it}" }
   tag { exp_id }
   label "sratoolkit"
   label "retry"
@@ -162,8 +172,8 @@ process fastq_dump {
     set val(run_ids), val(exp_id) from SRR2SRX_TO_FASTQ_DUMP
 
   output:
-    set val(exp_id), file("*.fastq") into RUN_FILES_FOR_COMBINATION
-    set val(exp_id), file("*.fastq") into RUN_FILES_FOR_CLEANING
+    set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_COMBINATION
+    set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_CLEANING
 
   script:
   """
@@ -183,12 +193,13 @@ process SRR_combine {
   tag { sample_id }
 
   input:
-    set val(sample_id), file(grouped) from RUN_FILES_FOR_COMBINATION
+    set val(sample_id), file(grouped) from DOWNLOADED_FASTQ_FOR_COMBINATION
 
   output:
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_COUNTING
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_FASTQC_1
-    set val(sample_id), val('SRR_combine') into CLEAN_RUN_FASTQ_SIGNAL
+    set val(sample_id), file("${sample_id}_?.fastq") into MERGED_FASTQ_FOR_CLEANING
+    set val(sample_id), val(1) into CLEAN_DOWNLOADED_FASTQ_SIGNAL
 
   /**
    * This command tests to see if ls produces a 0 or not by checking
@@ -265,6 +276,7 @@ process kallisto {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
+    set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL
 
   script:
   """
@@ -323,6 +335,7 @@ process salmon {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into SALMON_GA
+    set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_SALMON_SIGNAL
 
   script:
   """
@@ -393,7 +406,7 @@ process trimmomatic {
   output:
     set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_FOR_FASTQC
     set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_FOR_HISAT2
-    set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_2_CLEAN
+    set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_FASTQ_FOR_CLEANING
     set val(sample_id), file("${sample_id}.trim.log") into TRIMMED_SAMPLE_LOG
 
   script:
@@ -504,8 +517,9 @@ process hisat2 {
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam.log") into INDEXED_SAMPLES_LOG
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into HISAT2_SAM_2_CLEAN
-    set val(sample_id), val(1) into HISAT2_DONE_SAMPLES
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into SAM_FOR_CLEANING
+    set val(sample_id), val(1) into CLEAN_TRIMMED_FASTQ_SIGNAL
+    set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_HISAT_SIGNAL
 
   script:
   """
@@ -558,8 +572,8 @@ process samtools_sort {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") into SORTED_FOR_INDEX
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") into SAMTOOLS_SORT_BAM_2_CLEAN
-    set val(sample_id), val(1) into SAMTOOLS_SORT_DONE_SAMPLES
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") into BAM_FOR_CLEANING
+    set val(sample_id), val(1) into CLEAN_SAM_SIGNAL
 
   script:
     """
@@ -616,7 +630,7 @@ process stringtie {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into STRINGTIE_GTF
-    set val(sample_id), val(1) into STRINGTIE_DONE_SAMPLES
+    set val(sample_id), val(1) into CLEAN_BAM_SIGNAL
 
   script:
     """
@@ -679,41 +693,80 @@ process fpkm_or_tpm {
  * original size, we will also reset the original modify
  * and access times.
  */
-RFCLEAN = RUN_FILES_FOR_CLEANING.mix ( CLEAN_RUN_FASTQ_SIGNAL )
-RFCLEAN.groupTuple(size: 2).set { RUN_CLEANUP_READY }
 
- /**
-  * Cleans downloaded fastq files
-  *
- process clean_downloaded_fastq {
-   tag { sample_id }
 
-   input:
-     // We input fastq_files as a file because we need the full path.
-     set val(sample_id), val(files_list) from RUN_CLEANUP_READY
+/**
+ * Merge the fastq_dump files with SRR_combine signal 
+ * so that we can remove these files.
+ */
 
-   script:
-     template "clean_work_files.sh"
- }*/
+RFCLEAN = DOWNLOADED_FASTQ_FOR_CLEANING.mix(CLEAN_DOWNLOADED_FASTQ_SIGNAL)
+RFCLEAN.groupTuple(size: 2).set { DOWNLOADED_FASTQ_CLEANUP_READY }
+
+/**
+ * Cleans downloaded fastq files
+ */
+process clean_downloaded_fastq {
+  tag { sample_id }
+
+  input:
+    set val(sample_id), val(files_list) from DOWNLOADED_FASTQ_CLEANUP_READY
+
+  when: 
+    params.output.publish_downloaded_fastq == false
+
+  script:
+    template "clean_work_files.sh"
+}
+
+
+
+/**
+ * Merge the merged fastq files with the signals from hista2, 
+ * kallisto and salmon to clean up merged fastq files. This
+ * is only needed for remote files that were downloaded
+ * and then merged into a single sample in the SRR_combine
+ * process.
+ */
+MFCLEAN = MERGED_FASTQ_FOR_CLEANING.mix(CLEAN_MERGED_FASTQ_HISAT_SIGNAL, CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL, CLEAN_MERGED_FASTQ_SALMON_SIGNAL)
+MFCLEAN.groupTuple(size: 2).set { MERGED_FASTQ_CLEANUP_READY }
+
+/**
+ * Cleans merged fastq files
+ */
+process clean_merged_fastq {
+  tag { sample_id }
+
+  input:
+    set val(sample_id), val(files_list) from MERGED_FASTQ_CLEANUP_READY
+
+  when:
+    params.output.publish_downloaded_fastq == false
+
+  script:
+    template "clean_work_files.sh"
+}
+
 
 
 /**
  * Merge the Trimmomatic samples with Hisat's signal that it is
  * done so that we can remove these files.
  */
-TRHIMIX = TRIMMED_SAMPLES_2_CLEAN.mix( HISAT2_DONE_SAMPLES )
-TRHIMIX.groupTuple(size: 2).set { TRIMMED_CLEANUP_READY }
-
+TRHIMIX = TRIMMED_FASTQ_FOR_CLEANING.mix(CLEAN_TRIMMED_FASTQ_SIGNAL)
+TRHIMIX.groupTuple(size: 2).set { TRIMMED_FASTQ_CLEANUP_READY }
 
 /**
  * Cleans trimmed fastq files
  */
-process clean_trimmed {
+process clean_trimmed_fastq {
   tag { sample_id }
 
   input:
-    // We input fastq_files as a file because we need the full path.
-    set val(sample_id), val(files_list) from TRIMMED_CLEANUP_READY
+    set val(sample_id), val(files_list) from TRIMMED_FASTQ_CLEANUP_READY
+
+  when: 
+    params.output.publish_trimmed_fastq == false
 
   script:
     template "clean_work_files.sh"
@@ -725,12 +778,8 @@ process clean_trimmed {
  * Merge the HISAT sam file with samtools_sort signal that it is
  * done so that we can remove these files.
  */
-HISSMIX = HISAT2_SAM_2_CLEAN.mix( SAMTOOLS_SORT_DONE_SAMPLES )
-HISSMIX
-  .groupTuple(size: 2)
-  .set { SAM_CLEANUP_READY }
-
-
+HISSMIX = SAM_FOR_CLEANING.mix(CLEAN_SAM_SIGNAL)
+HISSMIX.groupTuple(size: 2).set { SAM_CLEANUP_READY }
 
 /**
  * Clean up SAM files
@@ -739,7 +788,6 @@ process clean_sam {
   tag { sample_id }
 
   input:
-    // We input sam_files as a file because we need the full path.
     set val(sample_id), val(files_list) from SAM_CLEANUP_READY
 
   script:
@@ -752,12 +800,8 @@ process clean_sam {
  * Merge the samtools_sort bam file with stringtie signal that it is
  * done so that we can remove these files.
  */
-SSSTMIX = SAMTOOLS_SORT_BAM_2_CLEAN.mix( STRINGTIE_DONE_SAMPLES )
-SSSTMIX
-  .groupTuple(size: 2)
-  .set { BAM_CLEANUP_READY }
-
-
+SSSTMIX = BAM_FOR_CLEANING.mix(CLEAN_BAM_SIGNAL)
+SSSTMIX.groupTuple(size: 2).set { BAM_CLEANUP_READY }
 
 /**
  * Clean up BAM files
@@ -766,8 +810,10 @@ process clean_bam {
   tag { sample_id }
 
   input:
-    // We input sam_files as a file because we need the full path.
     set val(sample_id), val(files_list) from BAM_CLEANUP_READY
+
+  when: 
+    params.output.publish_bam == false
 
   script:
     template "clean_work_files.sh"

@@ -11,21 +11,19 @@
 for file in ${files_list}
 do
   file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
-  if [ ${params.output.publish_downloaded_fastq} = false ]; then
-    if [ -e \$file ]; then
-      # Log some info about the file for debugging purposes
-      echo "cleaning \$file"
-      stat \$file
-      # Get file info: size, access and modify times
-      size=`stat --printf="%s" \$file`
-      atime=`stat --printf="%X" \$file`
-      mtime=`stat --printf="%Y" \$file`
-      # Make the file size 0 and set as a sparse file
-      > \$file
-      truncate -s \$size \$file
-      # Reset the timestamps on the file
-      touch -a -d @\$atime \$file
-      touch -m -d @\$mtime \$file
-    fi
+  if [ -e \$file ]; then
+    # Log some info about the file for debugging purposes
+    echo "cleaning \$file"
+    stat \$file
+    # Get file info: size, access and modify times
+    size=`stat --printf="%s" \$file`
+    atime=`stat --printf="%X" \$file`
+    mtime=`stat --printf="%Y" \$file`
+    # Make the file size 0 and set as a sparse file
+    > \$file
+    truncate -s \$size \$file
+    # Reset the timestamps on the file
+    touch -a -d @\$atime \$file
+    touch -m -d @\$mtime \$file
   fi
 done
