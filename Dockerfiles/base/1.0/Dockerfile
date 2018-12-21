@@ -13,5 +13,5 @@ LABEL about.license_file=""
 ENV DEBIAN_FRONTEND noninteractive
 
 # Update and install basic packages.
-RUN apt-get update \
-  && apt-get install -y curl git unzip wget 
+RUN apt-get update -qq \
+  && apt-get install -qq -y curl git unzip wget 
