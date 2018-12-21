@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """A Python script for retrieving metadata about NCBI SRA experiment runsself.
 
 .. module:: GEMmaker
@@ -108,6 +110,9 @@ def download_runs_meta(srr_file):
 
                 # Now save the mapping information
                 tabfile.write(run_id + "\t" + exp_id + "\n");
+
+                # Write in CSV format to STDOUT for Nextflow to handle
+                sys.stdout.write(run_id + "," + exp_id + "\n");
 
 
 def save_ncbi_meta(experiment, sample, run):
@@ -242,17 +247,15 @@ def save_gemmaker_meta(experiment, sample, run):
           annots['EFO:0000727'] = attr['VALUE']
         continue
 
-      print("Unhandled sample attribute: '" + attr['TAG'] + "', value: " + attr['VALUE'])
+      sys.stderr.write("Unhandled sample attribute: '" + attr['TAG'] + "', value: " + attr['VALUE'] + "\n")
 
     # Save the heirarchical JSON metadata from GEMmaker
     jsonfilename = annots['local:SRX_id'] + '.GEMmaker.meta.json'
-    print("Writing file: " + jsonfilename)
     with open(jsonfilename, 'w') as jsonfile:
       json.dump(annots, jsonfile)
 
     # Save a flattened CSV file
     tabfilename = annots['local:SRX_id'] + '.GEMmaker.meta.tab'
-    print("Writing file: " + tabfilename)
     with open(tabfilename, 'w') as tabfile:
       tabfile.write(
         annots["data:2091"]
