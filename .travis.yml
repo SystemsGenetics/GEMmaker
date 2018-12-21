@@ -1,7 +1,3 @@
-branches:
-  only:
-    - issue_38_docker_integration
-
 sudo: required
 jdk: openjdk8
 

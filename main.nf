@@ -44,6 +44,8 @@ Output Parameters:
   Publish mode:               ${params.output.publish_mode}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
   Publish BAM:                ${params.output.publish_bam}
+  Publish FPKM:               ${params.output.publish_fpkm}
+  Publish TPM:                ${params.output.publish_tpm}
 
 
 Execution Parameters:
@@ -69,6 +71,7 @@ HISAT2_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input
 GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf").collect()
 
 
+
 /**
  * Local Sample Input.
  * This checks the folder that the user has given
@@ -84,6 +87,8 @@ else {
     .set { LOCAL_SAMPLES_FOR_FASTQC_1 }
 }
 
+
+
 /**
  * Remote fastq_run_id Input.
  */
@@ -94,24 +99,46 @@ else {
   Channel.value(params.input.remote_list_path).set { SRR_FILE }
 }
 
+
+
 /**
  * Set the pattern for publishing trimmed files
  */
-trimmomatic_publish_pattern = "*.trim.log";
-if (params.publish.keep_trimmed_fastq == true) {
-  trimmomatic_publish_pattern = "{*.trim.log,*_trim.fastq}";
+publish_pattern_trimmomatic = "{*.trim.log}";
+if (params.output.publish_trimmed_fastq == true) {
+  publish_pattern_trimmomatic = "{*.trim.log,*_trim.fastq}";
 }
+
+
 
 /**
  * Set the pattern for publishing BAM files
  */
-samtools_sort_publish_pattern = "*.log";
-if (params.publish.keep_alignment_bam == true) {
-  samtools_sort_publish_pattern = "*.bam";
+publish_pattern_samtools_sort = "{*.log}";
+publish_pattern_samtools_index = "{*.log}";
+
+if (params.output.publish_bam == true) {
+  publish_pattern_samtools_sort = "{*.log,*.bam}";
+  publish_pattern_samtools_index = "{*.log,*.bam.bai}";
 }
-samtools_index_publish_pattern = "*.log";
-if (params.publish.keep_alignment_bam == true) {
-  samtools_index_publish_pattern = "{*.log,*.bam.bai}";
+
+
+
+process retrieve_sample_metadata {
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
+  label "python3"
+
+  input:
+    val srr_file from SRR_FILE
+
+  output:
+    stdout SRR2SRX
+    file "*.GEMmaker.meta.*"
+
+  script:
+    """
+    retrieve_SRA_metadata.py $srr_file
+    """
 }
 
 
@@ -121,12 +148,12 @@ if (params.publish.keep_alignment_bam == true) {
  */
 SRR2SRX.splitCsv().groupTuple(by: 1).set { SRR2SRX_TO_FASTQ_DUMP }
 
+
+
 /**
  * Downloads FASTQ files from the NCBI SRA.
  */
 process fastq_dump {
-  // module "sratoolkit"
-  // time params.software.fastq_dump.time
   tag { exp_id }
   label "sratoolkit"
   label "retry"
@@ -137,6 +164,7 @@ process fastq_dump {
   output:
     set val(exp_id), file("*.fastq") into RUN_FILES_FOR_COMBINATION
 
+  script:
   """
   ids=`echo $run_ids | perl -pi -e 's/[\\[,\\]]//g'`
   for run_id in \$ids; do
@@ -144,6 +172,8 @@ process fastq_dump {
   done
   """
 }
+
+
 
 /**
  * This process merges the fastq files based on their sample_id number.
@@ -153,6 +183,7 @@ process SRR_combine {
 
   input:
     set val(sample_id), file(grouped) from RUN_FILES_FOR_COMBINATION
+
   output:
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_COUNTING
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_FASTQC_1
@@ -162,6 +193,7 @@ process SRR_combine {
    * its standard out. We do not use a "if [-e *foo]" becuase it gets
    * confused if there are more than one things returned by the wildcard
    */
+  script:
   """
     if ls *_1.fastq >/dev/null 2>&1; then
       cat *_1.fastq >> "${sample_id}_1.fastq"
@@ -173,8 +205,12 @@ process SRR_combine {
   """
 }
 
+
+
 COMBINED_SAMPLES_FOR_FASTQC_1 = LOCAL_SAMPLES_FOR_FASTQC_1.mix(MERGED_SAMPLES_FOR_FASTQC_1)
 COMBINED_SAMPLES_FOR_COUNTING = LOCAL_SAMPLES_FOR_COUNTING.mix(MERGED_SAMPLES_FOR_COUNTING)
+
+
 
 /**
  * Performs fastqc on fastq files prior to trimmomatic
@@ -190,10 +226,13 @@ process fastqc_1 {
   output:
     set file("${sample_id}_?_fastqc.html") , file("${sample_id}_?_fastqc.zip") optional true into FASTQC_1_OUTPUT
 
+  script:
   """
   fastqc $pass_files
   """
 }
+
+
 
 /**
  * THIS IS WHERE THE SPLIT HAPPENS FOR hisat2 vs Kallisto vs Salmon
@@ -201,17 +240,15 @@ process fastqc_1 {
  * Information about "choice" split operator (to be deleted before final
  * GEMmaker release)
  */
-
 HISAT2_CHANNEL = Channel.create()
 KALLISTO_CHANNEL = Channel.create()
-SALMON_CHANNEL  = Channel.create()
+SALMON_CHANNEL = Channel.create()
 COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment.which_alignment }
+
 
 
 /**
  * Performs KALLISTO alignemnt of fastq files
- *
- *
  */
 process kallisto {
   publishDir params.output.sample_dir, mode: params.output.publish_mode
@@ -241,11 +278,11 @@ process kallisto {
       -i ${params.input.reference_prefix}.transcripts.Kallisto.indexed \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       ${sample_id}_1.fastq
+  fi
+  """
+}
 
-   fi
 
-   """
- }
 
 /**
  * Generates the final TPM file for Kallisto
@@ -265,7 +302,6 @@ process kallisto_tpm {
   awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
   """
 }
-
 
 
 
@@ -307,10 +343,7 @@ process salmon {
   """
 }
 
-    fi
 
-    """
-  }
 
 /**
  * Generates the final TPM file for Salmon
@@ -377,47 +410,49 @@ process trimmomatic {
     total=( \$total / 2 )
     minlen=\$total
 
-   script:
-   """
-   #This script calculates average length of fastq files.
-   total=0
+  elif [ -e ${sample_id}_1.fastq ]; then
+    minlen=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' ${sample_id}_1.fastq \
+      | sort \
+      | awk '{ print \$0, \$1*\$2}' \
+      | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
+  fi
 
-   if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
-     java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
-       PE \
-       -threads ${params.execution.threads} \
-       ${params.software.trimmomatic.quality} \
-       ${sample_id}_1.fastq \
-       ${sample_id}_2.fastq \
-       ${sample_id}_1p_trim.fastq \
-       ${sample_id}_1u_trim.fastq \
-       ${sample_id}_2p_trim.fastq \
-       ${sample_id}_2u_trim.fastq \
-       ILLUMINACLIP:${params.software.trimmomatic.clip_path}:2:40:15 \
-       LEADING:${params.software.trimmomatic.LEADING} \
-       TRAILING:${params.software.trimmomatic.TRAILING} \
-       SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
-       MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
-   else
-     # For ease of the next steps, rename the reverse file to the forward.
-     # since these are non-paired it really shouldn't matter.
-     if [ -e ${sample_id}_2.fastq ]; then
-       mv ${sample_id}_2.fastq ${sample_id}_1.fastq
-     fi
-     # Now run trimmomatic
-     java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
-       SE \
-       -threads ${params.execution.threads} \
-       ${params.software.trimmomatic.quality} \
-       ${sample_id}_1.fastq \
-       ${sample_id}_1u_trim.fastq \
-       ILLUMINACLIP:${params.software.trimmomatic.clip_path}:2:40:15 \
-       LEADING:${params.software.trimmomatic.LEADING} \
-       TRAILING:${params.software.trimmomatic.TRAILING} \
-       SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
-       MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
-   fi
-   """
+  if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
+    java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
+      PE \
+      -threads ${params.execution.threads} \
+      ${params.software.trimmomatic.quality} \
+      ${sample_id}_1.fastq \
+      ${sample_id}_2.fastq \
+      ${sample_id}_1p_trim.fastq \
+      ${sample_id}_1u_trim.fastq \
+      ${sample_id}_2p_trim.fastq \
+      ${sample_id}_2u_trim.fastq \
+      ILLUMINACLIP:${params.software.trimmomatic.clip_path}:2:40:15 \
+      LEADING:${params.software.trimmomatic.LEADING} \
+      TRAILING:${params.software.trimmomatic.TRAILING} \
+      SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
+      MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
+  else
+    # For ease of the next steps, rename the reverse file to the forward.
+    # since these are non-paired it really shouldn't matter.
+    if [ -e ${sample_id}_2.fastq ]; then
+      mv ${sample_id}_2.fastq ${sample_id}_1.fastq
+    fi
+    # Now run trimmomatic
+    java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
+      SE \
+      -threads ${params.execution.threads} \
+      ${params.software.trimmomatic.quality} \
+      ${sample_id}_1.fastq \
+      ${sample_id}_1u_trim.fastq \
+      ILLUMINACLIP:${params.software.trimmomatic.clip_path}:2:40:15 \
+      LEADING:${params.software.trimmomatic.LEADING} \
+      TRAILING:${params.software.trimmomatic.TRAILING} \
+      SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
+      MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
+  fi
+  """
 }
 
 
@@ -458,15 +493,15 @@ process hisat2 {
   label "hisat2"
 
   input:
-   set val(sample_id), file(input_files) from TRIMMED_SAMPLES_FOR_HISAT2
-   file indexes from HISAT2_INDEXES
-   file gtf_file from GTF_FILE
+    set val(sample_id), file(input_files) from TRIMMED_SAMPLES_FOR_HISAT2
+    file indexes from HISAT2_INDEXES
+    file gtf_file from GTF_FILE
 
   output:
-   set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES
-   set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam.log") into INDEXED_SAMPLES_LOG
-   set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into HISAT2_SAM_2_CLEAN
-   set val(sample_id), val(1) into HISAT2_DONE_SAMPLES
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam.log") into INDEXED_SAMPLES_LOG
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into HISAT2_SAM_2_CLEAN
+    set val(sample_id), val(1) into HISAT2_DONE_SAMPLES
 
   script:
   """
@@ -575,7 +610,6 @@ process stringtie {
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") from BAM_INDEXED_FOR_STRINGTIE
     file gtf_file from GTF_FILE
 
-
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into STRINGTIE_GTF
     set val(sample_id), val(1) into STRINGTIE_DONE_SAMPLES
@@ -610,22 +644,24 @@ process fpkm_or_tpm {
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into TPM
 
   script:
-  if( params.software.fpkm_or_tpm.fpkm == true && params.software.fpkm_or_tpm.tpm == true )
+  if ( params.output.publish_fpkm == true && params.output.publish_tpm == true )
     """
     awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
     """
-  else if( params.software.fpkm_or_tpm.fpkm == true)
+  else if ( params.output.publish_fpkm == true )
     """
     awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
     """
-  else if( params.software.fpkm_or_tpm.tpm == true )
+  else if ( params.output.publish_tpm == true )
     """
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
     """
   else
     error "Please choose at least one output and resume GEMmaker"
 }
+
+
 
 /**
  * PROCESSES FOR CLEANING LARGE FILES
@@ -638,8 +674,9 @@ process fpkm_or_tpm {
  * sparce file of size zero but masquerading as its
  * original size, we will also reset the original modify
  * and access times.
- *
  */
+
+
 
 /**
  * Merge the Trimmomatic samples with Hisat's signal that it is
@@ -655,37 +692,40 @@ TRHIMIX
 /**
  * Cleans downloaded and trimmed fastq files
  */
-process clean_trimmed {
+process clean_fastq {
   tag { sample_id }
+
   input:
     // We input fastq_files as a file because we need the full path.
     set val(sample_id), val(fastq_files) from TRIMMED_CLEANUP_READY
+
+  when: params.output.publish_trimmed_fastq == false
 
   script:
     """
     for file in ${fastq_files}
     do
       file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
-      if [ ${params.output.publish_trimmed_fastq} = false ]; then
-        if [ -e \$file ]; then
-          # Log some info about the file for debugging purposes
-          echo "cleaning \$file"
-          stat \$file
-          # Get file info: size, access and modify times
-          size=`stat --printf="%s" \$file`
-          atime=`stat --printf="%X" \$file`
-          mtime=`stat --printf="%Y" \$file`
-          # Make the file size 0 and set as a sparse file
-          > \$file
-          truncate -s \$size \$file
-          # Reset the timestamps on the file
-          touch -a -d @\$atime \$file
-          touch -m -d @\$mtime \$file
-        fi
+      if [ -e \$file ]; then
+        # Log some info about the file for debugging purposes
+        echo "cleaning \$file"
+        stat \$file
+        # Get file info: size, access and modify times
+        size=`stat --printf="%s" \$file`
+        atime=`stat --printf="%X" \$file`
+        mtime=`stat --printf="%Y" \$file`
+        # Make the file size 0 and set as a sparse file
+        > \$file
+        truncate -s \$size \$file
+        # Reset the timestamps on the file
+        touch -a -d @\$atime \$file
+        touch -m -d @\$mtime \$file
       fi
     done
     """
 }
+
+
 
 /**
  * Merge the HISAT sam file with samtools_sort signal that it is
@@ -703,6 +743,7 @@ HISSMIX
  */
 process clean_sam {
   tag { sample_id }
+
   input:
     // We input sam_files as a file because we need the full path.
     set val(sample_id), val(sam_files) from SAM_CLEANUP_READY
@@ -731,6 +772,8 @@ process clean_sam {
     """
 }
 
+
+
 /**
  * Merge the samtools_sort bam file with stringtie signal that it is
  * done so that we can remove these files.
@@ -747,9 +790,12 @@ SSSTMIX
  */
 process clean_bam {
   tag { sample_id }
+
   input:
     // We input sam_files as a file because we need the full path.
     set val(sample_id), val(bam_files) from BAM_CLEANUP_READY
+
+  when: params.output.publish_bam == false
 
   script:
     """

@@ -27,6 +27,8 @@ params {
     publish_mode = "link"
     publish_trimmed_fastq = true
     publish_bam = true
+    publish_fpkm = true
+    publish_tpm = true
   }
 
   execution {
@@ -61,11 +63,6 @@ params {
       // Salmon = 2
       //
       which_alignment = 0
-    }
-
-    fpkm_or_tpm {
-      fpkm = true
-      tpm = true
     }
   }
 }
@@ -157,10 +154,21 @@ process {
 
 
 profiles {
+  //
+  // The standard profile uses the local executor, in which processes are simply
+  // launched as normal processes on the local machine. By default the local
+  // executor uses the number of CPU cores to limit how many processes are run
+  // in parallel.
+  //
   standard {
     process.executor = "local"
   }
 
+  //
+  // The testing profile is used to override the execution params and force the
+  // workflow to terminate immediately if any process fails, which is useful for
+  // debugging purposes.
+  //
   testing {
     process {
       withLabel:retry {
