@@ -44,6 +44,8 @@ Output Parameters:
   Publish mode:               ${params.output.publish_mode}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
   Publish BAM:                ${params.output.publish_bam}
+  Publish FPKM:               ${params.output.publish_fpkm}
+  Publish TPM:                ${params.output.publish_tpm}
 
 
 Execution Parameters:
@@ -640,16 +642,16 @@ process fpkm_or_tpm {
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into TPM
 
   script:
-  if( params.software.fpkm_or_tpm.fpkm == true && params.software.fpkm_or_tpm.tpm == true )
+  if ( params.output.publish_fpkm == true && params.output.publish_tpm == true )
     """
     awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
     """
-  else if( params.software.fpkm_or_tpm.fpkm == true)
+  else if ( params.output.publish_fpkm == true )
     """
     awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
     """
-  else if( params.software.fpkm_or_tpm.tpm == true )
+  else if ( params.output.publish_tpm == true )
     """
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
     """
@@ -688,34 +690,34 @@ TRHIMIX
 /**
  * Cleans downloaded and trimmed fastq files
  */
-process clean_trimmed {
+process clean_fastq {
   tag { sample_id }
 
   input:
     // We input fastq_files as a file because we need the full path.
     set val(sample_id), val(fastq_files) from TRIMMED_CLEANUP_READY
 
+  when: params.output.publish_trimmed_fastq == false
+
   script:
     """
     for file in ${fastq_files}
     do
       file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
-      if [ ${params.output.publish_trimmed_fastq} = false ]; then
-        if [ -e \$file ]; then
-          # Log some info about the file for debugging purposes
-          echo "cleaning \$file"
-          stat \$file
-          # Get file info: size, access and modify times
-          size=`stat --printf="%s" \$file`
-          atime=`stat --printf="%X" \$file`
-          mtime=`stat --printf="%Y" \$file`
-          # Make the file size 0 and set as a sparse file
-          > \$file
-          truncate -s \$size \$file
-          # Reset the timestamps on the file
-          touch -a -d @\$atime \$file
-          touch -m -d @\$mtime \$file
-        fi
+      if [ -e \$file ]; then
+        # Log some info about the file for debugging purposes
+        echo "cleaning \$file"
+        stat \$file
+        # Get file info: size, access and modify times
+        size=`stat --printf="%s" \$file`
+        atime=`stat --printf="%X" \$file`
+        mtime=`stat --printf="%Y" \$file`
+        # Make the file size 0 and set as a sparse file
+        > \$file
+        truncate -s \$size \$file
+        # Reset the timestamps on the file
+        touch -a -d @\$atime \$file
+        touch -m -d @\$mtime \$file
       fi
     done
     """
@@ -791,27 +793,27 @@ process clean_bam {
     // We input sam_files as a file because we need the full path.
     set val(sample_id), val(bam_files) from BAM_CLEANUP_READY
 
+  when: params.output.publish_bam == false
+
   script:
     """
     for file in ${bam_files}
     do
       file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
-      if [ ${params.output.publish_bam} = false ]; then
-        if [ -e \$file ]; then
-          # Log some info about the file for debugging purposes
-          echo "cleaning \$file"
-          stat \$file
-          # Get file info: size, access and modify times
-          size=`stat --printf="%s" \$file`
-          atime=`stat --printf="%X" \$file`
-          mtime=`stat --printf="%Y" \$file`
-          # Make the file size 0 and set as a sparse file
-          > \$file
-          truncate -s \$size \$file
-          # Reset the timestamps on the file
-          touch -a -d @\$atime \$file
-          touch -m -d @\$mtime \$file
-        fi
+      if [ -e \$file ]; then
+        # Log some info about the file for debugging purposes
+        echo "cleaning \$file"
+        stat \$file
+        # Get file info: size, access and modify times
+        size=`stat --printf="%s" \$file`
+        atime=`stat --printf="%X" \$file`
+        mtime=`stat --printf="%Y" \$file`
+        # Make the file size 0 and set as a sparse file
+        > \$file
+        truncate -s \$size \$file
+        # Reset the timestamps on the file
+        touch -a -d @\$atime \$file
+        touch -m -d @\$mtime \$file
       fi
     done
     """

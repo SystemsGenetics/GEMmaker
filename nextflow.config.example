@@ -27,6 +27,8 @@ params {
     publish_mode = "link"
     publish_trimmed_fastq = true
     publish_bam = true
+    publish_fpkm = true
+    publish_tpm = true
   }
 
   execution {
