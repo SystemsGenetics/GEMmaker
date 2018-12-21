@@ -129,7 +129,7 @@ process {
     time = "24h"
   }
   withLabel:python3 {
-    container = "systemsgenetics/python3:1.0.0"
+    container = "systemsgenetics/python:3.5.1"
     time = "1h"
   }
   withLabel:salmon {

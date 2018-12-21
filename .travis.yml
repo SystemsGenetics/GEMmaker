@@ -27,7 +27,7 @@ script:
   - docker build -t systemsgenetics/fastqc:0.11.7    Dockerfiles/fastqc/0.11.7/
   - docker build -t systemsgenetics/hisat2:2.1.0     Dockerfiles/hisat2/2.1.0/
   - docker build -t systemsgenetics/kallisto:0.45.0  Dockerfiles/kallisto/0.45.0/
-  - docker build -t systemsgenetics/python3:1.0.0    Dockerfiles/python3/1.0.0/
+  - docker build -t systemsgenetics/python:3.5.1     Dockerfiles/python/3.5.1/
   - docker build -t systemsgenetics/salmon:0.12.0    Dockerfiles/salmon/0.12.0/
   - docker build -t systemsgenetics/samtools:1.9     Dockerfiles/samtools/1.9/
   - docker build -t systemsgenetics/sratoolkit:2.9.2 Dockerfiles/sratoolkit/2.9.2/
@@ -38,7 +38,7 @@ script:
   # - docker push systemsgenetics/gemmaker:latest
   # - docker push systemsgenetics/fastqc:latest
   # - docker push systemsgenetics/hisat2:2.1.0
-  # - docker push systemsgenetics/python3:1.0.0
+  # - docker push systemsgenetics/python:3.5.1
   # - docker push systemsgenetics/samtools:1.9
 
   # Run the workflow.

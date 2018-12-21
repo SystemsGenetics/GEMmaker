@@ -160,7 +160,6 @@ COMBINED_SAMPLES = DOWNLOADED_FASTQ_RUNS.mix( LOCAL_SAMPLES )
  *
  * This first checks to see if the format is standard SRR,ERR,DRR
  * This takes the input SRR numbersd and converts them to sample_id.
- * This is done by a python script that is stored in the "scripts" dir
  * The next step combines them
  */
 process SRR_to_sample_id {
