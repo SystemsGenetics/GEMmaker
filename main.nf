@@ -307,31 +307,31 @@ process kallisto {
 
 
 
- /**
-  * Generates the final TPM file for Kallisto
-  */
- process kallisto_tpm {
-   publishDir params.output.sample_dir, mode: params.output.publish_mode
-   tag { sample_id }
+/**
+ * Generates the final TPM file for Kallisto
+ */
+process kallisto_tpm {
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  tag { sample_id }
 
-   input:
-     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from KALLISTO_GA
+  input:
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from KALLISTO_GA
 
-   output:
-     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into KALLISTO_TPM
+  output:
+    file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into KALLISTO_TPM
 
-   script:
-   """
-   awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
-   """
- }
-
-
+  script:
+  """
+  awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+  """
+}
 
 
- /**
-  * Performs SALMON alignemnt of fastq files
-  */
+
+
+/**
+ * Performs SALMON alignemnt of fastq files
+ */
 process salmon {
   publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
