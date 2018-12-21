@@ -75,22 +75,34 @@ GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.refer
  * This checks the folder that the user has given
  */
 if (params.input.local_samples_path == "none") {
-  Channel
-    .empty()
-    .set { LOCAL_SAMPLES }
-} else {
-  Channel
-    .fromFilePairs( params.input.local_samples_path, size: -1 )
-    .set { LOCAL_SAMPLES }
+  Channel.empty().set { LOCAL_SAMPLES_FOR_COUNTING }
+  Channel.empty().set { LOCAL_SAMPLES_FOR_FASTQC_1 }
+}
+else {
+  Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
+    .set { LOCAL_SAMPLES_FOR_COUNTING }
+  Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
+    .set { LOCAL_SAMPLES_FOR_FASTQC_1 }
 }
 
 
 
 /**
- * Set the pattern for publishing trimmed FASTQ files
+ * Remote fastq_run_id Input.
+ */
+if (params.input.remote_list_path == "none") {
+  Channel.value().set { SRR_FILE }
+}
+else {
+  Channel.value(params.input.remote_list_path).set { SRR_FILE }
+}
+
+
+
+/**
+ * Set the pattern for publishing trimmed files
  */
 publish_pattern_trimmomatic = "{*.trim.log}";
-
 if (params.output.publish_trimmed_fastq == true) {
   publish_pattern_trimmomatic = "{*.trim.log,*_trim.fastq}";
 }
@@ -110,88 +122,52 @@ if (params.output.publish_bam == true) {
 
 
 
-/**
- * Remote fastq_run_id Input.
- */
-if (params.input.remote_list_path == "none") {
-  Channel
-     .empty()
-     .set { REMOTE_FASTQ_RUNS }
-} else {
-  Channel
-    .from( file(params.input.remote_list_path).readLines() )
-    .set { REMOTE_FASTQ_RUNS }
+process retrieve_sample_metadata {
+  label "python3"
+
+  input:
+    val srr_file from SRR_FILE
+
+  output:
+    stdout SRR2SRX
+
+  script:
+    """
+    retrieve_SRA_metadata.py $srr_file
+    """
 }
 
 
 
 /**
- * The fastq dump process downloads any needed remote fasta files to the
- * current working directory.
+ * Split the SRR2SRX mapping file
+ */
+SRR2SRX.splitCsv().groupTuple(by: 1).set { SRR2SRX_TO_FASTQ_DUMP }
+
+
+
+/**
+ * Downloads FASTQ files from the NCBI SRA.
  */
 process fastq_dump {
-  tag { fastq_run_id }
-  label "retry"
+  tag { exp_id }
   label "sratoolkit"
+  label "retry"
 
   input:
-    val fastq_run_id from REMOTE_FASTQ_RUNS
+    set val(run_ids), val(exp_id) from SRR2SRX_TO_FASTQ_DUMP
 
   output:
-    set val(fastq_run_id), file("${fastq_run_id}_?.fastq") into DOWNLOADED_FASTQ_RUNS
+    set val(exp_id), file("*.fastq") into RUN_FILES_FOR_COMBINATION
 
   script:
   """
-  fastq-dump --split-files $fastq_run_id
+  ids=`echo $run_ids | perl -pi -e 's/[\\[,\\]]//g'`
+  for run_id in \$ids; do
+    fastq-dump --split-files \$run_id
+  done
   """
 }
-
-
-
-/**
- * Combine the remote and local samples into the same channel.
- */
-COMBINED_SAMPLES = DOWNLOADED_FASTQ_RUNS.mix( LOCAL_SAMPLES )
-
-
-
-/**
- * Performs a SRR/DRR/ERR to sample_id converison:
- *
- * This first checks to see if the format is standard SRR,ERR,DRR
- * This takes the input SRR numbersd and converts them to sample_id.
- * The next step combines them
- */
-process SRR_to_sample_id {
-  tag { fastq_run_id }
-  label "python3"
-  label "rate_limit"
-
-  input:
-    set val(fastq_run_id), file(pass_files) from COMBINED_SAMPLES
-
-  output:
-    set stdout, file(pass_files) into GROUPED_BY_SAMPLE_ID mode flatten
-
-  script:
-  if( "$fastq_run_id".matches("[SDE]RR*") )
-    """
-    python3 retrieve_sample_metadata.py $fastq_run_id
-    """
-  else
-    """
-    echo -n "Sample_$fastq_run_id"
-    """
-}
-
-
-
-/**
- * This groups the channels based on sample_id.
- */
-GROUPED_BY_SAMPLE_ID
-  .groupTuple()
-  .set { GROUPED_SAMPLE_ID }
 
 
 
@@ -202,10 +178,10 @@ process SRR_combine {
   tag { sample_id }
 
   input:
-    set val(sample_id), file(grouped) from GROUPED_SAMPLE_ID
+    set val(sample_id), file(grouped) from RUN_FILES_FOR_COMBINATION
 
   output:
-    set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES
+    set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_COUNTING
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_FASTQC_1
 
   /**
@@ -227,6 +203,11 @@ process SRR_combine {
 
 
 
+COMBINED_SAMPLES_FOR_FASTQC_1 = LOCAL_SAMPLES_FOR_FASTQC_1.mix(MERGED_SAMPLES_FOR_FASTQC_1)
+COMBINED_SAMPLES_FOR_COUNTING = LOCAL_SAMPLES_FOR_COUNTING.mix(MERGED_SAMPLES_FOR_COUNTING)
+
+
+
 /**
  * Performs fastqc on fastq files prior to trimmomatic
  */
@@ -236,7 +217,7 @@ process fastqc_1 {
   label "fastqc"
 
   input:
-    set val(sample_id), file(pass_files) from MERGED_SAMPLES_FOR_FASTQC_1
+    set val(sample_id), file(pass_files) from COMBINED_SAMPLES_FOR_FASTQC_1
 
   output:
     set file("${sample_id}_?_fastqc.html") , file("${sample_id}_?_fastqc.zip") optional true into FASTQC_1_OUTPUT
@@ -258,7 +239,7 @@ process fastqc_1 {
 HISAT2_CHANNEL = Channel.create()
 KALLISTO_CHANNEL = Channel.create()
 SALMON_CHANNEL = Channel.create()
-MERGED_SAMPLES.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment.which_alignment }
+COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment.which_alignment }
 
 
 
@@ -317,7 +298,6 @@ process kallisto_tpm {
   awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
   """
 }
-
 
 
 
@@ -709,6 +689,8 @@ TRHIMIX
  * Cleans downloaded and trimmed fastq files
  */
 process clean_trimmed {
+  tag { sample_id }
+
   input:
     // We input fastq_files as a file because we need the full path.
     set val(sample_id), val(fastq_files) from TRIMMED_CLEANUP_READY
@@ -756,6 +738,8 @@ HISSMIX
  * Clean up SAM files
  */
 process clean_sam {
+  tag { sample_id }
+
   input:
     // We input sam_files as a file because we need the full path.
     set val(sample_id), val(sam_files) from SAM_CLEANUP_READY
@@ -801,6 +785,8 @@ SSSTMIX
  * Clean up BAM files
  */
 process clean_bam {
+  tag { sample_id }
+
   input:
     // We input sam_files as a file because we need the full path.
     set val(sample_id), val(bam_files) from BAM_CLEANUP_READY
@@ -810,20 +796,22 @@ process clean_bam {
     for file in ${bam_files}
     do
       file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
-      if [ -e \$file ]; then
-        # Log some info about the file for debugging purposes
-        echo "cleaning \$file"
-        stat \$file
-        # Get file info: size, access and modify times
-        size=`stat --printf="%s" \$file`
-        atime=`stat --printf="%X" \$file`
-        mtime=`stat --printf="%Y" \$file`
-        # Make the file size 0 and set as a sparse file
-        > \$file
-        truncate -s \$size \$file
-        # Reset the timestamps on the file
-        touch -a -d @\$atime \$file
-        touch -m -d @\$mtime \$file
+      if [ ${params.output.publish_bam} = false ]; then
+        if [ -e \$file ]; then
+          # Log some info about the file for debugging purposes
+          echo "cleaning \$file"
+          stat \$file
+          # Get file info: size, access and modify times
+          size=`stat --printf="%s" \$file`
+          atime=`stat --printf="%X" \$file`
+          mtime=`stat --printf="%Y" \$file`
+          # Make the file size 0 and set as a sparse file
+          > \$file
+          truncate -s \$size \$file
+          # Reset the timestamps on the file
+          touch -a -d @\$atime \$file
+          touch -m -d @\$mtime \$file
+        fi
       fi
     done
     """
