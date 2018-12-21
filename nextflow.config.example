@@ -174,27 +174,16 @@ profiles {
   // an example for execution of this workflow on Palmetto with some
   // defaults for all steps of the workflow.
   //
-  // Since the PBS resource list does not support disk or local scratch,
-  // we must use a custom resource list in order to guarantee a certain
-  // amount of local scratch space. In this case, we select nodes from phases
-  // on Palmetto which have plenty of local scratch and tend to be highly
-  // available. Additionally, nextflow does not properly support the "ncpus"
-  // and "mem" options in PBS Professional, so we must specify these resources
-  // using "clusterOptions" instead of the "cpus" and "mem" directives.
-  //
-
   pbs {
     process {
       executor = "pbs"
       time = "8h"
-      scratch = true
-      stageInMode = "copy"
 
       withLabel: "multithreaded" {
-        clusterOptions = "-l select=1:phase=4:mem=8gb:ncpus=${params.execution.threads}"
+        clusterOptions = "-l select=1:mem=8gb:ncpus=${params.execution.threads}"
       }
       withLabel: "!multithreaded" {
-        clusterOptions = "-l select=1:phase=4:mem=2gb:ncpus=2"
+        clusterOptions = "-l select=1:mem=2gb:ncpus=2"
       }
 
       withLabel:fastqc {
