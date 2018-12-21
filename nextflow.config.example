@@ -108,8 +108,8 @@ process {
     time = "48h"
     module = false
   }
-  withLabel:python3scripts {
-    container = 'systemsgenetics/python3scripts:1.0.0'
+  withLabel:python3 {
+    container = 'systemsgenetics/python3:1.0.0'
     time = "1h"
   }
   withLabel:fastqc {
@@ -190,7 +190,7 @@ profiles {
       withLabel:sratoolkit {
         module = "sratoolkit"
       }
-      withLabel:python3scripts {
+      withLabel:python3 {
         module = "python3"
       }
       withLabel:fastqc {

@@ -152,7 +152,7 @@ process SRR_to_sample_id {
   // module "anaconda3"
   // module "python3"
   tag { fastq_run_id }
-  label "python3scripts"
+  label "python3"
   label "rate_limit"
 
   input:
