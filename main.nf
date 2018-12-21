@@ -159,6 +159,7 @@ process fastq_dump {
 
   output:
     set val(exp_id), file("*.fastq") into RUN_FILES_FOR_COMBINATION
+    set val(exp_id), file("*.fastq") into RUN_FILES_FOR_CLEANING
 
   script:
   """
@@ -183,7 +184,7 @@ process SRR_combine {
   output:
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_COUNTING
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_FASTQC_1
-    set file("[SDE]RR*.fastq") into RUNS_FOR_CLEANING
+    set val(sample_id), val('SRR_combine') into CLEAN_RUN_FASTQ_SIGNAL
 
   /**
    * This command tests to see if ls produces a 0 or not by checking
@@ -674,6 +675,8 @@ process fpkm_or_tpm {
  * original size, we will also reset the original modify
  * and access times.
  */
+RFCLEAN = RUN_FILES_FOR_CLEANING.mix ( CLEAN_RUN_FASTQ_SIGNAL )
+RFCLEAN.groupTuple(size: 2).set { RUN_CLEANUP_READY }
 
  /**
   * Cleans downloaded fastq files
@@ -683,7 +686,7 @@ process fpkm_or_tpm {
 
    input:
      // We input fastq_files as a file because we need the full path.
-     set val(sample_id), val(files_list) from RUNS_FOR_CLEANING
+     set val(sample_id), val(files_list) from RUN_CLEANUP_READY
 
    script:
      template "clean_work_files.sh"
@@ -695,10 +698,7 @@ process fpkm_or_tpm {
  * done so that we can remove these files.
  */
 TRHIMIX = TRIMMED_SAMPLES_2_CLEAN.mix( HISAT2_DONE_SAMPLES )
-TRHIMIX
-  .groupTuple(size: 2)
-  .set { TRIMMED_CLEANUP_READY }
-
+TRHIMIX.groupTuple(size: 2).set { TRIMMED_CLEANUP_READY }
 
 
 /**
