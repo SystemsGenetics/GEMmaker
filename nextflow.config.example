@@ -27,6 +27,8 @@ params {
     publish_mode = "link"
     publish_trimmed_fastq = true
     publish_bam = true
+    publish_fpkm = true
+    publish_tpm = true
   }
 
   execution {
@@ -61,11 +63,6 @@ params {
       // Salmon = 2
       //
       which_alignment = 0
-    }
-
-    fpkm_or_tpm {
-      fpkm = true
-      tpm = true
     }
   }
 }

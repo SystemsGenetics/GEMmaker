@@ -44,6 +44,8 @@ Output Parameters:
   Publish mode:               ${params.output.publish_mode}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
   Publish BAM:                ${params.output.publish_bam}
+  Publish FPKM:               ${params.output.publish_fpkm}
+  Publish TPM:                ${params.output.publish_tpm}
 
 
 Execution Parameters:
@@ -123,6 +125,7 @@ if (params.output.publish_bam == true) {
 
 
 process retrieve_sample_metadata {
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
   label "python3"
 
   input:
@@ -130,6 +133,7 @@ process retrieve_sample_metadata {
 
   output:
     stdout SRR2SRX
+    file "*.GEMmaker.meta.*"
 
   script:
     """
@@ -644,16 +648,16 @@ process fpkm_or_tpm {
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into TPM
 
   script:
-  if( params.software.fpkm_or_tpm.fpkm == true && params.software.fpkm_or_tpm.tpm == true )
+  if ( params.output.publish_fpkm == true && params.output.publish_tpm == true )
     """
     awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
     """
-  else if( params.software.fpkm_or_tpm.fpkm == true)
+  else if ( params.output.publish_fpkm == true )
     """
     awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
     """
-  else if( params.software.fpkm_or_tpm.tpm == true )
+  else if ( params.output.publish_tpm == true )
     """
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
     """
