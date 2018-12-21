@@ -1,11 +1,4 @@
-SRX*
+.nextflow*
 nextflow.config
-report.html
-timeline.html
-trace.txt
+output
 work
-.idea
-.nextflow/
-output/
-.nextflow.l*
-*.out

@@ -41,20 +41,26 @@ Input Parameters:
 Output Parameters:
 ------------------
   Output directory:           ${params.output.dir}
+  Publish mode:               ${params.output.publish_mode}
+  Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
+  Publish BAM:                ${params.output.publish_bam}
+
+
+Execution Parameters:
+---------------------
+  Queue size:                 ${params.execution.queue_size}
+  Number of threads:          ${params.execution.threads}
+  Maximum retries:            ${params.execution.max_retries}
+  Error strategy:             ${params.execution.error_strategy}
 
 
 Software Parameters:
 --------------------
   Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
   Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}
-
-
-Publishing Files:
------------------
-  Trimmed FASTQ files:  ${params.publish.keep_trimmed_fastq}
-  BAM Alignment files:  ${params.publish.keep_alignment_bam}
-
 """
+
+
 
 /**
  * Create value channels that can be reused
@@ -108,22 +114,7 @@ if (params.publish.keep_alignment_bam == true) {
   samtools_index_publish_pattern = "{*.log,*.bam.bai}";
 }
 
-process retrieve_sample_metadata {
-   //label "python3scripts"
-   module "python3"
-   //publishDir params.output.sample_dir, mode: 'symlink', pattern: "{*.meta.json,*.meta.tab}"
 
-   input:
-     val srr_file from SRR_FILE
-
-   output:
-     stdout SRR2SRX
-
-   script:
-     """
-     python3 ${PWD}/bin/retrieve_SRA_metadata.py $srr_file
-     """
-}
 
 /**
  * Split the SRR2SRX mapping file
@@ -189,9 +180,7 @@ COMBINED_SAMPLES_FOR_COUNTING = LOCAL_SAMPLES_FOR_COUNTING.mix(MERGED_SAMPLES_FO
  * Performs fastqc on fastq files prior to trimmomatic
  */
 process fastqc_1 {
-  // module "fastQC"
-  // time params.software.fastqc_1.time
-  publishDir params.output.sample_dir, mode: 'symlink', pattern: "*_fastqc.*"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -207,10 +196,10 @@ process fastqc_1 {
 }
 
 /**
-  * THIS IS WHERE THE SPLIT HAPPENS FOR hisat2 vs Kallisto vs Salmon
-  *
-  * Information about "choice" split operator (to be deleted before final
-  * GEMmaker release)
+ * THIS IS WHERE THE SPLIT HAPPENS FOR hisat2 vs Kallisto vs Salmon
+ *
+ * Information about "choice" split operator (to be deleted before final
+ * GEMmaker release)
  */
 
 HISAT2_CHANNEL = Channel.create()
@@ -224,33 +213,28 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
  *
  *
  */
- process kallisto {
-   // module "kallisto"
-   publishDir params.output.sample_dir, mode: 'symlink'
-   tag { sample_id }
-   label "kallisto"
+process kallisto {
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  tag { sample_id }
+  label "kallisto"
 
-   input:
-     set val(sample_id), file(pass_files) from KALLISTO_CHANNEL
-     //file reference from file("${params.input.reference_path}/*").toList()
-     file kallisto_index from file("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Kallisto.indexed")
+  input:
+    set val(sample_id), file(pass_files) from KALLISTO_CHANNEL
+    file kallisto_index from file("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Kallisto.indexed")
 
-   output:
-     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
+  output:
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
 
-   script:
-   """
-   if [ -e ${sample_id}_2.fastq ]; then
+  script:
+  """
+  if [ -e ${sample_id}_2.fastq ]; then
     kallisto quant \
       -i  ${params.input.reference_prefix}.transcripts.Kallisto.indexed \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       ${sample_id}_1.fastq \
       ${sample_id}_2.fastq
-
-
-
-   else
-     kallisto quant \
+  else
+    kallisto quant \
       --single \
       -l 70 \
       -s .0000001 \
@@ -263,54 +247,47 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
    """
  }
 
- /**
-  * Generates the final TPM file for Kallisto
-  */
- process kallisto_tpm {
-   publishDir params.output.sample_dir, mode: 'symlink'
-   tag { sample_id }
+/**
+ * Generates the final TPM file for Kallisto
+ */
+process kallisto_tpm {
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  tag { sample_id }
 
-   input:
-     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from KALLISTO_GA
+  input:
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from KALLISTO_GA
 
-   output:
-     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into KALLISTO_TPM
+  output:
+    file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into KALLISTO_TPM
 
-   script:
-     """
-     awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
-     """
- }
-
-
-
-
- /**
-  * Performs SALMON alignemnt of fastq files
-  *
-  *
-  */
-  process salmon {
-    // module "salmon"
-    publishDir params.output.sample_dir, mode: 'symlink'
-    tag { sample_id }
-    label "salmon"
-
-    input:
-      set val(sample_id), file(pass_files) from SALMON_CHANNEL
-      file salmon_index from Channel.fromPath("${params.input.reference_path}${params.input.reference_prefix}*/*").toList()
-
-
-    output:
-      set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into SALMON_GA
-
-    script:
-    """
+  script:
+  """
+  awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+  """
+}
 
 
 
-    if [ -e ${sample_id}_2.fastq ]; then
-      salmon quant \
+
+/**
+ * Performs SALMON alignemnt of fastq files
+ */
+process salmon {
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  tag { sample_id }
+  label "salmon"
+
+  input:
+    set val(sample_id), file(pass_files) from SALMON_CHANNEL
+    file salmon_index from Channel.fromPath("${params.input.reference_path}${params.input.reference_prefix}*/*").toList()
+
+  output:
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into SALMON_GA
+
+  script:
+  """
+  if [ -e ${sample_id}_2.fastq ]; then
+    salmon quant \
       -i . \
       -l A \
       -1 ${sample_id}_1.fastq \
@@ -318,40 +295,41 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
       -p 8 \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       --minAssignedFrags 1
-
-
-    else
-      salmon quant \
+  else
+    salmon quant \
       -i . \
       -l A \
       -r ${sample_id}_1.fastq \
       -p 8 \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       --minAssignedFrags 1
+  fi
+  """
+}
 
     fi
 
     """
   }
 
-  /**
-   * Generates the final TPM file for Salmon
-   */
-  process salmon_tpm {
-    publishDir params.output.sample_dir, mode: 'symlink'
-    tag { sample_id }
+/**
+ * Generates the final TPM file for Salmon
+ */
+process salmon_tpm {
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  tag { sample_id }
 
-    input:
-      set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from SALMON_GA
+  input:
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from SALMON_GA
 
-    output:
-      file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into SALMON_TPM
+  output:
+    file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into SALMON_TPM
 
-    script:
-      """
-      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.tpm
-      """
-  }
+  script:
+  """
+  awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+  """
+}
 
 
 
@@ -367,87 +345,79 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
  * "nextflow.config" file
  */
 process trimmomatic {
-   // module "trimmomatic"
-   // time params.software.trimmomatic.time
-   publishDir params.output.sample_dir, mode: 'symlink', pattern: trimmomatic_publish_pattern
-   tag { sample_id }
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_trimmomatic
+  tag { sample_id }
+  label "multithreaded"
+  label "trimmomatic"
 
-   label "multithreaded"
-   label "trimmomatic"
+  input:
+    set val(sample_id), file("${sample_id}_?.fastq") from HISAT2_CHANNEL
 
+  output:
+    set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_FOR_FASTQC
+    set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_FOR_HISAT2
+    set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_2_CLEAN
+    set val(sample_id), file("${sample_id}.trim.log") into TRIMMED_SAMPLE_LOG
 
-   input:
-     set val(sample_id), file("${sample_id}_?.fastq") from HISAT2_CHANNEL
+  script:
+  """
+  # This script calculates average length of fastq files.
+  total=0
 
-   output:
-     set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_FOR_FASTQC
-     set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_FOR_HISAT2
-     set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_2_CLEAN
-     set val(sample_id), file("${sample_id}.trim.log") into TRIMMED_SAMPLE_LOG
+  # This if statement checks if the data is single or paired data, and checks length accordingly
+  # This script returns 1 number, which can be used for the minlen in trimmomatic
+  if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
+    for fastq in ${sample_id}_1.fastq ${sample_id}_2.fastq; do
+      a=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' \$fastq \
+      | sort \
+      | awk '{ print \$0, \$1*\$2}' \
+      | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
+    total=(\$a + \$total)
+    done
+    total=( \$total / 2 )
+    minlen=\$total
 
    script:
-     """
-     #This script calculates average length of fastq files.
-      total=0
+   """
+   #This script calculates average length of fastq files.
+   total=0
 
-      #This if statement checks if the data is single or paired data, and checks length accordingly
-      #This script returns 1 number, which can be used for the minlen in trimmomatic
-      if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
-        for fastq in ${sample_id}_1.fastq ${sample_id}_2.fastq; do
-          a=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' \$fastq \
-          | sort \
-          | awk '{ print \$0, \$1*\$2}' \
-          | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
-        total=(\$a + \$total)
-        done
-        total=( \$total / 2 )
-        minlen=\$total
-
-      elif [ -e ${sample_id}_1.fastq ]; then
-        minlen=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' ${sample_id}_1.fastq \
-          | sort \
-          | awk '{ print \$0, \$1*\$2}' \
-          | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
-      fi
-
-
-
-     if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
-      java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
-        PE \
-        -threads ${params.execution.threads} \
-        ${params.software.trimmomatic.quality} \
-        ${sample_id}_1.fastq \
-        ${sample_id}_2.fastq \
-        ${sample_id}_1p_trim.fastq \
-        ${sample_id}_1u_trim.fastq \
-        ${sample_id}_2p_trim.fastq \
-        ${sample_id}_2u_trim.fastq \
-        ILLUMINACLIP:${params.software.trimmomatic.clip_path}:2:40:15 \
-        LEADING:${params.software.trimmomatic.LEADING} \
-        TRAILING:${params.software.trimmomatic.TRAILING} \
-        SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
-        MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
-     else
-      # For ease of the next steps, rename the reverse file to the forward.
-      # since these are non-paired it really shouldn't matter.
-      if [ -e ${sample_id}_2.fastq ]; then
-        mv ${sample_id}_2.fastq ${sample_id}_1.fastq
-      fi
-      # Now run trimmomatic
-      java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
-        SE \
-        -threads ${params.execution.threads} \
-        ${params.software.trimmomatic.quality} \
-        ${sample_id}_1.fastq \
-        ${sample_id}_1u_trim.fastq \
-        ILLUMINACLIP:${params.software.trimmomatic.clip_path}:2:40:15 \
-        LEADING:${params.software.trimmomatic.LEADING} \
-        TRAILING:${params.software.trimmomatic.TRAILING} \
-        SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
-        MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
+   if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
+     java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
+       PE \
+       -threads ${params.execution.threads} \
+       ${params.software.trimmomatic.quality} \
+       ${sample_id}_1.fastq \
+       ${sample_id}_2.fastq \
+       ${sample_id}_1p_trim.fastq \
+       ${sample_id}_1u_trim.fastq \
+       ${sample_id}_2p_trim.fastq \
+       ${sample_id}_2u_trim.fastq \
+       ILLUMINACLIP:${params.software.trimmomatic.clip_path}:2:40:15 \
+       LEADING:${params.software.trimmomatic.LEADING} \
+       TRAILING:${params.software.trimmomatic.TRAILING} \
+       SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
+       MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
+   else
+     # For ease of the next steps, rename the reverse file to the forward.
+     # since these are non-paired it really shouldn't matter.
+     if [ -e ${sample_id}_2.fastq ]; then
+       mv ${sample_id}_2.fastq ${sample_id}_1.fastq
      fi
-     """
+     # Now run trimmomatic
+     java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
+       SE \
+       -threads ${params.execution.threads} \
+       ${params.software.trimmomatic.quality} \
+       ${sample_id}_1.fastq \
+       ${sample_id}_1u_trim.fastq \
+       ILLUMINACLIP:${params.software.trimmomatic.clip_path}:2:40:15 \
+       LEADING:${params.software.trimmomatic.LEADING} \
+       TRAILING:${params.software.trimmomatic.TRAILING} \
+       SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
+       MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
+   fi
+   """
 }
 
 
@@ -457,9 +427,7 @@ process trimmomatic {
  * Files are stored to an independent folder
  */
 process fastqc_2 {
-  // module "fastQC"
-  // time params.software.fastqc_2.time
-  publishDir params.output.sample_dir, mode: 'symlink', pattern: "*_fastqc.*"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -470,6 +438,7 @@ process fastqc_2 {
     set val(sample_id), file(pass_files) into TRIMMED_FASTQC_SAMPLES
     set file("${sample_id}_??_trim_fastqc.html"), file("${sample_id}_??_trim_fastqc.zip") optional true into FASTQC_2_OUTPUT
 
+  script:
   """
   fastqc $pass_files
   """
@@ -483,10 +452,8 @@ process fastqc_2 {
  * depends: trimmomatic
  */
 process hisat2 {
-  // time params.software.hisat2.time
-  publishDir params.output.sample_dir, mode: 'symlink', pattern: "*.log"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
   tag { sample_id }
-
   label "multithreaded"
   label "hisat2"
 
@@ -502,37 +469,37 @@ process hisat2 {
    set val(sample_id), val(1) into HISAT2_DONE_SAMPLES
 
   script:
-   """
-     if [ -e ${sample_id}_2p_trim.fastq ]; then
-       hisat2 \
-         -x ${params.input.reference_prefix} \
-         --no-spliced-alignment \
-         -q \
-         -1 ${sample_id}_1p_trim.fastq \
-         -2 ${sample_id}_2p_trim.fastq \
-         -U ${sample_id}_1u_trim.fastq,${sample_id}_2u_trim.fastq \
-         -S ${sample_id}_vs_${params.input.reference_prefix}.sam \
-         -t \
-         -p ${params.execution.threads} \
-         --un ${sample_id}_un.fastq \
-         --dta-cufflinks \
-         --new-summary \
-         --summary-file ${sample_id}_vs_${params.input.reference_prefix}.sam.log
-     else
-       hisat2 \
-         -x ${params.input.reference_prefix} \
-         --no-spliced-alignment \
-         -q \
-         -U ${sample_id}_1u_trim.fastq \
-         -S ${sample_id}_vs_${params.input.reference_prefix}.sam \
-         -t \
-         -p ${params.execution.threads} \
-         --un ${sample_id}_un.fastq \
-         --dta-cufflinks \
-         --new-summary \
-         --summary-file ${sample_id}_vs_${params.input.reference_prefix}.sam.log
-     fi
-   """
+  """
+  if [ -e ${sample_id}_2p_trim.fastq ]; then
+    hisat2 \
+      -x ${params.input.reference_prefix} \
+      --no-spliced-alignment \
+      -q \
+      -1 ${sample_id}_1p_trim.fastq \
+      -2 ${sample_id}_2p_trim.fastq \
+      -U ${sample_id}_1u_trim.fastq,${sample_id}_2u_trim.fastq \
+      -S ${sample_id}_vs_${params.input.reference_prefix}.sam \
+      -t \
+      -p ${params.execution.threads} \
+      --un ${sample_id}_un.fastq \
+      --dta-cufflinks \
+      --new-summary \
+      --summary-file ${sample_id}_vs_${params.input.reference_prefix}.sam.log
+  else
+    hisat2 \
+      -x ${params.input.reference_prefix} \
+      --no-spliced-alignment \
+      -q \
+      -U ${sample_id}_1u_trim.fastq \
+      -S ${sample_id}_vs_${params.input.reference_prefix}.sam \
+      -t \
+      -p ${params.execution.threads} \
+      --un ${sample_id}_un.fastq \
+      --dta-cufflinks \
+      --new-summary \
+      --summary-file ${sample_id}_vs_${params.input.reference_prefix}.sam.log
+  fi
+  """
 }
 
 
@@ -543,12 +510,9 @@ process hisat2 {
  * depends: hisat2
  */
 process samtools_sort {
-  // module "samtools"
-  // time params.software.samtools_sort.time
-  publishDir params.output.sample_dir, mode: 'symlink', pattern: samtools_sort_publish_pattern
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_samtools_sort
   tag { sample_id }
   label "samtools"
-
 
   input:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") from INDEXED_SAMPLES
@@ -557,8 +521,6 @@ process samtools_sort {
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") into SORTED_FOR_INDEX
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.bam") into SAMTOOLS_SORT_BAM_2_CLEAN
     set val(sample_id), val(1) into SAMTOOLS_SORT_DONE_SAMPLES
-
-    // samtools sort -o ${sample_id}_vs_${params.input.reference_prefix}.bam -O bam ${sample_id}_vs_${params.input.reference_prefix}.sam
 
   script:
     """
@@ -574,9 +536,7 @@ process samtools_sort {
  * depends: samtools_index
  */
 process samtools_index {
-  // module "samtools"
-  // time params.software.samtools_index.time
-  publishDir params.output.sample_dir, mode: 'symlink', pattern: samtools_index_publish_pattern
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_samtools_index
   tag { sample_id }
   label "samtools"
 
@@ -603,8 +563,6 @@ process samtools_index {
  * depends: samtools_index
  */
 process stringtie {
-  // module "stringtie"
-  // time params.software.stringtie.time
   tag { sample_id }
 
   label "multithreaded"
@@ -629,7 +587,7 @@ process stringtie {
     -p ${params.execution.threads} \
     -e \
     -o ${sample_id}_vs_${params.input.reference_prefix}.gtf \
-    -G $gtf_file \
+    -G ${gtf_file} \
     -A ${sample_id}_vs_${params.input.reference_prefix}.ga \
     -l ${sample_id} ${sample_id}_vs_${params.input.reference_prefix}.bam
     """
@@ -641,7 +599,7 @@ process stringtie {
  * Generates the final FPKM file
  */
 process fpkm_or_tpm {
-  publishDir params.output.sample_dir, mode: 'symlink'
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
 
   input:
@@ -684,20 +642,19 @@ process fpkm_or_tpm {
  */
 
 /**
- * Cleans downloaded fastq files
+ * Merge the Trimmomatic samples with Hisat's signal that it is
+ * done so that we can remove these files.
  */
-
-/**
- * Cleans up trimmed fastq files.
- */
-
-// Merge the Trimmomatic samples with Hisat's signal that it is
-// done so that we can remove these files.
 TRHIMIX = TRIMMED_SAMPLES_2_CLEAN.mix( HISAT2_DONE_SAMPLES )
 TRHIMIX
   .groupTuple(size: 2)
   .set { TRIMMED_CLEANUP_READY }
 
+
+
+/**
+ * Cleans downloaded and trimmed fastq files
+ */
 process clean_trimmed {
   tag { sample_id }
   input:
@@ -709,7 +666,7 @@ process clean_trimmed {
     for file in ${fastq_files}
     do
       file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
-      if [ ${params.publish.keep_trimmed_fastq} = false ]; then
+      if [ ${params.output.publish_trimmed_fastq} = false ]; then
         if [ -e \$file ]; then
           # Log some info about the file for debugging purposes
           echo "cleaning \$file"
@@ -731,16 +688,19 @@ process clean_trimmed {
 }
 
 /**
- * Clean up SAM files
+ * Merge the HISAT sam file with samtools_sort signal that it is
+ * done so that we can remove these files.
  */
-
-// Merge the HISAT sam file with samtools_sort signal that it is
-// done so that we can remove these files.
 HISSMIX = HISAT2_SAM_2_CLEAN.mix( SAMTOOLS_SORT_DONE_SAMPLES )
 HISSMIX
   .groupTuple(size: 2)
   .set { SAM_CLEANUP_READY }
 
+
+
+/**
+ * Clean up SAM files
+ */
 process clean_sam {
   tag { sample_id }
   input:
@@ -772,16 +732,19 @@ process clean_sam {
 }
 
 /**
- * Clean up BAM files
+ * Merge the samtools_sort bam file with stringtie signal that it is
+ * done so that we can remove these files.
  */
-
-// Merge the samtools_sort bam file with stringtie signal that it is
-// done so that we can remove these files.
 SSSTMIX = SAMTOOLS_SORT_BAM_2_CLEAN.mix( STRINGTIE_DONE_SAMPLES )
 SSSTMIX
   .groupTuple(size: 2)
   .set { BAM_CLEANUP_READY }
 
+
+
+/**
+ * Clean up BAM files
+ */
 process clean_bam {
   tag { sample_id }
   input:
