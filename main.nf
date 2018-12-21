@@ -125,6 +125,7 @@ if (params.output.publish_bam == true) {
 
 
 process retrieve_sample_metadata {
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
   label "python3"
 
   input:
@@ -132,6 +133,7 @@ process retrieve_sample_metadata {
 
   output:
     stdout SRR2SRX
+    file "*.GEMmaker.meta.*"
 
   script:
     """
