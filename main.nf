@@ -115,8 +115,7 @@ if (params.output.publish_bam == true) {
 }
 
 process retrieve_sample_metadata {
-   //label "python3scripts"
-   module "python3"
+   label "python3"
    //publishDir params.output.sample_dir, mode: 'symlink', pattern: "{*.meta.json,*.meta.tab}"
 
    input:
@@ -127,7 +126,7 @@ process retrieve_sample_metadata {
 
    script:
      """
-     python3 ${PWD}/bin/retrieve_SRA_metadata.py $srr_file
+     retrieve_SRA_metadata.py $srr_file
      """
 }
 
