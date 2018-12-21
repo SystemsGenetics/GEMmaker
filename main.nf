@@ -68,13 +68,21 @@ GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.refer
  * This checks the folder that the user has given
  */
 if (params.input.local_samples_path == "none") {
-  Channel
-    .empty()
+  Channel.empty().set { LOCAL_SAMPLES }
+}
+else {
+  Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
     .set { LOCAL_SAMPLES }
-} else {
-  Channel
-    .fromFilePairs( params.input.local_samples_path, size: -1 )
-    .set { LOCAL_SAMPLES }
+}
+
+/**
+ * Remote fastq_run_id Input.
+ */
+if (params.input.remote_list_path == "none") {
+  Channel.value().set { SRR_FILE }
+}
+else {
+  Channel.value(params.input.remote_list_path).set { SRR_FILE }
 }
 
 /**
@@ -97,20 +105,20 @@ if (params.publish.keep_alignment_bam == true) {
   samtools_index_publish_pattern = "{*.log,*.bam.bai}";
 }
 
-/**
- * Remote fastq_run_id Input.
- */
-if (params.input.remote_list_path == "none") {
-  Channel
-     .empty()
-     .set { REMOTE_FASTQ_RUNS }
-} else {
-  Channel
-    .from( file(params.input.remote_list_path).readLines() )
-    .set { REMOTE_FASTQ_RUNS }
+process retrieve_sample_metadata {
+   label "python3scripts"
+   publishDir params.output.sample_dir, mode: 'symlink', pattern: "{*.meta.json,*.meta.tab}"
+
+   input:
+     val srr_file from SRR_FILE
+
+   script:
+     """
+     python3 retrieve_sample_metadata.py $srr_file
+     """
+     println("hi");
+
 }
-
-
 
 /**
  * The fastq dump process downloads any needed remote fasta files to the
