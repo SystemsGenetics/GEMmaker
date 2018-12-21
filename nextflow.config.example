@@ -1,15 +1,16 @@
 /**
-* ===========================
-* GEMmaker Configuration File
-* ===========================
-*
-* This file provides the configuration settings for the GEMmaker workflow.
-*/
+ * ===========================
+ * GEMmaker Configuration File
+ * ===========================
+ *
+ * This file provides the configuration settings for the GEMmaker workflow.
+ */
 manifest {
-mainScript = "main.nf"
-defaultBranch = "master"
-nextflowVersion = ">=0.32.0"
+  mainScript = "main.nf"
+  defaultBranch = "master"
+  nextflowVersion = ">=0.32.0"
 }
+
 
 
 params {
@@ -25,18 +26,15 @@ params {
     sample_dir = { "${params.output.dir}/${sample_id}" }
   }
 
-  // TODO: Consider moving to profiles.
   execution {
-
     queue_size = 100
     threads = 1
+    max_retries = 2
+    error_strategy = "ignore"
   }
 
-
-  // TODO: Consider moving to profiles.
   software {
     trimmomatic {
-
       clip_path = "${PWD}/files/fasta_adapter.txt"
       MINLEN = "0.7"
       quality = ""
@@ -45,17 +43,15 @@ params {
       TRAILING = "6"
     }
 
-
     /**
-    * Alignment
-    *
-    * User Chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
-    * processes "samtools_sort", "samtools_index" and "stringtie" will also be
-    * done. All processes will end with a gene abundance file.
-    * Aligns reads to the reference genome.
-    */
-    alignment
-    {
+     * Alignment
+     *
+     * User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
+     * processes "samtools_sort", "samtools_index" and "stringtie" will also be
+     * done. All processes will end with a gene abundance file.
+     * Aligns reads to the reference genome.
+     */
+    alignment {
       //
       // hisat2 = 0
       // Kallisto = 1
@@ -63,7 +59,6 @@ params {
       //
       which_alignment = 0
     }
-
 
     fpkm_or_tpm {
       fpkm = true
@@ -78,30 +73,42 @@ params {
 }
 
 
+
 report {
   file = "${params.output.dir}/report.html"
 }
+
+
 
 timeline {
   file = "${params.output.dir}/timeline.html"
 }
 
 
-trace {
 
+trace {
   fields = "task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes"
   file = "${params.output.dir}/trace.txt"
   raw = true
 }
 
+
+
+docker {
+    fixOwnership = true
+    runOptions = '-u $(id -u):$(id -g)'
+    sudo = true
+}
+
+
+
 process {
-
-  withLabel:retry {
-    process.maxRetries = 3
-    process.error_strategy = "ignore"
-    errorStrategy = { "${task.attempt}" == "${task.max_retries}" ? "retry" : "${task.error_strategy}" }
+  withLabel:rate_limit {
+    maxForks = 1
   }
-
+  withLabel:retry {
+    errorStrategy = { "${task.attempt}" == "${params.execution.max_retries}" ? "retry" : "${params.execution.error_strategy}" }
+  }
 
   withLabel:sratoolkit {
     container = 'systemsgenetics/sratoolkit:2.8.2'
@@ -139,36 +146,17 @@ process {
     container = 'systemsgenetics/stringtie:1.3.4d'
     time = "48h"
   }
-  withLabel:rate_limit {
-    maxForks = 1
-  }
 }
+
 
 
 profiles {
   standard {
-    process {
-      executor = "local"
-    }
+    process.executor = "local"
   }
 
   testing {
-    process.error_strategy = "terminate"
-    process.max_retries = 1
-  }
-
-  inDocker {
-    docker {
-        enabled = true
-        fixOwnership = true
-        runOptions = '-u $(id -u):$(id -g)'
-    }
-  }
-
-  inSingularity {
-    singularity {
-        enabled = true
-    }
+    process.errorStrategy = "terminate"
   }
 
   //
@@ -191,7 +179,7 @@ profiles {
         module = "sratoolkit"
       }
       withLabel:python3 {
-        module = "python3"
+        module = "anaconda3"
       }
       withLabel:fastqc {
         module = "fastQC"
@@ -214,17 +202,14 @@ profiles {
       scratch = true
       stageInMode = "copy"
 
-      withLabel: "multithreaded"
-      {
+      withLabel: "multithreaded" {
         clusterOptions = "-l select=1:phase=4:mem=8gb:ncpus=${params.execution.threads}"
       }
-      withLabel: "!multithreaded"
-      {
+      withLabel: "!multithreaded" {
         clusterOptions = "-l select=1:phase=4:mem=2gb:ncpus=2"
       }
     }
-    executor
-    {
+    executor {
       queueSize = "${params.execution.queue_size}"
     }
   }
@@ -234,14 +219,11 @@ profiles {
   // an example for execution of this workflow on Kamiak with some
   // defaults for all steps of the workflow.
   //
-  slurm
-  {
-    process
-    {
+  slurm {
+    process {
       executor = "slurm"
       queue = "ficklin"
       time = "4h"
-
 
       withLabel: "multithreaded" {
         cpus = "${params.execution.threads}"
@@ -249,10 +231,8 @@ profiles {
       withLabel: "!multithreaded" {
         cpus = 1
       }
-
     }
-    executor
-    {
+    executor {
       queueSize = "${params.execution.queue_size}"
     }
   }
