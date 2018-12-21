@@ -93,9 +93,15 @@ trace {
 
 
 docker {
-    fixOwnership = true
-    runOptions = "--init"
-    sudo = true
+  fixOwnership = true
+  runOptions = "--init"
+  sudo = true
+}
+
+
+
+singularity {
+  runOptions = ""
 }
 
 
