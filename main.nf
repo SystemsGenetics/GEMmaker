@@ -42,6 +42,8 @@ Output Parameters:
 ------------------
   Output directory:           ${params.output.dir}
   Publish mode:               ${params.output.publish_mode}
+  Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
+  Publish BAM:                ${params.output.publish_bam}
 
 
 Execution Parameters:
@@ -56,13 +58,6 @@ Software Parameters:
 --------------------
   Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
   Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}
-
-
-Publishing Files:
------------------
-  Trimmed FASTQ files:  ${params.publish.keep_trimmed_fastq}
-  BAM Alignment files:  ${params.publish.keep_alignment_bam}
-
 """
 
 
@@ -92,12 +87,12 @@ if (params.input.local_samples_path == "none") {
 
 
 /**
- * Set the pattern for publishing trimmed files
+ * Set the pattern for publishing trimmed FASTQ files
  */
-trimmomatic_publish_pattern = "*.trim.log";
+publish_pattern_trimmomatic = "{*.trim.log}";
 
-if (params.publish.keep_trimmed_fastq == true) {
-  trimmomatic_publish_pattern = "{*.trim.log,*_trim.fastq}";
+if (params.output.publish_trimmed_fastq == true) {
+  publish_pattern_trimmomatic = "{*.trim.log,*_trim.fastq}";
 }
 
 
@@ -105,14 +100,12 @@ if (params.publish.keep_trimmed_fastq == true) {
 /**
  * Set the pattern for publishing BAM files
  */
-samtools_sort_publish_pattern = "*.log";
+publish_pattern_samtools_sort = "{*.log}";
+publish_pattern_samtools_index = "{*.log}";
 
-if (params.publish.keep_alignment_bam == true) {
-  samtools_sort_publish_pattern = "*.bam";
-}
-samtools_index_publish_pattern = "*.log";
-if (params.publish.keep_alignment_bam == true) {
-  samtools_index_publish_pattern = "{*.log,*.bam.bai}";
+if (params.output.publish_bam == true) {
+  publish_pattern_samtools_sort = "{*.log,*.bam}";
+  publish_pattern_samtools_index = "{*.log,*.bam.bai}";
 }
 
 
@@ -402,7 +395,7 @@ process salmon_tpm {
  * "nextflow.config" file
  */
 process trimmomatic {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: trimmomatic_publish_pattern
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_trimmomatic
   tag { sample_id }
   label "multithreaded"
   label "trimmomatic"
@@ -569,7 +562,7 @@ process hisat2 {
  * depends: hisat2
  */
 process samtools_sort {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: samtools_sort_publish_pattern
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_samtools_sort
   tag { sample_id }
   label "samtools"
 
@@ -595,7 +588,7 @@ process samtools_sort {
  * depends: samtools_index
  */
 process samtools_index {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: samtools_index_publish_pattern
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_samtools_index
   tag { sample_id }
   label "samtools"
 
@@ -726,7 +719,7 @@ process clean_trimmed {
     for file in ${fastq_files}
     do
       file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
-      if [ ${params.publish.keep_trimmed_fastq} = false ]; then
+      if [ ${params.output.publish_trimmed_fastq} = false ]; then
         if [ -e \$file ]; then
           # Log some info about the file for debugging purposes
           echo "cleaning \$file"

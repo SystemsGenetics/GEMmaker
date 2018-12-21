@@ -10,8 +10,8 @@ services:
 
 # Install all dependencies here.
 install:
-  - sudo apt-get -qq update
-  - sudo apt-get -qq -y install graphviz realpath
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq -y graphviz realpath
   - curl -fsSL get.nextflow.io | bash
   - mkdir -p ~/bin
   - cp nextflow ~/bin
@@ -40,5 +40,4 @@ script:
   # - docker push systemsgenetics/samtools:1.9
 
   # Run the workflow.
-  - nextflow run main.nf -profile testing
   - nextflow run main.nf -profile testing -with-docker
