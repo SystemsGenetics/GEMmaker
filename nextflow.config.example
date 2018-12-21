@@ -198,25 +198,25 @@ profiles {
       }
 
       withLabel:fastqc {
-        module "fastQC"
+        module = "fastQC"
       }
       withLabel:hisat2 {
-        module "hisat2"
+        module = "hisat2"
       }
       withLabel:python3 {
-        module "anaconda3"
+        module = "anaconda3"
       }
       withLabel:samtools {
-        module "samtools"
+        module = "samtools"
       }
       withLabel:sratoolkit {
-        module "sratoolkit"
+        module = "sratoolkit"
       }
       withLabel:stringtie {
-        module "stringtie"
+        module = "stringtie"
       }
       withLabel:trimmomatic {
-        module "trimmomatic"
+        module = "trimmomatic"
       }
     }
     executor {
@@ -243,25 +243,25 @@ profiles {
       }
 
       withLabel:fastqc {
-        module "fastQC"
+        module = "fastQC"
       }
       withLabel:hisat2 {
-        module "hisat2"
+        module = "hisat2"
       }
       withLabel:python3 {
-        module "python3"
+        module = "python3"
       }
       withLabel:samtools {
-        module "samtools"
+        module = "samtools"
       }
       withLabel:sratoolkit {
-        module "sratoolkit"
+        module = "sratoolkit"
       }
       withLabel:stringtie {
-        module "stringtie"
+        module = "stringtie"
       }
       withLabel:trimmomatic {
-        module "trimmomatic"
+        module = "trimmomatic"
       }
     }
     executor {
