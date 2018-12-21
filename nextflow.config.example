@@ -162,7 +162,11 @@ profiles {
   }
 
   testing {
-    process.errorStrategy = "terminate"
+    process {
+      withLabel:retry {
+        errorStrategy = "terminate"
+      }
+    }
   }
 
   //
