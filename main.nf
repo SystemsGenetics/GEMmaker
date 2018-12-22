@@ -78,7 +78,7 @@ GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.refer
  * This checks the folder that the user has given
  */
 if (params.input.local_samples_path == "none") {
-  Channel.empty().set { LOCAL_SAMPLES_FILES_FOR_BATCHING }
+  Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_BATCHING }
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 else {
