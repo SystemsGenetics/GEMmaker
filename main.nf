@@ -68,6 +68,7 @@ Software Parameters:
  * Create value channels that can be reused
  */
 HISAT2_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}*.ht2*").collect()
+SALMON_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}*").collect()
 GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf").collect()
 
 
@@ -77,23 +78,21 @@ GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.refer
  * This checks the folder that the user has given
  */
 if (params.input.local_samples_path == "none") {
-  Channel.empty().set { LOCAL_SAMPLES_FOR_COUNTING }
-  Channel.empty().set { LOCAL_SAMPLES_FOR_FASTQC_1 }
+  Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_BATCHING }
+  Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 else {
   Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
-    .set { LOCAL_SAMPLES_FOR_COUNTING }
+    .set { LOCAL_SAMPLE_FILES_FOR_BATCHING }
   Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
-    .set { LOCAL_SAMPLES_FOR_FASTQC_1 }
+    .set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
-
-
 
 /**
  * Remote fastq_run_id Input.
  */
 if (params.input.remote_list_path == "none") {
-  Channel.value().set { SRR_FILE }
+  Channel.empty().set { SRR_FILE }
 }
 else {
   Channel.value(params.input.remote_list_path).set { SRR_FILE }
@@ -132,7 +131,10 @@ if (params.output.publish_bam == true) {
 }
 
 
-
+/**
+ * Retrieves metadata for all of the remote samples
+ * and maps SRA runs to SRA experiments.
+ */
 process retrieve_sample_metadata {
   publishDir params.output.dir, mode: params.output.publish_mode, pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
   label "python3"
@@ -141,7 +143,7 @@ process retrieve_sample_metadata {
     val srr_file from SRR_FILE
 
   output:
-    stdout SRR2SRX
+    stdout SRR2SRX_FOR_BATCHING
     file "*.GEMmaker.meta.*"
 
   script:
@@ -150,14 +152,198 @@ process retrieve_sample_metadata {
     """
 }
 
+/**
+ * Splits the SRR2XRX mapping file for ensuring batches of samples
+ * process together to help conserve space
+ */
 
+// First create a list of the remote and local samples
+SRR2SRX_FOR_BATCHING
+  .splitCsv()
+  .groupTuple(by: 1)
+  .map { [it[1], it[0].toString().replaceAll(/[\[\]\'\,]/,''), 'remote'] }
+  .set{REMOTE_SAMPLES_FOR_BATCHING}
+
+LOCAL_SAMPLE_FILES_FOR_BATCHING
+  .map{ [it[0], it[1], 'local' ] }
+  .set{LOCAL_SAMPLES_FOR_BATCHING}
+
+// Create the channels needed for batching of samples
+BATCHES = REMOTE_SAMPLES_FOR_BATCHING
+  .mix(LOCAL_SAMPLES_FOR_BATCHING)
+  .collate(params.execution.queue_size)
+
+// Create the directories we'll use for running
+// batches
+file('work/GEMmaker').mkdir()
+file('work/GEMmaker/stage').mkdir()
+file('work/GEMmaker/process').mkdir()
+
+// Clean up any files left over from a previous run.
+existing_files = file('work/GEMmaker/stage/*')
+for (existing_file in existing_files) {
+  existing_file.delete()
+}
+existing_files = file('work/GEMmaker/process/*')
+for (existing_file in existing_files) {
+  existing_file.delete()
+}
 
 /**
- * Split the SRR2SRX mapping file
+ * Writes the batch files and stores them in the
+ * stage directory.
  */
-SRR2SRX.splitCsv().groupTuple(by: 1).set { SRR2SRX_TO_FASTQ_DUMP }
+process write_batch_files {
+  executor "local"
+  cache false
+
+  input:
+    val batch from BATCHES
+
+  output: 
+    val (1) into BATCHES_READY_SIGNAL
+
+  exec: 
+    // First create a file for each batch of samples.  We will
+    // process the batches one at a time.  
+    num_files = file('work/GEMmaker/stage/BATCH.*').size()
+    batch_file = file('work/GEMmaker/stage/BATCH.' + num_files)
+    batch_file.withWriter {
+      for (item in batch) {
+        sample = item[0]
+        type = item[2]
+        if (type.equals('local')) {
+          if (item[1].size() > 1) {
+            files = item[1]
+            files_str = files.join('::')
+            it.writeLine '"' + sample + '","' + files_str + '","' + type + '"'
+          }
+          else {
+            it.writeLine '"' + sample + '","' + item[1].first().toString() + '","' + type + '"'
+          }
+        }
+        else {
+          it.writeLine '"' + sample + '","' + item[1] + '","' + type + '"'
+        }
+      }
+    }
+}
+
+// When all batch files are created we need to then
+// move the first file into the process directory.
+BATCHES_READY_SIGNAL.collect().set { FIRST_BATCH_START_SIGNAL }
+
+/**
+ * Moves the first batch file into the process directory.
+ */
+process start_first_batch {
+  executor "local"
+  cache false
+
+  input:
+    val signal from FIRST_BATCH_START_SIGNAL
+   
+  exec:
+    // Move the first batch file into the processing direcotry
+    // so that we jumpstart the workflow.
+    batch_files = file('work/GEMmaker/stage/BATCH.*');
+    batch_files.first().moveTo('work/GEMmaker/process')
+}
+
+// Create the channel that will watch the process directory
+// for new files. When a new batch file is added 
+// it will be read and its samples sent through the
+// workflow.
+NEXT_BATCH = Channel
+   .watchPath('work/GEMmaker/process')
+
+/**
+ * Opens the batch file and prints it's conents to
+ * STDOUT so that the samples can be caught in a new
+ * channel and start processing.
+ */
+process read_batch_file {
+  executor "local"
+  tag { batch_file }
+  cache false
+    
+  input:
+    file(batch_file) from NEXT_BATCH
+
+  output:
+    stdout BATCH_FILE_CONTENTS
+
+  script:
+    // If this is our last batch then close the open
+    // channels that perform our looping or we'll hang.
+    batch_files = file('work/GEMmaker/stage/BATCH.*');
+    if (batch_files.size() == 0) {
+      NEXT_BATCH.close()
+      HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
+      KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
+      SALMON_SAMPLE_COMPLETE_SIGNAL.close()
+      SAMPLE_COMPLETE_SIGNAL.close()
+    }
+    """
+      cat $batch_file
+    """
+}
+
+// Split our batch file contents into two different
+// channels, one for remote samples and another for local.
+LOCAL_SAMPLES = Channel.create()
+REMOTE_SAMPLES = Channel.create()
+BATCH_FILE_CONTENTS
+  .splitCsv(quote: '"')
+  .choice(LOCAL_SAMPLES, REMOTE_SAMPLES) { a -> a[2] =~ /local/ ? 0 : 1 } 
+
+// Split our list of local samples into two pathways, onefor
+// FastQC analysis and the other for read counting.  We don't
+// do this for remote samples because they need downloading
+// first.
+LOCAL_SAMPLES
+  .map {[it[0], 'hi']}
+  .mix(LOCAL_SAMPLE_FILES_FOR_JOIN)
+  .groupTuple(size: 2)
+  .map {[it[0], it[1][0]]}
+  .into {LOCAL_SAMPLES_FOR_FASTQC_1; LOCAL_SAMPLES_FOR_COUNTING}
 
 
+// Create the channels needed for signalling when
+// samples are completed.
+HISAT2_SAMPLE_COMPLETE_SIGNAL = Channel.create()
+KALLISTO_SAMPLE_COMPLETE_SIGNAL = Channel.create()
+SALMON_SAMPLE_COMPLETE_SIGNAL = Channel.create()
+
+// Create the channel that will collate all the signals
+// and release a signal when the batch is complete
+SAMPLE_COMPLETE_SIGNAL = Channel.create()
+SAMPLE_COMPLETE_SIGNAL
+  .mix(HISAT2_SAMPLE_COMPLETE_SIGNAL, KALLISTO_SAMPLE_COMPLETE_SIGNAL, SALMON_SAMPLE_COMPLETE_SIGNAL)
+  .collate(params.execution.queue_size, false)
+  .set { BATCH_DONE_SIGNAL }
+
+/**
+ * Handles the end of a batch by moving a new batch
+ * file into the process directory which triggers
+ * the NEXT_BATCH.watchPath channel.
+ */
+process next_batch {
+  executor "local"
+
+  input:
+    val signal from BATCH_DONE_SIGNAL
+
+  exec:
+    // Move the first batch file into the processing direcotry
+    // so that we jumpstart the workflow.
+    batch_files = file('work/GEMmaker/stage/BATCH.*');
+    if (batch_files.size() > 0) {
+      batch_files.first().moveTo('work/GEMmaker/process')
+    }
+    else {
+    }
+}
 
 /**
  * Downloads FASTQ files from the NCBI SRA.
@@ -169,7 +355,7 @@ process fastq_dump {
   label "retry"
 
   input:
-    set val(run_ids), val(exp_id) from SRR2SRX_TO_FASTQ_DUMP
+    set val(exp_id), val(run_ids), val(type) from REMOTE_SAMPLES
 
   output:
     set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_COMBINATION
@@ -177,7 +363,7 @@ process fastq_dump {
 
   script:
   """
-  ids=`echo $run_ids | perl -pi -e 's/[\\[,\\]]//g'`
+  ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
   for run_id in \$ids; do
     fastq-dump --split-files \$run_id
   done
@@ -219,16 +405,15 @@ process SRR_combine {
 }
 
 
+
 /**
  * This is where we combine samples from both local and remote sources.
  */
 COMBINED_SAMPLES_FOR_FASTQC_1 = LOCAL_SAMPLES_FOR_FASTQC_1.mix(MERGED_SAMPLES_FOR_FASTQC_1)
 COMBINED_SAMPLES_FOR_COUNTING = LOCAL_SAMPLES_FOR_COUNTING.mix(MERGED_SAMPLES_FOR_COUNTING)
 
-
-
 /**
- * Performs fastqc on fastq files prior to trimmomatic
+ * Performs fastqc on raw fastq files 
  */
 process fastqc_1 {
   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
@@ -246,7 +431,6 @@ process fastqc_1 {
   fastqc $pass_files
   """
 }
-
 
 
 /**
@@ -312,6 +496,7 @@ process kallisto_tpm {
 
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into KALLISTO_TPM
+    val 1  into KALLISTO_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
@@ -331,7 +516,7 @@ process salmon {
 
   input:
     set val(sample_id), file(pass_files) from SALMON_CHANNEL
-    file salmon_index from Channel.fromPath("${params.input.reference_path}${params.input.reference_prefix}*/*").toList()
+    file salmon_index from SALMON_INDEXES
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into SALMON_GA
@@ -374,6 +559,7 @@ process salmon_tpm {
 
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into SALMON_TPM
+    val 1  into SALMON_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
@@ -487,7 +673,6 @@ process fastqc_2 {
     set val(sample_id), file(pass_files) from TRIMMED_SAMPLES_FOR_FASTQC
 
   output:
-    set val(sample_id), file(pass_files) into TRIMMED_FASTQC_SAMPLES
     set file("${sample_id}_??_trim_fastqc.html"), file("${sample_id}_??_trim_fastqc.zip") optional true into FASTQC_2_OUTPUT
 
   script:
@@ -660,6 +845,7 @@ process fpkm_or_tpm {
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.fpkm" optional true into FPKMS
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into TPM
+    val 1  into HISAT2_SAMPLE_COMPLETE_SIGNAL
 
   script:
   if ( params.output.publish_fpkm == true && params.output.publish_tpm == true )
@@ -818,3 +1004,5 @@ process clean_bam {
   script:
     template "clean_work_files.sh"
 }
+
+
