@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 """A Python script for retrieving metadata about NCBI SRA experiment runsself.
-
 .. module:: GEMmaker
     :platform: UNIX, Linux
     :synopsis: This script recieves a single input argument: a file containing
@@ -22,11 +21,9 @@ Script, File = sys.argv
 
 def download_runs_meta(srr_file):
     """ Downloads the meta data for the runs contained the input file.
-
     :param srr_file:  the path of the file containing the run IDs. Each run
       ID must be on a new line in the file. Empty lines are ignored.
     :type srr_file: A string
-
     """
     # Holds the list of valid SRR Ids
     srr_ids = [];
@@ -75,7 +72,16 @@ def download_runs_meta(srr_file):
             response_xml = response_obj.read()
             response = xmltodict.parse(response_xml)
 
+            # Get the list of experiments from the query.
             experiments = response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]
+
+            # If we only have one experiment then we have to convert it to an
+            # array for our for loop below.
+            if (isinstance(experiments, list) == False):
+              experiments = []
+              experiments.append(response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"])
+
+            # Now loop through the experiments to handle the metadata.
             for i in range(0, len(experiments)):
                 experiment = experiments[i]
                 run_id = srr_ids[page * page_size + i]
@@ -85,7 +91,7 @@ def download_runs_meta(srr_file):
                 else:
                   srx_ids[exp_id] = [run_id];
 
-                # Get the metadata for the sample
+                # Get the metadata for the sample.
                 sample = experiment["SAMPLE"]
 
                 # Get this run's metadata.
@@ -117,16 +123,12 @@ def download_runs_meta(srr_file):
 
 def save_ncbi_meta(experiment, sample, run):
     """ Creates .meta.json files containing run, experiment and sample info.
-
     :param experiment:  A dictionary containing the experiment metadata.
     :type experiment: dictionary
-
     :param sample: A dictionary containing the sample metadata.
     :type sample: dictionary
-
     :param run: A dictionary containing the run metadta.
     :type run: dictionaty.
-
     """
     # The query returns the experiment details. Write out
     # the metadata for the experiment.
@@ -147,18 +149,14 @@ def save_ncbi_meta(experiment, sample, run):
 
 def save_gemmaker_meta(experiment, sample, run):
     """Writes a file using controlled vocabulary terms for meta data.
-
     This function creates both a JSON and tab delimited meta data file that
     maps meta data from NCBI to known controlled vocabulary terms. The purpose
     of this is to help ensure uniformity in meta data details between
     runs of GEMmaker and between different sample sets.
-
     :param experiment:  A dictionary containing the experiment metadata.
     :type experiment: dictionary
-
     :param sample:  A dictionary containing the sample metadata.
     :type sample: dictionary
-
     :param run:  A dictionary containing the run metatdata.
     :type: dictionary
     """
