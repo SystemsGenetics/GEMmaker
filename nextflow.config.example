@@ -16,7 +16,8 @@ manifest {
 params {
   input {
     remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
-    local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
+    local_samples_path = "none"
+    // local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
     reference_path = "${PWD}/examples/reference/"
     reference_prefix = "CORG"
   }
@@ -90,17 +91,17 @@ trace {
 
 
 
-docker {
-  fixOwnership = true
-  runOptions = "--init"
-  sudo = true
-}
+// docker {
+//   fixOwnership = true
+//   runOptions = "--init"
+//   sudo = true
+// }
 
-
-
-singularity {
-  runOptions = ""
-}
+//
+//
+// singularity {
+//   runOptions = ""
+// }
 
 
 
@@ -114,6 +115,9 @@ process {
     errorStrategy = { "${task.attempt}" == "${params.execution.max_retries}" ? "retry" : "${params.execution.error_strategy}" }
   }
 
+  withLabel:ascp {
+    container = "systemsgenetics/ascp:3.9.1"
+  }
   withLabel:fastqc {
     container = "systemsgenetics/fastqc:0.11.7"
     time = "24h"
@@ -175,6 +179,15 @@ profiles {
       withLabel:retry {
         errorStrategy = "terminate"
       }
+    }
+  }
+
+  inDocker {
+    docker {
+        // sudo = true
+        enabled = true
+        fixOwnership = true
+        runOptions = '-u $(id -u):$(id -g)'
     }
   }
 
