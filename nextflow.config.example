@@ -25,6 +25,7 @@ params {
     dir = "${PWD}/output"
     sample_dir = { "${params.output.dir}/${sample_id}" }
     publish_mode = "link"
+    publish_downloaded_fastq = true
     publish_trimmed_fastq = true
     publish_bam = true
     publish_fpkm = true
