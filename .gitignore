@@ -1,4 +1,6 @@
 .nextflow*
 nextflow.config
+nextflow
 output
 work
+docs/_build
