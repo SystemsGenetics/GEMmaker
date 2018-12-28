@@ -42,6 +42,7 @@ Output Parameters:
 ------------------
   Output directory:           ${params.output.dir}
   Publish mode:               ${params.output.publish_mode}
+  Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
   Publish BAM:                ${params.output.publish_bam}
   Publish FPKM:               ${params.output.publish_fpkm}
@@ -171,6 +172,7 @@ LOCAL_SAMPLE_FILES_FOR_BATCHING
 // Create the channels needed for batching of samples
 BATCHES = REMOTE_SAMPLES_FOR_BATCHING
   .mix(LOCAL_SAMPLES_FOR_BATCHING)
+  .toSortedList()
   .collate(params.execution.queue_size)
 
 // Create the directories we'll use for running
