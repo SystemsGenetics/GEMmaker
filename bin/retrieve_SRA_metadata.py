@@ -203,60 +203,61 @@ def save_gemmaker_meta(experiment, sample, run):
     annots['EFO:0000721'] = ''
     annots['EFO:0000727'] = ''
 
-    # Itearte through the sample attributes
-    attrs = sample['SAMPLE_ATTRIBUTES']['SAMPLE_ATTRIBUTE']
-    for attr in attrs:
+    # Iterate through the sample attributes
+    if 'SAMPLE_ATTRIBUTES' in sample and 'SAMPLE_ATTRIBUTE' in sample['SAMPLE_ATTRIBUTES']:
+      attrs = sample['SAMPLE_ATTRIBUTES']['SAMPLE_ATTRIBUTE']
+      for attr in attrs:
 
-      # Add the cultivar
-      if attr['TAG'] == 'cultivar':
-        if attr['VALUE'] != 'missing':
-          annots['sep:00195']['obi:organism']['local:infraspecific_type'] = 'cultivar'
-          annots['sep:00195']['obi:organism']['TAXRANK:0000045'] = attr['VALUE']
-        continue
+        # Add the cultivar
+        if attr['TAG'] == 'cultivar':
+          if attr['VALUE'] != 'missing':
+            annots['sep:00195']['obi:organism']['local:infraspecific_type'] = 'cultivar'
+            annots['sep:00195']['obi:organism']['TAXRANK:0000045'] = attr['VALUE']
+          continue
 
-      # Add the age
-      if attr['TAG'] == 'age':
-        if attr['VALUE'] != 'missing':
-          annots['sep:00195']['NCIT:C25150'] = attr['VALUE']
-        continue
+        # Add the age
+        if attr['TAG'] == 'age':
+          if attr['VALUE'] != 'missing':
+            annots['sep:00195']['NCIT:C25150'] = attr['VALUE']
+          continue
 
-      # Add the genotype
-      if attr['TAG'] == 'Genotype' or attr['TAG'] == 'genotype':
-        if attr['VALUE'] != 'missing':
-          annots['sep:00195']['NCIT:C16631'] = attr['VALUE']
-        continue
+        # Add the genotype
+        if attr['TAG'] == 'Genotype' or attr['TAG'] == 'genotype':
+          if attr['VALUE'] != 'missing':
+            annots['sep:00195']['NCIT:C16631'] = attr['VALUE']
+          continue
 
-      # Add the tissue
-      if attr['TAG'] == 'tissue':
-        if attr['VALUE'] != 'missing':
-          annots['sep:00195']['NCIT:C12801'] = attr['VALUE']
-        continue
+        # Add the tissue
+        if attr['TAG'] == 'tissue':
+          if attr['VALUE'] != 'missing':
+            annots['sep:00195']['NCIT:C12801'] = attr['VALUE']
+          continue
 
-      # Add the developmental stage
-      if attr['TAG'] == 'dev_stage':
-        if attr['VALUE'] != 'missing':
-          annots['sep:00195']['NCIT:C43531'] = attr['VALUE']
-        continue
+        # Add the developmental stage
+        if attr['TAG'] == 'dev_stage':
+          if attr['VALUE'] != 'missing':
+            annots['sep:00195']['NCIT:C43531'] = attr['VALUE']
+          continue
 
-      # Add the temperature
-      if attr['TAG'] == 'temp':
-        if attr['VALUE'] != 'missing':
-          annots['NCIT:C25206'] = attr['VALUE']
-        continue
+        # Add the temperature
+        if attr['TAG'] == 'temp':
+          if attr['VALUE'] != 'missing':
+            annots['NCIT:C25206'] = attr['VALUE']
+          continue
 
-      # Add the time
-      if attr['TAG'] == 'time':
-        if attr['VALUE'] != 'missing':
-          annots['EFO:0000721'] = attr['VALUE']
-        continue
+        # Add the time
+        if attr['TAG'] == 'time':
+          if attr['VALUE'] != 'missing':
+            annots['EFO:0000721'] = attr['VALUE']
+          continue
 
-      # Add the treatment
-      if attr['TAG'] == 'treatment':
-        if attr['VALUE'] != 'missing':
-          annots['EFO:0000727'] = attr['VALUE']
-        continue
+        # Add the treatment
+        if attr['TAG'] == 'treatment':
+          if attr['VALUE'] != 'missing':
+            annots['EFO:0000727'] = attr['VALUE']
+          continue
 
-      sys.stderr.write("Unhandled sample attribute: '" + attr['TAG'] + "', value: " + attr['VALUE'] + "\n")
+        sys.stderr.write("Unhandled sample attribute: '" + attr['TAG'] + "', value: " + attr['VALUE'] + "\n")
 
     # Save the heirarchical JSON metadata from GEMmaker
     jsonfilename = annots['local:SRX_id'] + '.GEMmaker.meta.json'
