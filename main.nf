@@ -79,12 +79,12 @@ GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.refer
  * This checks the folder that the user has given
  */
 if (params.input.local_samples_path == "none") {
-  Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_BATCHING }
+  Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_STAGING }
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 else {
   Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
-    .set { LOCAL_SAMPLE_FILES_FOR_BATCHING }
+    .set { LOCAL_SAMPLE_FILES_FOR_STAGING }
   Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
     .set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
@@ -144,7 +144,7 @@ process retrieve_sample_metadata {
     val srr_file from SRR_FILE
 
   output:
-    stdout SRR2SRX_FOR_BATCHING
+    stdout REMOTE_SAMPLES_LIST
     file "*.GEMmaker.meta.*"
 
   script:
@@ -154,150 +154,145 @@ process retrieve_sample_metadata {
 }
 
 /**
- * Splits the SRR2XRX mapping file for ensuring batches of samples
- * process together to help conserve space
+ * Splits the SRR2XRX mapping file
  */
 
 // First create a list of the remote and local samples
-SRR2SRX_FOR_BATCHING
+REMOTE_SAMPLES_LIST
   .splitCsv()
   .groupTuple(by: 1)
   .map { [it[1], it[0].toString().replaceAll(/[\[\]\'\,]/,''), 'remote'] }
-  .set{REMOTE_SAMPLES_FOR_BATCHING}
+  .set{REMOTE_SAMPLES_FOR_STAGING}
 
-LOCAL_SAMPLE_FILES_FOR_BATCHING
+LOCAL_SAMPLE_FILES_FOR_STAGING
   .map{ [it[0], it[1], 'local' ] }
-  .set{LOCAL_SAMPLES_FOR_BATCHING}
+  .set{LOCAL_SAMPLES_FOR_STAGING}
 
-// Create the channels needed for batching of samples
-BATCHES = REMOTE_SAMPLES_FOR_BATCHING
-  .mix(LOCAL_SAMPLES_FOR_BATCHING)
-  .toSortedList()
-  .collate(params.execution.queue_size)
+ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
+  .mix(LOCAL_SAMPLES_FOR_STAGING)
 
 // Create the directories we'll use for running
 // batches
 file('work/GEMmaker').mkdir()
 file('work/GEMmaker/stage').mkdir()
 file('work/GEMmaker/process').mkdir()
+file('work/GEMmaker/done').mkdir()
 
-// Clean up any files left over from a previous run.
-existing_files = file('work/GEMmaker/stage/*')
-for (existing_file in existing_files) {
-  existing_file.delete()
-}
+// Clean up any files left over from a previous run by moving them
+// back to the stage directory.
 existing_files = file('work/GEMmaker/process/*')
 for (existing_file in existing_files) {
-  existing_file.delete()
+  existing_file.moveTo('work/GEMmaker/stage')
 }
 
 /**
  * Writes the batch files and stores them in the
  * stage directory.
  */
-process write_batch_files {
+process write_stage_files {
   executor "local"
-  cache false
+  tag {sample[0]}
 
   input:
-    val batch from BATCHES
+    val sample from ALL_SAMPLES
 
-  output: 
-    val (1) into BATCHES_READY_SIGNAL
+  output:
+    val (1) into SAMPLES_READY_SIGNAL
 
-  exec: 
-    // First create a file for each batch of samples.  We will
-    // process the batches one at a time.  
-    num_files = file('work/GEMmaker/stage/BATCH.*').size()
-    batch_file = file('work/GEMmaker/stage/BATCH.' + num_files)
-    batch_file.withWriter {
-      for (item in batch) {
-        sample = item[0]
-        type = item[2]
-        if (type.equals('local')) {
-          if (item[1].size() > 1) {
-            files = item[1]
-            files_str = files.join('::')
-            it.writeLine '"' + sample + '","' + files_str + '","' + type + '"'
-          }
-          else {
-            it.writeLine '"' + sample + '","' + item[1].first().toString() + '","' + type + '"'
-          }
+  exec:
+    // Create a file for each samples.
+    sample_file = file('work/GEMmaker/stage/' + sample[0] + '.sample.csv')
+    sample_file.withWriter {
+
+      // Get the sample type: local or remote.
+      type = sample[2]
+
+      // If this is a local file.
+      if (type.equals('local')) {
+        if (sample[1].size() > 1) {
+          files = sample[1]
+          files_str = files.join('::')
+          it.writeLine '"' + sample[0] + '","' + files_str + '","' + type + '"'
         }
         else {
-          it.writeLine '"' + sample + '","' + item[1] + '","' + type + '"'
+          it.writeLine '"' + sample[0] + '","' + sample[1].first().toString() + '","' + type + '"'
         }
+      }
+      // If this is a remote file.
+      else {
+        it.writeLine '"' + sample[0] + '","' + sample[1] + '","' + type + '"'
       }
     }
 }
 
 // When all batch files are created we need to then
 // move the first file into the process directory.
-BATCHES_READY_SIGNAL.collect().set { FIRST_BATCH_START_SIGNAL }
+SAMPLES_READY_SIGNAL.collect().set { FIRST_SAMPLE_START_SIGNAL }
 
 /**
- * Moves the first batch file into the process directory.
+ * Moves the first set of sample files into the process directory.
  */
 process start_first_batch {
   executor "local"
   cache false
 
   input:
-    val signal from FIRST_BATCH_START_SIGNAL
-   
+    val signal from FIRST_SAMPLE_START_SIGNAL
+
   exec:
-    // Move the first batch file into the processing direcotry
+    // Move the first set of sample file into the processing directory
     // so that we jumpstart the workflow.
-    batch_files = file('work/GEMmaker/stage/BATCH.*');
-    batch_files.first().moveTo('work/GEMmaker/process')
+    sample_files = file('work/GEMmaker/stage/*.sample.csv');
+    start_samples = sample_files.sort().take(params.execution.queue_size)
+    for (sample in start_samples) {
+      sample.moveTo('work/GEMmaker/process')
+    }
 }
 
 // Create the channel that will watch the process directory
-// for new files. When a new batch file is added 
-// it will be read and its samples sent through the
-// workflow.
-NEXT_BATCH = Channel
+// for new files. When a new sample file is added
+// it will be read it and sent it through the workflow.
+NEXT_SAMPLE = Channel
    .watchPath('work/GEMmaker/process')
 
 /**
- * Opens the batch file and prints it's conents to
+ * Opens the sample file and prints it's contents to
  * STDOUT so that the samples can be caught in a new
  * channel and start processing.
  */
-process read_batch_file {
+process read_sample_file {
   executor "local"
-  tag { batch_file }
-  cache false
-    
+  tag { sample_file }
+
   input:
-    file(batch_file) from NEXT_BATCH
+    file(sample_file) from NEXT_SAMPLE
 
   output:
-    stdout BATCH_FILE_CONTENTS
+    stdout SAMPLE_FILE_CONTENTS
 
   script:
     // If this is our last batch then close the open
     // channels that perform our looping or we'll hang.
-    batch_files = file('work/GEMmaker/stage/BATCH.*');
-    if (batch_files.size() == 0) {
-      NEXT_BATCH.close()
+    sample_files = file('work/GEMmaker/stage/*.sample.csv');
+    if (sample_files.size() == 0) {
+      NEXT_SAMPLE.close()
       HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
       KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
       SALMON_SAMPLE_COMPLETE_SIGNAL.close()
       SAMPLE_COMPLETE_SIGNAL.close()
     }
     """
-      cat $batch_file
+      cat $sample_file
     """
 }
 
-// Split our batch file contents into two different
+// Split our sample file contents into two different
 // channels, one for remote samples and another for local.
 LOCAL_SAMPLES = Channel.create()
 REMOTE_SAMPLES = Channel.create()
-BATCH_FILE_CONTENTS
+SAMPLE_FILE_CONTENTS
   .splitCsv(quote: '"')
-  .choice(LOCAL_SAMPLES, REMOTE_SAMPLES) { a -> a[2] =~ /local/ ? 0 : 1 } 
+  .choice(LOCAL_SAMPLES, REMOTE_SAMPLES) { a -> a[2] =~ /local/ ? 0 : 1 }
 
 // Split our list of local samples into two pathways, onefor
 // FastQC analysis and the other for read counting.  We don't
@@ -318,32 +313,29 @@ KALLISTO_SAMPLE_COMPLETE_SIGNAL = Channel.create()
 SALMON_SAMPLE_COMPLETE_SIGNAL = Channel.create()
 
 // Create the channel that will collate all the signals
-// and release a signal when the batch is complete
+// and release a signal when the sample is complete
 SAMPLE_COMPLETE_SIGNAL = Channel.create()
 SAMPLE_COMPLETE_SIGNAL
   .mix(HISAT2_SAMPLE_COMPLETE_SIGNAL, KALLISTO_SAMPLE_COMPLETE_SIGNAL, SALMON_SAMPLE_COMPLETE_SIGNAL)
-  .collate(params.execution.queue_size, false)
-  .set { BATCH_DONE_SIGNAL }
+  .set { SAMPLE_DONE_SIGNAL }
 
 /**
- * Handles the end of a batch by moving a new batch
+ * Handles the end of a sample by moving a new sample
  * file into the process directory which triggers
- * the NEXT_BATCH.watchPath channel.
+ * the NEXT_SAMPLE.watchPath channel.
  */
-process next_batch {
+process next_sample {
   executor "local"
 
   input:
-    val signal from BATCH_DONE_SIGNAL
+    val signal from SAMPLE_DONE_SIGNAL
 
   exec:
-    // Move the first batch file into the processing direcotry
-    // so that we jumpstart the workflow.
-    batch_files = file('work/GEMmaker/stage/BATCH.*');
-    if (batch_files.size() > 0) {
-      batch_files.first().moveTo('work/GEMmaker/process')
-    }
-    else {
+    // Move the next sample file into the processing directory
+    // which will trigger the start of the next sample.
+    sample_files = file('work/GEMmaker/stage/*');
+    if (sample_files.size() > 0) {
+      sample_files.first().moveTo('work/GEMmaker/process')
     }
 }
 
@@ -415,7 +407,7 @@ COMBINED_SAMPLES_FOR_FASTQC_1 = LOCAL_SAMPLES_FOR_FASTQC_1.mix(MERGED_SAMPLES_FO
 COMBINED_SAMPLES_FOR_COUNTING = LOCAL_SAMPLES_FOR_COUNTING.mix(MERGED_SAMPLES_FOR_COUNTING)
 
 /**
- * Performs fastqc on raw fastq files 
+ * Performs fastqc on raw fastq files
  */
 process fastqc_1 {
   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
@@ -884,7 +876,7 @@ process fpkm_or_tpm {
 
 
 /**
- * Merge the fastq_dump files with SRR_combine signal 
+ * Merge the fastq_dump files with SRR_combine signal
  * so that we can remove these files.
  */
 
@@ -900,7 +892,7 @@ process clean_downloaded_fastq {
   input:
     set val(sample_id), val(files_list) from DOWNLOADED_FASTQ_CLEANUP_READY
 
-  when: 
+  when:
     params.output.publish_downloaded_fastq == false
 
   script:
@@ -910,7 +902,7 @@ process clean_downloaded_fastq {
 
 
 /**
- * Merge the merged fastq files with the signals from hista2, 
+ * Merge the merged fastq files with the signals from hista2,
  * kallisto and salmon to clean up merged fastq files. This
  * is only needed for remote files that were downloaded
  * and then merged into a single sample in the SRR_combine
@@ -953,7 +945,7 @@ process clean_trimmed_fastq {
   input:
     set val(sample_id), val(files_list) from TRIMMED_FASTQ_CLEANUP_READY
 
-  when: 
+  when:
     params.output.publish_trimmed_fastq == false
 
   script:
@@ -1000,11 +992,9 @@ process clean_bam {
   input:
     set val(sample_id), val(files_list) from BAM_CLEANUP_READY
 
-  when: 
+  when:
     params.output.publish_bam == false
 
   script:
     template "clean_work_files.sh"
 }
-
-
