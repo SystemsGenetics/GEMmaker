@@ -176,7 +176,6 @@ ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
 file('work/GEMmaker').mkdir()
 file('work/GEMmaker/stage').mkdir()
 file('work/GEMmaker/process').mkdir()
-file('work/GEMmaker/done').mkdir()
 
 // Clean up any files left over from a previous run by moving them
 // back to the stage directory.
@@ -888,6 +887,7 @@ RFCLEAN.groupTuple(size: 2).set { DOWNLOADED_FASTQ_CLEANUP_READY }
  */
 process clean_downloaded_fastq {
   tag { sample_id }
+  executor "local"
 
   input:
     set val(sample_id), val(files_list) from DOWNLOADED_FASTQ_CLEANUP_READY
@@ -916,6 +916,7 @@ MFCLEAN.groupTuple(size: 2).set { MERGED_FASTQ_CLEANUP_READY }
  */
 process clean_merged_fastq {
   tag { sample_id }
+  executor "local"
 
   input:
     set val(sample_id), val(files_list) from MERGED_FASTQ_CLEANUP_READY
@@ -941,6 +942,7 @@ TRHIMIX.groupTuple(size: 2).set { TRIMMED_FASTQ_CLEANUP_READY }
  */
 process clean_trimmed_fastq {
   tag { sample_id }
+  executor "local"
 
   input:
     set val(sample_id), val(files_list) from TRIMMED_FASTQ_CLEANUP_READY
@@ -966,9 +968,13 @@ HISSMIX.groupTuple(size: 2).set { SAM_CLEANUP_READY }
  */
 process clean_sam {
   tag { sample_id }
+  executor "local"
 
   input:
     set val(sample_id), val(files_list) from SAM_CLEANUP_READY
+
+  when:
+    params.output.publish_bam == false
 
   script:
     template "clean_work_files.sh"
@@ -988,6 +994,7 @@ SSSTMIX.groupTuple(size: 2).set { BAM_CLEANUP_READY }
  */
 process clean_bam {
   tag { sample_id }
+  executor "local"
 
   input:
     set val(sample_id), val(files_list) from BAM_CLEANUP_READY
