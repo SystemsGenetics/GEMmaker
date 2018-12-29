@@ -345,6 +345,7 @@ process next_batch {
 /**
  * Downloads FASTQ files from the NCBI SRA.
  */
+ /*
 process ascp_download {
  tag { exp_id }
  label "ascp"
@@ -386,28 +387,33 @@ process ascp_download {
  ascp -k1 –T -l $limit anonftp@ftp.ncbi.nlm.nih.gov:$query .
  """
 }
-//
-// process fastq_dump {
-//   publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${exp_id}/${it}" }
-//   tag { exp_id }
-//   label "sratoolkit"
-//   label "retry"
-//
-//   input:
-//     set val(exp_id), val(run_ids), val(type) from REMOTE_SAMPLES
-//
-//   output:
-//     set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_COMBINATION
-//     set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_CLEANING
-//
-//   script:
-//   """
-//   ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
-//   for run_id in \$ids; do
-//     fastq-dump --split-files \$run_id
-//   done
-//   """
-// }
+*/
+
+process aspera_download {
+   publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${exp_id}/${it}" }
+   tag { exp_id }
+   label "aspera"
+   label "retry"
+
+   input:
+     set val(exp_id), val(run_ids), val(type) from REMOTE_SAMPLES
+
+   output:
+     set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_COMBINATION
+     set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_CLEANING
+
+   script:
+   """
+   ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
+   for id in \$ids; do
+     prefix=`echo \$id | perl -p -e 's/^([SDE]RR)\\d+\$/\$1/'`
+     sixchars=`echo \$id | perl -p -e 's/^([SDE]RR\\d{1,3}).*\$/\$1/'`
+     url="/sra/sra-instant/reads/ByRun/sra/\$prefix/\$sixchars/\$id/\$id.sra"
+     env
+     ascp -i /home/gemdocker/.aspera/connect/etc/asperaweb_id_dsa.openssh -k 1 -T -l 1000m anonftp@ftp.ncbi.nlm.nih.gov:\$url .
+   done
+   """
+}
 
 
 

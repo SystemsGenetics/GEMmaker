@@ -115,8 +115,8 @@ process {
     errorStrategy = { "${task.attempt}" == "${params.execution.max_retries}" ? "retry" : "${params.execution.error_strategy}" }
   }
 
-  withLabel:ascp {
-    container = "systemsgenetics/ascp:3.9.1"
+  withLabel:aspera {
+    container = "systemsgenetics/aspera:3.9.1"
   }
   withLabel:fastqc {
     container = "systemsgenetics/fastqc:0.11.7"
@@ -182,12 +182,21 @@ profiles {
     }
   }
 
-  inDocker {
+  // A profile for execution of GEMmaker on a stand-alone machine
+  // using Docker.
+  localDocker {
     docker {
-        // sudo = true
         enabled = true
         fixOwnership = true
         runOptions = '-u $(id -u):$(id -g)'
+    }
+  }
+
+  // A profile for execution of GEMmaker on a stand-alone machine
+  // using singularity.
+  localSingularity {
+    singularity {
+        enabled = true
     }
   }
 
@@ -207,7 +216,9 @@ profiles {
       withLabel: "!multithreaded" {
         clusterOptions = "-l select=1:mem=2gb:ncpus=2"
       }
-
+      withLabel:aspera {
+        module = "aspera"
+      }
       withLabel:fastqc {
         module = "fastQC"
       }
@@ -252,7 +263,9 @@ profiles {
       withLabel: "!multithreaded" {
         cpus = 1
       }
-
+      withLabel:aspera {
+        module = "aspera"
+      }
       withLabel:fastqc {
         module = "fastQC"
       }
