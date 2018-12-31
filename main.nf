@@ -418,6 +418,7 @@ process fastqc_1 {
 
   output:
     set file("${sample_id}_?_fastqc.html") , file("${sample_id}_?_fastqc.zip") optional true into FASTQC_1_OUTPUT
+    set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_FASTQC_SIGNAL
 
   script:
   """
@@ -667,6 +668,7 @@ process fastqc_2 {
 
   output:
     set file("${sample_id}_??_trim_fastqc.html"), file("${sample_id}_??_trim_fastqc.zip") optional true into FASTQC_2_OUTPUT
+    set val(sample_id), val(1) into CLEAN_TRIMMED_FASTQ_FASTQC_SIGNAL
 
   script:
   """
@@ -696,7 +698,7 @@ process hisat2 {
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into INDEXED_SAMPLES
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam.log") into INDEXED_SAMPLES_LOG
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.sam") into SAM_FOR_CLEANING
-    set val(sample_id), val(1) into CLEAN_TRIMMED_FASTQ_SIGNAL
+    set val(sample_id), val(1) into CLEAN_TRIMMED_FASTQ_HISAT_SIGNAL
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_HISAT_SIGNAL
 
   script:
@@ -903,13 +905,13 @@ process clean_downloaded_fastq {
 
 /**
  * Merge the merged fastq files with the signals from hista2,
- * kallisto and salmon to clean up merged fastq files. This
+ * kallisto, salmon and fastqc_1 to clean up merged fastq files. This
  * is only needed for remote files that were downloaded
  * and then merged into a single sample in the SRR_combine
  * process.
  */
-MFCLEAN = MERGED_FASTQ_FOR_CLEANING.mix(CLEAN_MERGED_FASTQ_HISAT_SIGNAL, CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL, CLEAN_MERGED_FASTQ_SALMON_SIGNAL)
-MFCLEAN.groupTuple(size: 2).set { MERGED_FASTQ_CLEANUP_READY }
+MFCLEAN = MERGED_FASTQ_FOR_CLEANING.mix(CLEAN_MERGED_FASTQ_HISAT_SIGNAL, CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL, CLEAN_MERGED_FASTQ_SALMON_SIGNAL, CLEAN_MERGED_FASTQ_FASTQC_SIGNAL)
+MFCLEAN.groupTuple(size: 3).set { MERGED_FASTQ_CLEANUP_READY }
 
 /**
  * Cleans merged fastq files
@@ -931,11 +933,12 @@ process clean_merged_fastq {
 
 
 /**
- * Merge the Trimmomatic samples with Hisat's signal that it is
- * done so that we can remove these files.
+ * Merge the Trimmomatic samples with Hisat's signal and FastQC signal. Once
+ * both tools send the signal that they are done with the trimmed file it can
+ * be removed.
  */
-TRHIMIX = TRIMMED_FASTQ_FOR_CLEANING.mix(CLEAN_TRIMMED_FASTQ_SIGNAL)
-TRHIMIX.groupTuple(size: 2).set { TRIMMED_FASTQ_CLEANUP_READY }
+TRHIMIX = TRIMMED_FASTQ_FOR_CLEANING.mix(CLEAN_TRIMMED_FASTQ_HISAT_SIGNAL, CLEAN_TRIMMED_FASTQ_FASTQC_SIGNAL)
+TRHIMIX.groupTuple(size: 3).set { TRIMMED_FASTQ_CLEANUP_READY }
 
 /**
  * Cleans trimmed fastq files
