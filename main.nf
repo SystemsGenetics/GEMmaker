@@ -176,6 +176,7 @@ ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
 file('work/GEMmaker').mkdir()
 file('work/GEMmaker/stage').mkdir()
 file('work/GEMmaker/process').mkdir()
+file('work/GEMmaker/done').mkdir()
 
 // Clean up any files left over from a previous run by moving them
 // back to the stage directory.
@@ -327,12 +328,16 @@ process next_sample {
   executor "local"
 
   input:
-    val signal from SAMPLE_DONE_SIGNAL
+    val sample_id from SAMPLE_DONE_SIGNAL
 
   exec:
+    // Move the finished sample to the done directory.
+    sample_file = file('work/GEMmaker/process/' + sample_id + '.sample.csv')
+    sample_file.moveTo('work/GEMmaker/done')
+ 
     // Move the next sample file into the processing directory
     // which will trigger the start of the next sample.
-    sample_files = file('work/GEMmaker/stage/*');
+    sample_files = file('work/GEMmaker/stage/*')
     if (sample_files.size() > 0) {
       sample_files.first().moveTo('work/GEMmaker/process')
     }
@@ -490,7 +495,7 @@ process kallisto_tpm {
 
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into KALLISTO_TPM
-    val 1  into KALLISTO_SAMPLE_COMPLETE_SIGNAL
+    val sample_id  into KALLISTO_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
@@ -553,7 +558,7 @@ process salmon_tpm {
 
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into SALMON_TPM
-    val 1  into SALMON_SAMPLE_COMPLETE_SIGNAL
+    val sample_id  into SALMON_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
@@ -840,7 +845,7 @@ process fpkm_or_tpm {
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.fpkm" optional true into FPKMS
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into TPM
-    val 1  into HISAT2_SAMPLE_COMPLETE_SIGNAL
+    val sample_id   into HISAT2_SAMPLE_COMPLETE_SIGNAL
 
   script:
   if ( params.output.publish_fpkm == true && params.output.publish_tpm == true )
@@ -889,7 +894,6 @@ RFCLEAN.groupTuple(size: 2).set { DOWNLOADED_FASTQ_CLEANUP_READY }
  */
 process clean_downloaded_fastq {
   tag { sample_id }
-  executor "local"
 
   input:
     set val(sample_id), val(files_list) from DOWNLOADED_FASTQ_CLEANUP_READY
@@ -918,7 +922,6 @@ MFCLEAN.groupTuple(size: 3).set { MERGED_FASTQ_CLEANUP_READY }
  */
 process clean_merged_fastq {
   tag { sample_id }
-  executor "local"
 
   input:
     set val(sample_id), val(files_list) from MERGED_FASTQ_CLEANUP_READY
@@ -945,7 +948,6 @@ TRHIMIX.groupTuple(size: 3).set { TRIMMED_FASTQ_CLEANUP_READY }
  */
 process clean_trimmed_fastq {
   tag { sample_id }
-  executor "local"
 
   input:
     set val(sample_id), val(files_list) from TRIMMED_FASTQ_CLEANUP_READY
@@ -971,7 +973,6 @@ HISSMIX.groupTuple(size: 2).set { SAM_CLEANUP_READY }
  */
 process clean_sam {
   tag { sample_id }
-  executor "local"
 
   input:
     set val(sample_id), val(files_list) from SAM_CLEANUP_READY
@@ -997,7 +998,6 @@ SSSTMIX.groupTuple(size: 2).set { BAM_CLEANUP_READY }
  */
 process clean_bam {
   tag { sample_id }
-  executor "local"
 
   input:
     set val(sample_id), val(files_list) from BAM_CLEANUP_READY

@@ -231,7 +231,7 @@ profiles {
     process {
       executor = "slurm"
       queue = "ficklin"
-      time = "4h"
+      time = "24h"
 
       withLabel: "multithreaded" {
         cpus = "${params.execution.threads}"
