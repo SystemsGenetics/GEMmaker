@@ -165,6 +165,24 @@ profiles {
     process.executor = "local"
   }
 
+  // A profile for execution of GEMmaker on a stand-alone machine
+  // using Docker.
+  localDocker {
+    docker {
+        enabled = true
+        fixOwnership = true
+        runOptions = '-u $(id -u):$(id -g)'
+    }
+  }
+
+  // A profile for execution of GEMmaker on a stand-alone machine
+  // using singularity.
+  localSingularity {
+    singularity {
+        enabled = true
+    }
+  }
+
   //
   // The testing profile is used to override the execution params and force the
   // workflow to terminate immediately if any process fails, which is useful for
