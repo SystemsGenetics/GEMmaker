@@ -33,7 +33,19 @@ Default:
 
 .. code:: bash
 
-  remote_list_path = "none"
+  remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
+
+Example of format:
+
+.. code:: bash
+
+ SRR360147
+  SRR493289
+  SRR1696865
+  SRR2086505
+  SRR2086497
+  SRR1184187
+  SRR1184188
 
 local_samples_path
 ==================
@@ -53,13 +65,51 @@ Default:
 reference_path
 ==============
 
-The full file system path of the directory containing the genome reference
+The full system path to the directory containing the genome reference
 files. The reference genome is provided to this workflow via a set of files
-in a single directory. The list of files includes:
+in a single directory.The reference files will vary based on which alignment you wish to use. Requirment for each of the alignment methods (Hisat2, Slamon and Kallisto)
 
-1) A FASTA file containing the genomic sequence
-2) Hisat2 index files for the reference, which must be created with bisat2-bulid
-3) A GTF file containing the genes annotated within hte genome
+For Hisat2:
+
+1) Hisat2 index files for the reference, created with hisat2-bulid from the reference genome.
+2) A GTF file containing the genes annotated from the reference genome.
+
+To generate the hisat2 files, download the reference genome and run this command (This example uses the arabidopsis genome from `TAIR<>`__):
+
+.. code:: bash
+
+  hisat2-build -f TAIR10_Araport11.fna TAIR10_Araport11 | tee > hisat2-build.log
+
+Example of Hisat2 reference directory:
+
+.. code:: bash
+
+ TAIR10_Araport11.1.ht2
+  TAIR10_Araport11.2.ht2
+  TAIR10_Araport11.3.ht2
+  TAIR10_Araport11.4.ht2
+  TAIR10_Araport11.5.ht2
+  TAIR10_Araport11.6.ht2
+  TAIR10_Araport11.7.ht2
+  TAIR10_Araport11.8.ht2
+  TAIR10_Araport11.gtf
+  TAIR10_Araport11.fna
+
+For Salmon:
+
+Example of Salmon reference directory:
+
+.. code:: bash
+
+  TAIR10_Araport11.transcripts.Salmon.indexed/
+
+For Kallisto:
+
+Example of Kallisto reference directory:
+
+.. code:: bash
+
+  TAIR10_Araport11.transcripts.Kallisto.indexed
 
 All files for the reference genome must begin with the same file prefix. For
 example, if the prefix is TAIR10_Araport11 then the following files should be
