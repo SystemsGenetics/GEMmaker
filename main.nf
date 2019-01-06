@@ -136,7 +136,7 @@ if (params.output.publish_bam == true) {
  * and maps SRA runs to SRA experiments.
  */
 process retrieve_sample_metadata {
-  publishDir params.output.dir, mode: "symlink", pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
   label "python3"
 
   input:
@@ -177,14 +177,14 @@ file('work/GEMmaker/stage').mkdir()
 file('work/GEMmaker/process').mkdir()
 file('work/GEMmaker/done').mkdir()
 
-// Channels to bootstrap post-processing of 
+// Channels to bootstrap post-processing of
 // sample results if a resume is performed when
 // all samples have completed.
 MULTIQC_BOOTSTRAP = Channel.create()
 CREATE_GEM_BOOTSTRAP = Channel.create()
 
 // Check to see if we have any files left in the
-// stage directory. If so we need to keep processing 
+// stage directory. If so we need to keep processing
 // samples
 staged_files = file('work/GEMmaker/stage/*')
 if (staged_files.size() > 0) {
@@ -197,9 +197,9 @@ if (staged_files.size() > 0) {
 }
 // If there are no staged files then the workflow will
 // end because it only proceeds when there are samples
-// in the processed directory.  However suppose the workflow 
-// fails on multiqc and needs to be resumed.  The 
-// following bootstraps the post-processsing portion of 
+// in the processed directory.  However suppose the workflow
+// fails on multiqc and needs to be resumed.  The
+// following bootstraps the post-processsing portion of
 // the workflow
 else {
   MULTIQC_BOOTSTRAP.bind(1)
@@ -361,7 +361,7 @@ process next_sample {
     // Move the finished sample to the done directory.
     sample_file = file('work/GEMmaker/process/' + sample_id + '.sample.csv')
     sample_file.moveTo('work/GEMmaker/done')
- 
+
     // Move the next sample file into the processing directory
     // which will trigger the start of the next sample.
     sample_files = file('work/GEMmaker/stage/*')
@@ -386,7 +386,7 @@ process next_sample {
  * Downloads FASTQ files from the NCBI SRA.
  */
 process fastq_dump {
-  publishDir params.output.dir, mode: "symlink", pattern: publish_pattern_fastq_dump, saveAs: { "${exp_id}/${it}" }
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${exp_id}/${it}" }
   tag { exp_id }
   label "sratoolkit"
   label "retry"
@@ -453,7 +453,7 @@ COMBINED_SAMPLES_FOR_COUNTING = LOCAL_SAMPLES_FOR_COUNTING.mix(MERGED_SAMPLES_FO
  * Performs fastqc on raw fastq files
  */
 process fastqc_1 {
-  publishDir params.output.sample_dir, mode: "symlink", pattern: "*_fastqc.*"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -488,7 +488,7 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
  * Performs KALLISTO alignemnt of fastq files
  */
 process kallisto {
-  publishDir params.output.sample_dir, mode: "symlink"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
   label "kallisto"
 
@@ -527,7 +527,7 @@ process kallisto {
  * Generates the final TPM and raw count files for Kallisto
  */
 process kallisto_tpm {
-  publishDir params.output.sample_dir, mode: "symlink"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
 
   input:
@@ -551,7 +551,7 @@ process kallisto_tpm {
  * Performs SALMON alignemnt of fastq files
  */
 process salmon {
-  publishDir params.output.sample_dir, mode: "symlink"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
   label "salmon"
 
@@ -593,7 +593,7 @@ process salmon {
  * Generates the final TPM file for Salmon
  */
 process salmon_tpm {
-  publishDir params.output.sample_dir, mode: "symlink"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
 
   input:
@@ -625,7 +625,7 @@ process salmon_tpm {
  * "nextflow.config" file
  */
 process trimmomatic {
-  publishDir params.output.sample_dir, mode: "symlink", pattern: publish_pattern_trimmomatic
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_trimmomatic
   tag { sample_id }
   label "multithreaded"
   label "trimmomatic"
@@ -709,7 +709,7 @@ process trimmomatic {
  * Files are stored to an independent folder
  */
 process fastqc_2 {
-  publishDir params.output.sample_dir, mode: "symlink", pattern: "*_fastqc.*"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -734,7 +734,7 @@ process fastqc_2 {
  * depends: trimmomatic
  */
 process hisat2 {
-  publishDir params.output.sample_dir, mode: "symlink", pattern: "*.log"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
   tag { sample_id }
   label "multithreaded"
   label "hisat2"
@@ -793,7 +793,7 @@ process hisat2 {
  * depends: hisat2
  */
 process samtools_sort {
-  publishDir params.output.sample_dir, mode: "symlink", pattern: publish_pattern_samtools_sort
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_samtools_sort
   tag { sample_id }
   label "samtools"
 
@@ -819,7 +819,7 @@ process samtools_sort {
  * depends: samtools_index
  */
 process samtools_index {
-  publishDir params.output.sample_dir, mode: "symlink", pattern: publish_pattern_samtools_index
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_samtools_index
   tag { sample_id }
   label "samtools"
 
@@ -880,7 +880,7 @@ process stringtie {
  * Generate raw counts from Hisat2/stringtie
  */
 process hisat2_raw {
-  publishDir params.output.sample_dir, mode: "symlink"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
   label "stringtie"
 
@@ -910,7 +910,7 @@ process hisat2_raw {
  * Generates the final FPKM file
  */
 process fpkm_or_tpm {
-  publishDir params.output.sample_dir, mode: "symlink"
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
 
   input:
@@ -941,7 +941,7 @@ process fpkm_or_tpm {
 
 /**
  * The multiqc process should run when all samples have
- * completed or if on a resume when the bootstrap signal is 
+ * completed or if on a resume when the bootstrap signal is
  * received.
  */
 MULTIQC_RUN = MULTIQC_READY_SIGNAL.mix(MULTIQC_BOOTSTRAP)
@@ -952,11 +952,11 @@ MULTIQC_RUN = MULTIQC_READY_SIGNAL.mix(MULTIQC_BOOTSTRAP)
 process multiqc {
 
   label "multiqc"
-  publishDir "${params.output.dir}/reports", mode: "symlink"
- 
+  publishDir "${params.output.dir}/reports", mode: params.output.publish_mode
+
   input:
-    val signal from MULTIQC_RUN.collect() 
-  
+    val signal from MULTIQC_RUN.collect()
+
   output:
     file "multiqc_data" into MULTIQC_DATA
     file "multiqc_report.html" into MULTIQC_REPORT
@@ -969,7 +969,7 @@ process multiqc {
 
 /**
  * The createGEM process should run when all samples have
- * completed or if on a resume when the bootstrap signal is 
+ * completed or if on a resume when the bootstrap signal is
  * received.
  */
 CREATE_GEM_RUN = CREATE_GEM_READY_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
@@ -979,7 +979,7 @@ CREATE_GEM_RUN = CREATE_GEM_READY_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
  */
 process createGEM {
   label "python3"
-  publishDir "${params.output.dir}/GEM", mode: "symlink"
+  publishDir "${params.output.dir}/GEM", mode: params.output.publish_mode
 
   input:
     val signal from CREATE_GEM_RUN.collect()
@@ -989,7 +989,7 @@ process createGEM {
 
   script:
   """
-    # If the alignment tool is hisat then we need to generate both 
+    # If the alignment tool is hisat then we need to generate both
     # TPM and FPKM
     if [ ${params.software.alignment.which_alignment} == 0 ]; then
       create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
@@ -997,7 +997,7 @@ process createGEM {
     create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type raw
     create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
   """
-  
+
 }
 
 /**
