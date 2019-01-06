@@ -178,11 +178,33 @@ file('work/GEMmaker/stage').mkdir()
 file('work/GEMmaker/process').mkdir()
 file('work/GEMmaker/done').mkdir()
 
-// Clean up any files left over from a previous run by moving them
-// back to the stage directory.
-existing_files = file('work/GEMmaker/process/*')
-for (existing_file in existing_files) {
-  existing_file.moveTo('work/GEMmaker/stage')
+// Channels to bootstrap post-processing of 
+// sample results if a resume is performed when
+// all samples have completed.
+MULTIQC_BOOTSTRAP = Channel.create()
+CREATE_GEM_BOOTSTRAP = Channel.create()
+
+// Check to see if we have any files left in the
+// stage directory. If so we need to keep processing 
+// samples
+staged_files = file('work/GEMmaker/stage/*')
+if (staged_files.size() > 0) {
+  // Clean up any files left over from a previous run by moving them
+  // back to the stage directory.
+  existing_files = file('work/GEMmaker/process/*')
+  for (existing_file in existing_files) {
+    existing_file.moveTo('work/GEMmaker/stage')
+  }
+}
+// If there are no staged files then the workflow will
+// end because it only proceeds when there are samples
+// in the processed directory.  However suppose the workflow 
+// fails on multiqc and needs to be resumed.  The 
+// following bootstraps the post-processsing portion of 
+// the workflow
+else {
+  MULTIQC_BOOTSTRAP.bind(1)
+  CREATE_GEM_BOOTSTRAP.bind(1)
 }
 
 /**
@@ -244,22 +266,26 @@ process start_first_batch {
     // so that we jumpstart the workflow.
     sample_files = file('work/GEMmaker/stage/*.sample.csv');
     start_samples = sample_files.sort().take(params.execution.queue_size)
-    if (start_samples.size() > 0) {
+    if (sample_files.size() > 0 ) {
       for (sample in start_samples) {
         sample.moveTo('work/GEMmaker/process')
       }
-    }
-    // If there are no samples in stage then we are done.
-    else {
+   }
+   // If there are no staged files then we need to
+   // close out the channels so we don't hang.
+   else {
       NEXT_SAMPLE.close()
       NEXT_SAMPLE_SIGNAL.close()
       HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
       KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
       SALMON_SAMPLE_COMPLETE_SIGNAL.close()
       SAMPLE_COMPLETE_SIGNAL.close()
-      println "There are no staged samples.  This should occur when GEMmaker has completed successfully!"
-    }
+      MULTIQC_BOOTSTRAP.close()
+      CREATE_GEM_BOOTSTRAP.close()
+      println "There are no staged samples.  Moving on to post-processing"
+   }
 }
+
 
 // Create the channel that will watch the process directory
 // for new files. When a new sample file is added
@@ -319,7 +345,7 @@ SALMON_SAMPLE_COMPLETE_SIGNAL = Channel.create()
 SAMPLE_COMPLETE_SIGNAL = Channel.create()
 SAMPLE_COMPLETE_SIGNAL
   .mix(HISAT2_SAMPLE_COMPLETE_SIGNAL, KALLISTO_SAMPLE_COMPLETE_SIGNAL, SALMON_SAMPLE_COMPLETE_SIGNAL)
-  .into { NEXT_SAMPLE_SIGNAL; MULTIQC_READY_SIGNAL }
+  .into { NEXT_SAMPLE_SIGNAL; MULTIQC_READY_SIGNAL; CREATE_GEM_READY_SIGNAL }
 
 /**
  * Handles the end of a sample by moving a new sample
@@ -352,6 +378,8 @@ process next_sample {
       KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
       SALMON_SAMPLE_COMPLETE_SIGNAL.close()
       SAMPLE_COMPLETE_SIGNAL.close()
+      MULTIQC_BOOTSTRAP.close()
+      CREATE_GEM_BOOTSTRAP.close()
     }
 }
 
@@ -878,6 +906,13 @@ process fpkm_or_tpm {
 }
 
 /**
+ * The multiqc process should run when all samples have
+ * completed or if on a resume when the bootstrap signal is 
+ * received.
+ */
+MULTIQC_RUN = MULTIQC_READY_SIGNAL.mix(MULTIQC_BOOTSTRAP)
+
+/**
  * Process to generate the multiqc report once everything is completed
  */
 process multiqc {
@@ -886,7 +921,7 @@ process multiqc {
   publishDir "${params.output.dir}/reports", mode: params.output.publish_mode
  
   input:
-    val signal from MULTIQC_READY_SIGNAL.collect() 
+    val signal from MULTIQC_RUN.collect() 
   
   output:
     file "multiqc_data" into MULTIQC_DATA
@@ -898,6 +933,33 @@ process multiqc {
     """
 }
 
+/**
+ * The createGEM process should run when all samples have
+ * completed or if on a resume when the bootstrap signal is 
+ * received.
+ */
+CREATE_GEM_RUN = CREATE_GEM_READY_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
+
+/**
+ * Creates the GEM file from all the FPKM/TPM outputs
+ */
+process createGEM {
+  label "python3"
+  publishDir "${params.output.dir}/GEM", mode: params.output.publish_mode
+
+  input:
+    val signal from CREATE_GEM_RUN.collect()
+
+  output:
+    file "*.GEM.*.txt" into GEM_FILES
+
+  script:
+  """
+    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
+    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
+  """
+  
+}
 
 /**
  * PROCESSES FOR CLEANING LARGE FILES

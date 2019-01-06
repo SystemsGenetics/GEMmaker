@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """A Python script for creating gene expression matrix (GEM) files
 
@@ -22,7 +22,7 @@ import re
 # Specify the arguments that are allowed by this script
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--sources', dest='path', action='store', required=True, nargs='*',
-                   help='One or more GEMmaker directory paths where results are stored. FPKM or TPM files are found in Sample_* or [SDR]RX directories within the GEMmaker directory.')
+                   help='One or more GEMmaker directory paths where results are stored. FPKM or TPM files are found in the directory.')
 parser.add_argument('--prefix', dest='prefix', action='store', required=True,
                    help='A prefix to be added to the GEM.txt file when writing the final matrix.')
 parser.add_argument('--type', dest='type', action='store', required=True, choices=['TPM', 'FPKM'],

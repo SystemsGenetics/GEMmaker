@@ -14,6 +14,13 @@ manifest {
 
 
 params {
+
+   project {
+    name = "CORG RNA-Seq example"
+    machine_name = "CORG_vs_samples"
+    description = "This is the default project settings for GEMmaker.  Change these to properly describe your project and provide a description that helps others understand the purpose of this analsis."
+  }
+
   input {
     remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
     local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
