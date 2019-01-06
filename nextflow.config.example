@@ -126,6 +126,9 @@ process {
     container = "systemsgenetics/kallisto:0.45.0"
     time = "24h"
   }
+  withLabel:multiqc {
+    container = "ewels/multiqc:v1.7"
+  }
   withLabel:python3 {
     container = "systemsgenetics/python:3.5.1"
     time = "1h"
