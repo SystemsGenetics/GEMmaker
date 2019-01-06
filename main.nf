@@ -856,20 +856,49 @@ process stringtie {
     file gtf_file from GTF_FILE
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into STRINGTIE_GTF
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into STRINGTIE_GTF_FOR_FPKM
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.gtf") into STRINGTIE_GTF_FOR_RAW
     set val(sample_id), val(1) into CLEAN_BAM_SIGNAL
 
   script:
     """
     stringtie \
-    -v \
-    -p ${params.execution.threads} \
-    -e \
-    -o ${sample_id}_vs_${params.input.reference_prefix}.gtf \
-    -G ${gtf_file} \
-    -A ${sample_id}_vs_${params.input.reference_prefix}.ga \
-    -l ${sample_id} ${sample_id}_vs_${params.input.reference_prefix}.bam
+      -v \
+      -p ${params.execution.threads} \
+      -e \
+      -o ${sample_id}_vs_${params.input.reference_prefix}.gtf \
+      -G ${gtf_file} \
+      -A ${sample_id}_vs_${params.input.reference_prefix}.ga \
+      -l ${sample_id} ${sample_id}_vs_${params.input.reference_prefix}.bam
     """
+}
+
+/**
+ * Generate raw counts from Hisat2/stringtie
+ */
+process hisat2_raw {
+  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  tag { sample_id }
+  label "stringtie"
+
+  input:
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.gtf") from STRINGTIE_GTF_FOR_RAW
+
+  output:
+    file "${sample_id}_vs_${params.input.reference_prefix}.raw" into RAW_COUNTS
+
+  script:
+  """
+    # Run the prepDE.py script provided by stringtie to get the raw counts.
+    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_prefix}.gtf" > gtf_files
+    prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_prefix}.raw.pre
+
+    # Reformat the raw file to be the same as the TPM/FKPM files.
+    cat ${sample_id}_vs_${params.input.reference_prefix}.raw.pre | \
+      grep -v gene_id | \
+      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_prefix}.raw
+
+  """
 }
 
 
@@ -882,7 +911,7 @@ process fpkm_or_tpm {
   tag { sample_id }
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from STRINGTIE_GTF
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from STRINGTIE_GTF_FOR_FPKM
 
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.fpkm" optional true into FPKMS
@@ -961,6 +990,7 @@ process createGEM {
     # TPM and FPKM
     if [ ${params.software.alignment.which_alignment} == 0 ]; then
       create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
+      create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type raw
     fi;
     create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
   """
