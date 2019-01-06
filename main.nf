@@ -41,7 +41,6 @@ Input Parameters:
 Output Parameters:
 ------------------
   Output directory:           ${params.output.dir}
-  Publish mode:               ${params.output.publish_mode}
   Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
   Publish BAM:                ${params.output.publish_bam}
@@ -137,7 +136,7 @@ if (params.output.publish_bam == true) {
  * and maps SRA runs to SRA experiments.
  */
 process retrieve_sample_metadata {
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
+  publishDir params.output.dir, mode: "symlink", pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
   label "python3"
 
   input:
@@ -387,7 +386,7 @@ process next_sample {
  * Downloads FASTQ files from the NCBI SRA.
  */
 process fastq_dump {
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${exp_id}/${it}" }
+  publishDir params.output.dir, mode: "symlink", pattern: publish_pattern_fastq_dump, saveAs: { "${exp_id}/${it}" }
   tag { exp_id }
   label "sratoolkit"
   label "retry"
@@ -454,7 +453,7 @@ COMBINED_SAMPLES_FOR_COUNTING = LOCAL_SAMPLES_FOR_COUNTING.mix(MERGED_SAMPLES_FO
  * Performs fastqc on raw fastq files
  */
 process fastqc_1 {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
+  publishDir params.output.sample_dir, mode: "symlink", pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -489,7 +488,7 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
  * Performs KALLISTO alignemnt of fastq files
  */
 process kallisto {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: "symlink"
   tag { sample_id }
   label "kallisto"
 
@@ -528,7 +527,7 @@ process kallisto {
  * Generates the final TPM and raw count files for Kallisto
  */
 process kallisto_tpm {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: "symlink"
   tag { sample_id }
 
   input:
@@ -552,7 +551,7 @@ process kallisto_tpm {
  * Performs SALMON alignemnt of fastq files
  */
 process salmon {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: "symlink"
   tag { sample_id }
   label "salmon"
 
@@ -594,7 +593,7 @@ process salmon {
  * Generates the final TPM file for Salmon
  */
 process salmon_tpm {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: "symlink"
   tag { sample_id }
 
   input:
@@ -626,7 +625,7 @@ process salmon_tpm {
  * "nextflow.config" file
  */
 process trimmomatic {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_trimmomatic
+  publishDir params.output.sample_dir, mode: "symlink", pattern: publish_pattern_trimmomatic
   tag { sample_id }
   label "multithreaded"
   label "trimmomatic"
@@ -710,7 +709,7 @@ process trimmomatic {
  * Files are stored to an independent folder
  */
 process fastqc_2 {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
+  publishDir params.output.sample_dir, mode: "symlink", pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -735,7 +734,7 @@ process fastqc_2 {
  * depends: trimmomatic
  */
 process hisat2 {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*.log"
+  publishDir params.output.sample_dir, mode: "symlink", pattern: "*.log"
   tag { sample_id }
   label "multithreaded"
   label "hisat2"
@@ -794,7 +793,7 @@ process hisat2 {
  * depends: hisat2
  */
 process samtools_sort {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_samtools_sort
+  publishDir params.output.sample_dir, mode: "symlink", pattern: publish_pattern_samtools_sort
   tag { sample_id }
   label "samtools"
 
@@ -820,7 +819,7 @@ process samtools_sort {
  * depends: samtools_index
  */
 process samtools_index {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_samtools_index
+  publishDir params.output.sample_dir, mode: "symlink", pattern: publish_pattern_samtools_index
   tag { sample_id }
   label "samtools"
 
@@ -881,7 +880,7 @@ process stringtie {
  * Generate raw counts from Hisat2/stringtie
  */
 process hisat2_raw {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: "symlink"
   tag { sample_id }
   label "stringtie"
 
@@ -911,7 +910,7 @@ process hisat2_raw {
  * Generates the final FPKM file
  */
 process fpkm_or_tpm {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: "symlink"
   tag { sample_id }
 
   input:
@@ -953,7 +952,7 @@ MULTIQC_RUN = MULTIQC_READY_SIGNAL.mix(MULTIQC_BOOTSTRAP)
 process multiqc {
 
   label "multiqc"
-  publishDir "${params.output.dir}/reports", mode: params.output.publish_mode
+  publishDir "${params.output.dir}/reports", mode: "symlink"
  
   input:
     val signal from MULTIQC_RUN.collect() 
@@ -980,7 +979,7 @@ CREATE_GEM_RUN = CREATE_GEM_READY_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
  */
 process createGEM {
   label "python3"
-  publishDir "${params.output.dir}/GEM", mode: params.output.publish_mode
+  publishDir "${params.output.dir}/GEM", mode: "symlink"
 
   input:
     val signal from CREATE_GEM_RUN.collect()
