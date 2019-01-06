@@ -78,13 +78,13 @@ params {
 
 
 report {
-  file = "${params.output.dir}/report.html"
+  file = "${params.output.dir}/reports/report.html"
 }
 
 
 
 timeline {
-  file = "${params.output.dir}/timeline.html"
+  file = "${params.output.dir}/reports/timeline.html"
 }
 
 
