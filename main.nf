@@ -244,8 +244,20 @@ process start_first_batch {
     // so that we jumpstart the workflow.
     sample_files = file('work/GEMmaker/stage/*.sample.csv');
     start_samples = sample_files.sort().take(params.execution.queue_size)
-    for (sample in start_samples) {
-      sample.moveTo('work/GEMmaker/process')
+    if (start_samples.size() > 0) {
+      for (sample in start_samples) {
+        sample.moveTo('work/GEMmaker/process')
+      }
+    }
+    // If there are no samples in stage then we are done.
+    else {
+      NEXT_SAMPLE.close()
+      NEXT_SAMPLE_SIGNAL.close()
+      HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
+      KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
+      SALMON_SAMPLE_COMPLETE_SIGNAL.close()
+      SAMPLE_COMPLETE_SIGNAL.close()
+      println "There are no staged samples.  This should occur when GEMmaker has completed successfully!"
     }
 }
 
@@ -271,16 +283,6 @@ process read_sample_file {
     stdout SAMPLE_FILE_CONTENTS
 
   script:
-    // If this is our last batch then close the open
-    // channels that perform our looping or we'll hang.
-    sample_files = file('work/GEMmaker/stage/*.sample.csv');
-    if (sample_files.size() == 0) {
-      NEXT_SAMPLE.close()
-      HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
-      KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
-      SALMON_SAMPLE_COMPLETE_SIGNAL.close()
-      SAMPLE_COMPLETE_SIGNAL.close()
-    }
     """
       cat $sample_file
     """
@@ -317,7 +319,7 @@ SALMON_SAMPLE_COMPLETE_SIGNAL = Channel.create()
 SAMPLE_COMPLETE_SIGNAL = Channel.create()
 SAMPLE_COMPLETE_SIGNAL
   .mix(HISAT2_SAMPLE_COMPLETE_SIGNAL, KALLISTO_SAMPLE_COMPLETE_SIGNAL, SALMON_SAMPLE_COMPLETE_SIGNAL)
-  .set { SAMPLE_DONE_SIGNAL }
+  .into { NEXT_SAMPLE_SIGNAL; MULTIQC_READY_SIGNAL }
 
 /**
  * Handles the end of a sample by moving a new sample
@@ -328,7 +330,7 @@ process next_sample {
   executor "local"
 
   input:
-    val sample_id from SAMPLE_DONE_SIGNAL
+    val sample_id from NEXT_SAMPLE_SIGNAL
 
   exec:
     // Move the finished sample to the done directory.
@@ -340,6 +342,16 @@ process next_sample {
     sample_files = file('work/GEMmaker/stage/*')
     if (sample_files.size() > 0) {
       sample_files.first().moveTo('work/GEMmaker/process')
+    }
+    // If there are no more samples left then close the
+    // channels that perform our looping or we'll hang.
+    if (sample_files.size() == 0) {
+      NEXT_SAMPLE.close()
+      NEXT_SAMPLE_SIGNAL.close()
+      HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
+      KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
+      SALMON_SAMPLE_COMPLETE_SIGNAL.close()
+      SAMPLE_COMPLETE_SIGNAL.close()
     }
 }
 
@@ -865,6 +877,26 @@ process fpkm_or_tpm {
     error "Please choose at least one output and resume GEMmaker"
 }
 
+/**
+ * Process to generate the multiqc report once everything is completed
+ */
+process multiqc {
+
+  label "multiqc"
+  publishDir "${params.output.dir}/reports", mode: params.output.publish_mode
+ 
+  input:
+    val signal from MULTIQC_READY_SIGNAL.collect() 
+  
+  output:
+    file "multiqc_data" into MULTIQC_DATA
+    file "multiqc_report.html" into MULTIQC_REPORT
+
+  script:
+    """
+    multiqc ${params.output.dir}
+    """
+}
 
 
 /**
