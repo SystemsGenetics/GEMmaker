@@ -525,7 +525,7 @@ process kallisto {
 
 
 /**
- * Generates the final TPM file for Kallisto
+ * Generates the final TPM and raw count files for Kallisto
  */
 process kallisto_tpm {
   publishDir params.output.sample_dir, mode: params.output.publish_mode
@@ -536,11 +536,13 @@ process kallisto_tpm {
 
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into KALLISTO_TPM
+    file "${sample_id}_vs_${params.input.reference_prefix}.raw" optional true into KALLISTO_RAW
     val sample_id  into KALLISTO_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
   awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+  awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.raw
   """
 }
 
@@ -600,11 +602,13 @@ process salmon_tpm {
 
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into SALMON_TPM
+    file "${sample_id}_vs_${params.input.reference_prefix}.raw" optional true into SALMON_RAW
     val sample_id  into SALMON_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
   awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+  awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.raw
   """
 }
 
@@ -990,8 +994,8 @@ process createGEM {
     # TPM and FPKM
     if [ ${params.software.alignment.which_alignment} == 0 ]; then
       create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
-      create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type raw
     fi;
+    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type raw
     create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
   """
   
