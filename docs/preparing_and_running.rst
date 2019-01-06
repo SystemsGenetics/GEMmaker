@@ -27,7 +27,7 @@ repository <https://www.ncbi.nlm.nih.gov/sra>`__.
   by running ``vdb-config -i`` (see `SRA Toolkit
   Configuration <https://github.com/ncbi/sra-tools/wiki/Toolkit-Configuration>`__).
 
-Step 2) Aquire Reference Genome Files
+Step 2) Acquire Reference Genome Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Download the genome annotation/reference files. These will differ depending on

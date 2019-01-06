@@ -2,8 +2,8 @@ Customizing the Workflow
 ------------------------
 
 
-All nextflow workflows have a ``nextflow.config`` file. It is where parameters for
-the workflow can be customized.
+GEMmaker is a nextflow workflow. All nextflow workflows have a
+``nextflow.config`` file. It is where parameters for the workflow can be customized.
 
 For GEMmaker, the ``nextflow.config`` file is in 3 main parts:
 
