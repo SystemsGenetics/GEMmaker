@@ -69,7 +69,7 @@ Software Parameters:
  * Create value channels that can be reused
  */
 HISAT2_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}*.ht2*").collect()
-SALMON_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}*").collect()
+SALMON_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Salmon.indexed/*").collect()
 GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf").collect()
 
 
@@ -500,6 +500,7 @@ process kallisto {
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL
+    file "*kallisto.log" into KALLISTO_LOG
 
   script:
   """
@@ -508,7 +509,7 @@ process kallisto {
       -i  ${params.input.reference_prefix}.transcripts.Kallisto.indexed \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       ${sample_id}_1.fastq \
-      ${sample_id}_2.fastq
+      ${sample_id}_2.fastq > ${sample_id}.kallisto.log 2>&1
   else
     kallisto quant \
       --single \
@@ -516,7 +517,7 @@ process kallisto {
       -s .0000001 \
       -i ${params.input.reference_prefix}.transcripts.Kallisto.indexed \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
-      ${sample_id}_1.fastq
+      ${sample_id}_1.fastq > ${sample_id}.kallisto.log 2>&1
   fi
   """
 }
@@ -560,6 +561,7 @@ process salmon {
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into SALMON_GA
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_SALMON_SIGNAL
+    file "*.salmon.log" into SALMON_LOG
 
   script:
   """
@@ -571,7 +573,7 @@ process salmon {
       -2 ${sample_id}_2.fastq \
       -p 8 \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
-      --minAssignedFrags 1
+      --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   else
     salmon quant \
       -i . \
@@ -579,7 +581,7 @@ process salmon {
       -r ${sample_id}_1.fastq \
       -p 8 \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
-      --minAssignedFrags 1
+      --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   fi
   """
 }
@@ -929,7 +931,7 @@ process multiqc {
 
   script:
     """
-    multiqc ${params.output.dir}
+    multiqc --ignore ${params.output.dir}/GEM --ignore ${params.output.dir}/reports ${params.output.dir}
     """
 }
 
@@ -955,7 +957,11 @@ process createGEM {
 
   script:
   """
-    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
+    # If the alignment tool is hisat then we need to generate both 
+    # TPM and FPKM
+    if [ ${params.software.alignment.which_alignment} == 0 ]; then
+      create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
+    fi;
     create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
   """
   
