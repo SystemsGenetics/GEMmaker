@@ -46,7 +46,7 @@ for source_dir in args.path:
     result_files.append(filename)
 
   # Check for local non SRA files
-  for filename in glob.iglob(source_dir + '/Sample_*/*' + str.lower(args.type), recursive=True):
+  for filename in glob.iglob(source_dir + '/*/*' + str.lower(args.type), recursive=True):
     result_files.append(filename)
 
 print("Found %d sample files" % (len(result_files)))
