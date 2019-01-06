@@ -8,7 +8,7 @@
 manifest {
   mainScript = "main.nf"
   defaultBranch = "master"
-  nextflowVersion = ">=0.32.0"
+  nextflowVersion = ">=18.10"
 }
 
 
