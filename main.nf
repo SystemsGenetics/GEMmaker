@@ -368,12 +368,12 @@ process fastq_dump {
   when: false
 
   script:
-    """
-    ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
-    for run_id in \$ids; do
-      fastq-dump --split-files \$run_id
-    done
-    """
+  """
+  ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
+  for run_id in \$ids; do
+    fastq-dump --split-files \$run_id
+  done
+  """
 }
 
 
