@@ -72,6 +72,7 @@ SALMON_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input
 GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf").collect()
 
 
+
 /**
  * Local Sample Input.
  * This checks the folder that the user has given
@@ -115,6 +116,8 @@ publish_pattern_trimmomatic = "{*.trim.log}";
 if (params.output.publish_trimmed_fastq == true) {
   publish_pattern_trimmomatic = "{*.trim.log,*_trim.fastq}";
 }
+
+
 
 /**
  * Set the pattern for publishing BAM files
@@ -197,12 +200,12 @@ process write_batch_files {
   input:
     val batch from BATCHES
 
-  output:
+  output: 
     val (1) into BATCHES_READY_SIGNAL
 
-  exec:
+  exec: 
     // First create a file for each batch of samples.  We will
-    // process the batches one at a time.
+    // process the batches one at a time.  
     num_files = file('work/GEMmaker/stage/BATCH.*').size()
     batch_file = file('work/GEMmaker/stage/BATCH.' + num_files)
     batch_file.withWriter {
@@ -239,7 +242,7 @@ process start_first_batch {
 
   input:
     val signal from FIRST_BATCH_START_SIGNAL
-
+   
   exec:
     // Move the first batch file into the processing direcotry
     // so that we jumpstart the workflow.
@@ -248,7 +251,7 @@ process start_first_batch {
 }
 
 // Create the channel that will watch the process directory
-// for new files. When a new batch file is added
+// for new files. When a new batch file is added 
 // it will be read and its samples sent through the
 // workflow.
 NEXT_BATCH = Channel
@@ -263,7 +266,7 @@ process read_batch_file {
   executor "local"
   tag { batch_file }
   cache false
-
+   
   input:
     file(batch_file) from NEXT_BATCH
 
@@ -292,7 +295,7 @@ LOCAL_SAMPLES = Channel.create()
 REMOTE_SAMPLES = Channel.create()
 BATCH_FILE_CONTENTS
   .splitCsv(quote: '"')
-  .choice(LOCAL_SAMPLES, REMOTE_SAMPLES) { a -> a[2] =~ /local/ ? 0 : 1 }
+  .choice(LOCAL_SAMPLES, REMOTE_SAMPLES) { a -> a[2] =~ /local/ ? 0 : 1 } 
 
 // Split our list of local samples into two pathways, onefor
 // FastQC analysis and the other for read counting.  We don't
@@ -342,52 +345,7 @@ process next_batch {
     }
 }
 
-/**
- * Downloads FASTQ files from the NCBI SRA.
- */
- /*
-process ascp_download {
- tag { exp_id }
- label "ascp"
- label "retry"
- // echo true
- // publishDir "/out"
 
- input:
-   set val(exp_id), val(run_ids), val(type) from REMOTE_SAMPLES
-
- output:
-   set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_COMBINATION
-   set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_CLEANING
-
- script:
- // Run pre-processing outside of the script, thie ensures that containers
- // will not have unexpected requirements.
-
- // Groovy string building...
- // StringBuilder sb = new StringBuilder()
-
- // Iterate over the run IDs, and create the sra download path.
- // for (id in exp_id) {
- letters = run_ids.take(3)
- six_chars = run_ids.take(6)
- query = ("/sra/sra-instant/reads/ByRun/sra/$letters/$six_chars/$run_ids/${run_ids}.sra")
-
- // }
- // String queries = sb.toString()
-
- // temporary declaration of future parameters.
- limit = "10m"
-
- // """
- // echo $query
- // """
- //
- """
- ascp -k1 –T -l $limit anonftp@ftp.ncbi.nlm.nih.gov:$query .
- """
-}
-*/
 
 process aspera_download {
    publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${exp_id}/${it}" }
@@ -458,7 +416,7 @@ COMBINED_SAMPLES_FOR_FASTQC_1 = LOCAL_SAMPLES_FOR_FASTQC_1.mix(MERGED_SAMPLES_FO
 COMBINED_SAMPLES_FOR_COUNTING = LOCAL_SAMPLES_FOR_COUNTING.mix(MERGED_SAMPLES_FOR_COUNTING)
 
 /**
- * Performs fastqc on raw fastq files
+ * Performs fastqc on raw fastq files 
  */
 process fastqc_1 {
   publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: "*_fastqc.*"
@@ -927,7 +885,7 @@ process fpkm_or_tpm {
 
 
 /**
- * Merge the fastq_dump files with SRR_combine signal
+ * Merge the fastq_dump files with SRR_combine signal 
  * so that we can remove these files.
  */
 
@@ -943,7 +901,7 @@ process clean_downloaded_fastq {
   input:
     set val(sample_id), val(files_list) from DOWNLOADED_FASTQ_CLEANUP_READY
 
-  when:
+  when: 
     params.output.publish_downloaded_fastq == false
 
   script:
@@ -953,7 +911,7 @@ process clean_downloaded_fastq {
 
 
 /**
- * Merge the merged fastq files with the signals from hista2,
+ * Merge the merged fastq files with the signals from hista2, 
  * kallisto and salmon to clean up merged fastq files. This
  * is only needed for remote files that were downloaded
  * and then merged into a single sample in the SRR_combine
@@ -996,7 +954,7 @@ process clean_trimmed_fastq {
   input:
     set val(sample_id), val(files_list) from TRIMMED_FASTQ_CLEANUP_READY
 
-  when:
+  when: 
     params.output.publish_trimmed_fastq == false
 
   script:
@@ -1043,7 +1001,7 @@ process clean_bam {
   input:
     set val(sample_id), val(files_list) from BAM_CLEANUP_READY
 
-  when:
+  when: 
     params.output.publish_bam == false
 
   script:

@@ -21,8 +21,8 @@ ENV DEBIAN_FRONTEND noninteractive
 
 
 # Update and install basic packages.
-RUN apt-get update && apt-get upgrade -y wget curl unzip \
-  && apt-get install -y git
+RUN apt-get update -qq \
+  && apt-get install -qq -y curl git unzip wget 
 
 
 # Tini for signal processing and zombie killing.
