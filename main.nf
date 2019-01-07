@@ -183,25 +183,24 @@ file('work/GEMmaker/done').mkdir()
 MULTIQC_BOOTSTRAP = Channel.create()
 CREATE_GEM_BOOTSTRAP = Channel.create()
 
+// Clean up any files left over from a previous run by moving them
+// back to the stage directory.
+existing_files = file('work/GEMmaker/process/*')
+for (existing_file in existing_files) {
+  existing_file.moveTo('work/GEMmaker/stage')
+}
+
 // Check to see if we have any files left in the
 // stage directory. If so we need to keep processing
 // samples
 staged_files = file('work/GEMmaker/stage/*')
-if (staged_files.size() > 0) {
-  // Clean up any files left over from a previous run by moving them
-  // back to the stage directory.
-  existing_files = file('work/GEMmaker/process/*')
-  for (existing_file in existing_files) {
-    existing_file.moveTo('work/GEMmaker/stage')
-  }
-}
-// If there are no staged files then the workflow will
-// end because it only proceeds when there are samples
-// in the processed directory.  However suppose the workflow
-// fails on multiqc and needs to be resumed.  The
-// following bootstraps the post-processsing portion of
-// the workflow
-else {
+if (staged_files.size() == 0) {
+  // If there are no staged files then the workflow will
+  // end because it only proceeds when there are samples
+  // in the processed directory.  However suppose the workflow
+  // fails on multiqc and needs to be resumed.  The
+  // following bootstraps the post-processsing portion of
+  // the workflow
   MULTIQC_BOOTSTRAP.bind(1)
   CREATE_GEM_BOOTSTRAP.bind(1)
 }
@@ -368,17 +367,18 @@ process next_sample {
     if (sample_files.size() > 0) {
       sample_files.first().moveTo('work/GEMmaker/process')
     }
-    // If there are no more samples left then close the
-    // channels that perform our looping or we'll hang.
-    if (sample_files.size() == 0) {
-      NEXT_SAMPLE.close()
-      NEXT_SAMPLE_SIGNAL.close()
-      HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
-      KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
-      SALMON_SAMPLE_COMPLETE_SIGNAL.close()
-      SAMPLE_COMPLETE_SIGNAL.close()
-      MULTIQC_BOOTSTRAP.close()
-      CREATE_GEM_BOOTSTRAP.close()
+    else {
+      processing = file('work/GEMmaker/process/*.sample.csv')
+      if (processing.size() == 0) {
+        NEXT_SAMPLE.close()
+        NEXT_SAMPLE_SIGNAL.close()
+        HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
+        KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
+        SALMON_SAMPLE_COMPLETE_SIGNAL.close()
+        SAMPLE_COMPLETE_SIGNAL.close()
+        MULTIQC_BOOTSTRAP.close()
+        CREATE_GEM_BOOTSTRAP.close()
+      }
     }
 }
 
