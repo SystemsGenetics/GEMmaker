@@ -1,7 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ##
 ## This is a helper script for splitting a very large file
 ## of NCBI SRAs into smaller chunk files for use with GEMmaker.
+## GEMmaker can handle very large files without the need for
+## splitting the input file, but if you do want to split it
+## you can with this script.
 ##
 ## Usage:
 ##   python SRA_splitter.py [file] [chunk-size]

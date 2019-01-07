@@ -8,12 +8,19 @@
 manifest {
   mainScript = "main.nf"
   defaultBranch = "master"
-  nextflowVersion = ">=0.32.0"
+  nextflowVersion = ">=18.10"
 }
 
 
 
 params {
+
+   project {
+    name = "CORG RNA-Seq example"
+    machine_name = "CORG_vs_samples"
+    description = "This is the default project settings for GEMmaker.  Change these to properly describe your project and provide a description that helps others understand the purpose of this analsis."
+  }
+
   input {
     remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
     local_samples_path = "none"
@@ -72,20 +79,20 @@ params {
 
 
 report {
-  file = "${params.output.dir}/report.html"
+  file = "${params.output.dir}/reports/report.html"
 }
 
 
 
 timeline {
-  file = "${params.output.dir}/timeline.html"
+  file = "${params.output.dir}/reports/timeline.html"
 }
 
 
 
 trace {
   fields = "task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes"
-  file = "${params.output.dir}/trace.txt"
+  file = "${params.output.dir}/reports/trace.txt"
   raw = true
 }
 
@@ -130,6 +137,9 @@ process {
     container = "systemsgenetics/kallisto:0.45.0"
     time = "24h"
   }
+  withLabel:multiqc {
+    container = "ewels/multiqc:v1.7"
+  }
   withLabel:python3 {
     container = "systemsgenetics/python:3.5.1"
     time = "1h"
@@ -167,6 +177,24 @@ profiles {
   //
   standard {
     process.executor = "local"
+  }
+
+  // A profile for execution of GEMmaker on a stand-alone machine
+  // using Docker.
+  localDocker {
+    docker {
+        enabled = true
+        fixOwnership = true
+        runOptions = '-u $(id -u):$(id -g)'
+    }
+  }
+
+  // A profile for execution of GEMmaker on a stand-alone machine
+  // using singularity.
+  localSingularity {
+    singularity {
+        enabled = true
+    }
   }
 
   //
@@ -256,7 +284,7 @@ profiles {
     process {
       executor = "slurm"
       queue = "ficklin"
-      time = "4h"
+      time = "24h"
 
       withLabel: "multithreaded" {
         cpus = "${params.execution.threads}"
