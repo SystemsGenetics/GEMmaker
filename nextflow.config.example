@@ -216,6 +216,7 @@ profiles {
       withLabel: "!multithreaded" {
         clusterOptions = "-l select=1:mem=2gb:ncpus=2"
       }
+
       withLabel:aspera {
         module = "aspera"
       }
@@ -263,6 +264,7 @@ profiles {
       withLabel: "!multithreaded" {
         cpus = 1
       }
+
       withLabel:aspera {
         module = "aspera"
       }

@@ -266,7 +266,7 @@ process read_batch_file {
   executor "local"
   tag { batch_file }
   cache false
-   
+    
   input:
     file(batch_file) from NEXT_BATCH
 
@@ -343,6 +343,37 @@ process next_batch {
     }
     else {
     }
+}
+
+
+
+/**
+ * Downloads FASTQ files from the NCBI SRA.
+ */
+REMOTE_SAMPLES_FASTQ_DUMP = Channel.empty()
+
+process fastq_dump {
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${exp_id}/${it}" }
+  tag { exp_id }
+  label "sratoolkit"
+  label "retry"
+
+  input:
+    set val(exp_id), val(run_ids), val(type) from REMOTE_SAMPLES_FASTQ_DUMP
+
+  output:
+    set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_COMBINATION_FASTQ_DUMP
+    set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_CLEANING_FASTQ_DUMP
+
+  when: false
+
+  script:
+    """
+    ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
+    for run_id in \$ids; do
+      fastq-dump --split-files \$run_id
+    done
+    """
 }
 
 
