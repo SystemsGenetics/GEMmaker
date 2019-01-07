@@ -23,8 +23,7 @@ params {
 
   input {
     remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
-    local_samples_path = "none"
-    // local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
+    local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
     reference_path = "${PWD}/examples/reference/"
     reference_prefix = "CORG"
   }
