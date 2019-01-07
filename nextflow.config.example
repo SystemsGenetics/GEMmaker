@@ -91,17 +91,17 @@ trace {
 
 
 
-// docker {
-//   fixOwnership = true
-//   runOptions = "--init"
-//   sudo = true
-// }
+docker {
+  fixOwnership = true
+  runOptions = "--init"
+  sudo = true
+}
 
-//
-//
-// singularity {
-//   runOptions = ""
-// }
+
+
+singularity {
+  runOptions = ""
+}
 
 
 
@@ -116,7 +116,7 @@ process {
   }
 
   withLabel:aspera {
-    container = "systemsgenetics/aspera:3.9.1"
+    container = "systemsgenetics/aspera:3.8.1"
   }
   withLabel:fastqc {
     container = "systemsgenetics/fastqc:0.11.7"
