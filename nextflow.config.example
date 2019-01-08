@@ -15,7 +15,7 @@ manifest {
 
 params {
 
-   project {
+  project {
     name = "CORG RNA-Seq example"
     machine_name = "CORG_vs_samples"
     description = "This is the default project settings for GEMmaker.  Change these to properly describe your project and provide a description that helps others understand the purpose of this analsis."
@@ -48,6 +48,12 @@ params {
   }
 
   software {
+    //
+    // ascp = 0
+    // prefetch = 1
+    //
+    sra_download = 0
+
     trimmomatic {
       clip_path = "${PWD}/files/fasta_adapter.txt"
       MINLEN = "0.7"

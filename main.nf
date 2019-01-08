@@ -386,19 +386,30 @@ process next_sample {
 
 
 /**
- * Downloads SRA files from NCBI using ascp.
+ * Route the REMOTE_SAMPLES channel to the appropriate process
+ * to download SRA files.
  */
-process sra_download {
+REMOTE_SAMPLES_ASCP = Channel.create()
+REMOTE_SAMPLES_PREFETCH = Channel.create()
+
+REMOTE_SAMPLES.choice(REMOTE_SAMPLES_ASCP, REMOTE_SAMPLES_PREFETCH) { params.software.sra_download }
+
+
+
+/**
+ * Downloads SRA files from NCBI using Aspera.
+ */
+process ascp {
   tag { sample_id }
   label "aspera"
   label "retry"
 
   input:
-    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES
+    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_ASCP
 
   output:
-    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT
-    set val(sample_id), file("*.sra") into SRA_TO_CLEAN
+    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT_ASCP
+    set val(sample_id), file("*.sra") into SRA_TO_CLEAN_ASCP
 
   script:
   """
@@ -415,13 +426,46 @@ process sra_download {
 
 
 /**
- * Extracts FASTQ files from downloaded SRA files.
+ * Downloads SRA files from NCBI using the SRA Toolkit.
  */
-process fastq_extract {
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq, saveAs: { "${sample_id}/${it}" }
+process prefetch {
   tag { sample_id }
   label "sratoolkit"
   label "retry"
+
+  input:
+    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_PREFETCH
+
+  output:
+    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT_PREFETCH
+    set val(sample_id), file("*.sra") into SRA_TO_CLEAN_PREFETCH
+
+  script:
+  """
+  ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
+  for run_id in \$ids; do
+    prefetch --output-directory . \$run_id
+  done
+  """
+}
+
+
+
+/**
+ * Merge the output channels from each SRA downloader process.
+ */
+SRA_TO_EXTRACT = SRA_TO_EXTRACT_ASCP.mix(SRA_TO_EXTRACT_PREFETCH)
+SRA_TO_CLEAN = SRA_TO_CLEAN_ASCP.mix(SRA_TO_CLEAN_PREFETCH)
+
+
+
+/**
+ * Extracts FASTQ files from downloaded SRA files.
+ */
+process fastq_dump {
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq, saveAs: { "${sample_id}/${it}" }
+  tag { sample_id }
+  label "sratoolkit"
 
   input:
     set val(sample_id), val(sra_files) from SRA_TO_EXTRACT
@@ -1071,7 +1115,7 @@ process clean_sra {
 
 
 /**
- * Merge the fastq_extract files with fastq_merge signal
+ * Merge the fastq_dump files with fastq_merge signal
  * so that we can remove these files.
  */
 
