@@ -477,7 +477,8 @@ process fastq_dump {
 
   script:
   """
-  for sra_file in $sra_files; do
+  files=`echo $sra_files | perl -p -e 's/[\\[,\\]]//g'`
+  for sra_file in \$files; do
     fastq-dump --split-files \$sra_file
   done
   """
