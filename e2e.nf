@@ -121,22 +121,25 @@ process retrieve_sample_metadata {
 
 
 /**
- * Create channels for remote samples and local samples
+ * Merge remote samples and local samples into one channel.
  */
 REMOTE_SAMPLES_LIST
   .splitCsv()
   .groupTuple(by: 1)
-  .map { [it[1], it[0].toString().replaceAll(/[\[\]\'\,]/,''), 'remote'] }
+  .map{ [it[1], "remote", it[0], []] }
   .set{REMOTE_SAMPLES}
 
 LOCAL_SAMPLE_FILES
-  .map{ [it[0], it[1], 'local' ] }
+  .map{ [it[0], "local", [], it[1]] }
   .set{LOCAL_SAMPLES}
 
-// ALL_SAMPLES = REMOTE_SAMPLES.mix(LOCAL_SAMPLES)
+ALL_SAMPLES = REMOTE_SAMPLES.mix(LOCAL_SAMPLES)
 
 
 
+/**
+ * Make sure that at least one type of output is specified
+ */
 if ( params.output.publish_fpkm == false && params.output.publish_tpm == false ) {
   error "At least one of FPKM or TPM should be enabled."
 }
@@ -162,7 +165,7 @@ process process_sample {
   publishDir params.output.sample_dir, mode: params.output.publish_mode
 
   input:
-    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES
+    set val(sample_id), val(type), val(remote_ids), val(local_files) from ALL_SAMPLES
     file indexes from HISAT2_INDEXES
     file gtf_file from GTF_FILE
 
@@ -183,54 +186,59 @@ process process_sample {
 
   script:
   """
-  # download SRA files from NCBI
-  SRR_IDS=\$(echo ${run_ids} | perl -p -e 's/[\\[,\\]]//g')
+  # for remote samples, prepare FASTQ files from NCBI
+  if [[ ${type} == "remote" ]]; then
+    # download SRA files from NCB
+    SRR_IDS=${remote_ids.join(' ')}
 
-  # use ascp
-  if [[ ${params.software.sra_download} == 0 ]]; then
-    for id in \$SRR_IDS; do
-      prefix=`echo \$id | perl -p -e 's/^([SDE]RR)\\d+\$/\$1/'`
-      sixchars=`echo \$id | perl -p -e 's/^([SDE]RR\\d{1,3}).*\$/\$1/'`
-      url="/sra/sra-instant/reads/ByRun/sra/\$prefix/\$sixchars/\$id/\$id.sra"
-      ascp -i /home/gemdocker/.aspera/connect/etc/asperaweb_id_dsa.openssh -k 1 -T -l 1000m anonftp@ftp.ncbi.nlm.nih.gov:\$url .
+    # use ascp
+    if [[ ${params.software.sra_download} == 0 ]]; then
+      for id in \$SRR_IDS; do
+        prefix=`echo \$id | perl -p -e 's/^([SDE]RR)\\d+\$/\$1/'`
+        sixchars=`echo \$id | perl -p -e 's/^([SDE]RR\\d{1,3}).*\$/\$1/'`
+        url="/sra/sra-instant/reads/ByRun/sra/\$prefix/\$sixchars/\$id/\$id.sra"
+        ascp -i /home/gemdocker/.aspera/connect/etc/asperaweb_id_dsa.openssh -k 1 -T -l 1000m anonftp@ftp.ncbi.nlm.nih.gov:\$url .
+      done
+
+    # or use the SRA toolkit
+    elif [[ ${params.software.sra_download} == 1 ]]; then
+      for id in \$SRR_IDS; do
+        prefetch --output-directory . \$id
+      done
+    fi
+
+    # extract FASTQ files from SRA files
+    SRA_FILES=\$(ls *.sra)
+
+    for sra_file in \$SRA_FILES; do
+      fastq-dump --split-files \$sra_file
     done
 
-  # or use the SRA toolkit
-  elif [[ ${params.software.sra_download} == 1 ]]; then
-    for id in \$SRR_IDS; do
-      prefetch --output-directory . \$id
-    done
+    # remove SRA files if they will not be published
+    if [[ ${params.output.publish_sra} == false ]]; then
+      rm -f \$SRA_FILES
+    fi
+
+    # merge the FASTQ files from each run in the experiment
+    DOWNLOADED_FASTQ_FILES=\$(ls *.fastq)
+
+    if ls *_1.fastq >/dev/null 2>&1; then
+      cat *_1.fastq >> "${sample_id}_1.fastq"
+    fi
+
+    if ls *_2.fastq >/dev/null 2>&1; then
+      cat *_2.fastq >> "${sample_id}_2.fastq"
+    fi
+
+    # remove downloaded FASTQ files if they will not be published
+    if [[ ${params.output.publish_downloaded_fastq} == false ]]; then
+      rm -f \$DOWNLOADED_FASTQ_FILES
+    fi
+
+  # for local samples, fetch FASTQ files from filesystem
+  elif [[ ${type} == "local" ]]; then
+    cp ${local_files.join(' ')} .
   fi
-
-  # extract FASTQ files from SRA files
-  SRA_FILES=\$(ls *.sra)
-
-  for sra_file in \$SRA_FILES; do
-    fastq-dump --split-files \$sra_file
-  done
-
-  # remove SRA files if they will not be published
-  if [[ ${params.output.publish_sra} == false ]]; then
-    rm -f \$SRA_FILES
-  fi
-
-  # merge the FASTQ files from each run in the experiment
-  DOWNLOADED_FASTQ_FILES=\$(ls *.fastq)
-
-  if ls *_1.fastq >/dev/null 2>&1; then
-    cat *_1.fastq >> "${sample_id}_1.fastq"
-  fi
-
-  if ls *_2.fastq >/dev/null 2>&1; then
-    cat *_2.fastq >> "${sample_id}_2.fastq"
-  fi
-
-  # remove downloaded FASTQ files if they will not be published
-  if [[ ${params.output.publish_downloaded_fastq} == false ]]; then
-    rm -f \$DOWNLOADED_FASTQ_FILES
-  fi
-
-  # TODO: run the above code only for remote samples
 
   # perform fastqc on raw FASTQ files
   MERGED_FASTQ_FILES=\$(ls ${sample_id}_?.fastq)
