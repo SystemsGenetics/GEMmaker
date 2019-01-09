@@ -78,20 +78,20 @@ params {
 
 
 report {
-  file = "${params.output.dir}/report.html"
+  file = "${params.output.dir}/reports/report.html"
 }
 
 
 
 timeline {
-  file = "${params.output.dir}/timeline.html"
+  file = "${params.output.dir}/reports/timeline.html"
 }
 
 
 
 trace {
   fields = "task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes"
-  file = "${params.output.dir}/trace.txt"
+  file = "${params.output.dir}/reports/trace.txt"
   raw = true
 }
 
@@ -134,7 +134,7 @@ process {
     time = "24h"
   }
   withLabel:multiqc {
-    container = "ewels/multiqc:v1.7"
+    container = "systemsgenetics/multiqc:1.7"
   }
   withLabel:python3 {
     container = "systemsgenetics/python:3.5.1"
