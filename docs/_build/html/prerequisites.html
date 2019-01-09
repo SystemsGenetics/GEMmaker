@@ -1,0 +1,336 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Software Prerequisites &mdash; GEMmaker 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Running the Examples" href="examples.html" />
+    <link rel="prev" title="Welcome to GEMmaker’s documentation!" href="index.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> GEMmaker
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Software Prerequisites</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#local-machine">Local machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#high-performance-computing-hpc-cluster">High-Performance Computing (HPC) cluster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#downloading-gemmaker">Downloading GEMmaker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#after-installation">After Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Running the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nextflow_config.html">Customizing the Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preparing_and_running.html">Running your Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors_and_example_outputs.html">Error troubleshooting and Example Outputs</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GEMmaker</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Software Prerequisites</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/prerequisites.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="figure">
+<img alt="GEMmaker Logo" src="_images/GEMmaker-logo-sm.png" />
+</div>
+<p><img alt="DOI" src="https://zenodo.org/badge/114067776.svg:target:" /></p>
+<div class="section" id="software-prerequisites">
+<span id="id1"></span><h1>Software Prerequisites<a class="headerlink" href="#software-prerequisites" title="Permalink to this headline">¶</a></h1>
+<p>GEMmaker is a <a class="reference external" href="https://www.nextflow.io/">Nextflow</a> workflow for large-scale
+gene expression sample processing, expression-level quantification and Gene
+Expression Matrix (GEM) construction. Results from GEMmaker are useful for
+differential gene expression (DGE) and gene co-expression network (GCN)
+analyses. The GEMmaker workflow currently supports Illumina RNA-seq datasets.
+GEMmaker is intended to be run on a linux based operating system, the defacto
+operating system of bioinformatics.</p>
+<p>GEMmaker is compatible with <a class="reference external" href="https://www.docker.com/">Docker</a> and
+<a class="reference external" href="https://www.sylabs.io/docs/">Singularity</a>. <strong>Running with either Docker or
+Singularity is the recommended way to run GEMmaker</strong>, as GEMmaker will
+automatically pull each of the images that it needs to run.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Nextflow (The workflow language GEMmaker uses) does not support Singualrity
+version 3.0 and higher as of yet. You must use a version of singularity that
+is higher than 2.3.x, but less than 3.0.x</p>
+</div>
+<p>The following list provides the set of software and versions that have been
+verified to work with GEMmaker. They are split into 2 sections. <strong>Section 1</strong>
+are prerequisites of GEMmaker, and must be installed manually by the user
+previous to running GEMmaker. <strong>Section 2</strong> are software contained in Docker
+images that GEMmaker will automatically download. Most users of GEMmaker do not
+need to worry about programs in section 2 unless a different version of the
+software is required. NOTE: newer versions of these tools are assumed to also
+work, and older versions may work but have not been tested:</p>
+<p><strong>Section 1</strong>: Required Prerequisites:</p>
+<ul class="simple">
+<li><a class="reference external" href="https://www.java.com/en/">java</a> v8 or later: prerequisite of nextflow</li>
+<li><a class="reference external" href="https://www.nextflow.io/">nextflow</a> v18.10.1: Executes the workflow. Must
+be installed on system by user.</li>
+<li>either <a class="reference external" href="https://www.docker.com/">Docker</a>
+v18.09.0 or <a class="reference external" href="https://www.sylabs.io/docs/">Singularity</a> v2.5 - 2.6 NOT
+v3.0!: Automatically downloads and runs the docker images of the following
+programs:</li>
+</ul>
+<p><strong>Section 2</strong>: Programs contained in Docker Images that will be automatically
+downloaded by GEMmaker using Docker or Singularity:</p>
+<ul class="simple">
+<li><a class="reference external" href="https://www.python.org">python3</a></li>
+<li><a class="reference external" href="https://www.ncbi.nlm.nih.gov/books/NBK158900/">sratoolkit</a>
+v2.8.0: Downloads SRA files from NCBI using the SRA Run IDs.</li>
+<li><a class="reference external" href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/">fastQC</a>
+v0.11.7: Generates read quality statistics for FASTQ files used by
+the workflow.</li>
+<li><a class="reference external" href="http://www.usadellab.org/cms/?page=trimmomatic">trimmomatic</a>
+v0.38: Removes low-quality bases from the ends of reads and removes
+adapter sequences.</li>
+<li><a class="reference external" href="https://ccb.jhu.edu/software/hisat2/index.shtml">hisat2</a> v2.1.0:
+Aligns cleaned reads to the reference genome.</li>
+<li><a class="reference external" href="https://combine-lab.github.io/salmon/">salmon</a> v0.12.0:
+Performs quasi alignment of reads and quantifies</li>
+<li><a class="reference external" href="https://pachterlab.github.io/kallisto/">kallisto</a> v 0.45.0
+Performs pseudo alignment of reads and quantifies</li>
+<li><a class="reference external" href="http://www.htslib.org/">samtools</a> v1.3.1: Used for indexing and
+sorting of BAM files created by Hisat2.</li>
+<li><a class="reference external" href="http://www.ccb.jhu.edu/software/stringtie/">stringTie</a> v1.3.4d:
+Performs gene expression quantification.</li>
+<li><a class="reference external" href="http://multiqc.info/">MultiQC</a> (optional) v1.5: Generate a full
+summary report for the entire workflow.</li>
+</ul>
+<p>If a user requires a different version of software contained in <strong>Section 2</strong>,
+please reference <strong>different software versions</strong></p>
+<div class="section" id="local-machine">
+<h2>Local machine<a class="headerlink" href="#local-machine" title="Permalink to this headline">¶</a></h2>
+<p>GEMmaker can be ran on a local desktop machine, assuming that the machine is
+running linux, (we like <a class="reference external" href="https://www.ubuntu.com/">ubuntu 18.04</a>) has a
+reasonable amount of  memory and has docker or singularity installed.</p>
+</div>
+<div class="section" id="high-performance-computing-hpc-cluster">
+<h2>High-Performance Computing (HPC) cluster<a class="headerlink" href="#high-performance-computing-hpc-cluster" title="Permalink to this headline">¶</a></h2>
+<p>Most HPC clusters do not allow users to run docker, but singularity should be
+allowed. On your own, or with the help of your HPC administrator, install
+singularity and nextflow if they are not already installed. After Nextflow and
+singuarity are installed, clone GEMmaker into your desired directory as shown
+below. GEMmaker will then install all of the dependencies the first time it is
+run.</p>
+</div>
+<div class="section" id="downloading-gemmaker">
+<h2>Downloading GEMmaker<a class="headerlink" href="#downloading-gemmaker" title="Permalink to this headline">¶</a></h2>
+<p>After ensuring that all necessary software prerequisites from <strong>Section 1</strong> are
+installed, clone GEMmaker into your working directory.</p>
+<p>To clone the workflow into a directory:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">nextflow</span> <span class="n">clone</span> <span class="n">SystemsGenetics</span><span class="o">/</span><span class="n">GEMmaker</span> <span class="o">/</span><span class="n">target</span><span class="o">-</span><span class="nb">dir</span><span class="o">/</span>
+</pre></div>
+</div>
+<p>Note that you should change <code class="docutils literal"><span class="pre">target-dir</span></code> to your target directory.</p>
+<p>As with all Nextflow workflows, you can configure the behavior of the workflow
+by creating a <code class="docutils literal"><span class="pre">nextflow.config</span></code> file. The GEMmaker workflow provides an
+example file (<code class="docutils literal"><span class="pre">nextflow.config.example</span></code>) which you can copy to get started:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="n">nextflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">example</span> <span class="n">nextflow</span><span class="o">.</span><span class="n">config</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="after-installation">
+<h2>After Installation<a class="headerlink" href="#after-installation" title="Permalink to this headline">¶</a></h2>
+<p><strong>To run the example data, refer to</strong> <a class="reference internal" href="examples.html#running-the-examples"><span class="std std-ref">Running the Examples</span></a></p>
+<p><strong>To get started running your own data, refer to</strong> <a class="reference internal" href="preparing_and_running.html#running-your-data"><span class="std std-ref">Running your Data</span></a></p>
+<p><strong>To learn about all the parameters in the</strong> <code class="docutils literal"><span class="pre">nextflow.config</span></code> <strong>refer to the instructions
+at:</strong> <a class="reference internal" href="nextflow_config.html#nextflow-config-instructions"><span class="std std-ref">Customizing the Workflow</span></a>.</p>
+<p><a class="reference external" href="https://zenodo.org/badge/latestdoi/114067776">https://zenodo.org/badge/latestdoi/114067776</a></p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="examples.html" class="btn btn-neutral float-right" title="Running the Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to GEMmaker’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'./',
+              VERSION:'1.0',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
