@@ -15,7 +15,7 @@ manifest {
 
 params {
 
-   project {
+  project {
     name = "CORG RNA-Seq example"
     machine_name = "CORG_vs_samples"
     description = "This is the default project settings for GEMmaker.  Change these to properly describe your project and provide a description that helps others understand the purpose of this analsis."
@@ -32,8 +32,9 @@ params {
     dir = "${PWD}/output"
     sample_dir = { "${params.output.dir}/${sample_id}" }
     publish_mode = "link"
-    publish_downloaded_fastq = true
-    publish_trimmed_fastq = true
+    publish_sra = false
+    publish_fastq = false
+    publish_trimmed_fastq = false
     publish_bam = true
     publish_fpkm = true
     publish_tpm = true
@@ -47,6 +48,12 @@ params {
   }
 
   software {
+    //
+    // ascp = 0
+    // prefetch = 1
+    //
+    sra_download = 0
+
     trimmomatic {
       clip_path = "${PWD}/files/fasta_adapter.txt"
       MINLEN = "0.7"
@@ -121,6 +128,9 @@ process {
     errorStrategy = { "${task.attempt}" == "${params.execution.max_retries}" ? "retry" : "${params.execution.error_strategy}" }
   }
 
+  withLabel:aspera {
+    container = "systemsgenetics/aspera:3.8.1"
+  }
   withLabel:fastqc {
     container = "systemsgenetics/fastqc:0.11.7"
     time = "24h"
@@ -206,6 +216,24 @@ profiles {
     }
   }
 
+  // A profile for execution of GEMmaker on a stand-alone machine
+  // using Docker.
+  localDocker {
+    docker {
+        enabled = true
+        fixOwnership = true
+        runOptions = '-u $(id -u):$(id -g)'
+    }
+  }
+
+  // A profile for execution of GEMmaker on a stand-alone machine
+  // using singularity.
+  localSingularity {
+    singularity {
+        enabled = true
+    }
+  }
+
   //
   // Clemson's Palmetto cluster uses the PBS scheduler. Here we provide
   // an example for execution of this workflow on Palmetto with some
@@ -223,6 +251,9 @@ profiles {
         clusterOptions = "-l select=1:mem=2gb:ncpus=2"
       }
 
+      withLabel:aspera {
+        module = "aspera"
+      }
       withLabel:fastqc {
         module = "fastQC"
       }
@@ -268,6 +299,9 @@ profiles {
         cpus = 1
       }
 
+      withLabel:aspera {
+        module = "aspera"
+      }
       withLabel:fastqc {
         module = "fastQC"
       }
