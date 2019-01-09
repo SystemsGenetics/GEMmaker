@@ -5,8 +5,8 @@ RUN groupadd -g 61000 gemdocker \
 USER gemdocker
 WORKDIR /home/gemdocker
 
-RUN wget https://download.asperasoft.com/download/sw/connect/3.8.1/ibm-aspera-connect-3.8.1.161274-linux-g2.12-64.tar.gz \
-  && tar -zxvf ibm-aspera-connect-3.8.1.161274-linux-g2.12-64.tar.gz \
+RUN wget -q https://download.asperasoft.com/download/sw/connect/3.8.1/ibm-aspera-connect-3.8.1.161274-linux-g2.12-64.tar.gz \
+  && tar -xf ibm-aspera-connect-3.8.1.161274-linux-g2.12-64.tar.gz \
   && ./ibm-aspera-connect-3.8.1.161274-linux-g2.12-64.sh \
   && rm ibm-aspera-connect-3.8.1.161274-linux-g2.12-64.sh
 

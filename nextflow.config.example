@@ -216,24 +216,6 @@ profiles {
     }
   }
 
-  // A profile for execution of GEMmaker on a stand-alone machine
-  // using Docker.
-  localDocker {
-    docker {
-        enabled = true
-        fixOwnership = true
-        runOptions = '-u $(id -u):$(id -g)'
-    }
-  }
-
-  // A profile for execution of GEMmaker on a stand-alone machine
-  // using singularity.
-  localSingularity {
-    singularity {
-        enabled = true
-    }
-  }
-
   //
   // Clemson's Palmetto cluster uses the PBS scheduler. Here we provide
   // an example for execution of this workflow on Palmetto with some
