@@ -128,6 +128,10 @@ process {
     errorStrategy = { "${task.attempt}" == "${params.execution.max_retries}" ? "retry" : "${params.execution.error_strategy}" }
   }
 
+  withLabel:gemmaker {
+    container = "systemsgenetics/gemmaker:1.0-merged"
+    time = "72h"
+  }
   withLabel:aspera {
     container = "systemsgenetics/aspera:3.8.1"
   }
@@ -233,6 +237,16 @@ profiles {
         clusterOptions = "-l select=1:mem=2gb:ncpus=2"
       }
 
+      withLabel:gemmaker {
+        module = "aspera"
+        module = "fastQC"
+        module = "hisat2"
+        module = "anaconda3"
+        module = "samtools"
+        module = "sratoolkit"
+        module = "stringtie"
+        module = "trimmomatic"
+      }
       withLabel:aspera {
         module = "aspera"
       }
@@ -281,6 +295,16 @@ profiles {
         cpus = 1
       }
 
+      withLabel:gemmaker {
+        module = "aspera"
+        module = "fastQC"
+        module = "hisat2"
+        module = "python3"
+        module = "samtools"
+        module = "sratoolkit"
+        module = "stringtie"
+        module = "trimmomatic"
+      }
       withLabel:aspera {
         module = "aspera"
       }
