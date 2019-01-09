@@ -42,7 +42,7 @@ Output Parameters:
 ------------------
   Output directory:           ${params.output.dir}
   Publish SRA:                ${params.output.publish_sra}
-  Publish FASTQ:              ${params.output.publish_fastq}
+  Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
   Publish BAM:                ${params.output.publish_bam}
   Publish FPKM:               ${params.output.publish_fpkm}
@@ -101,11 +101,11 @@ else {
 
 
 /**
- * Set the pattern for publishing FASTQ files
+ * Set the pattern for publishing downloaded FASTQ files
  */
-publish_pattern_fastq = "{none}";
-if (params.output.publish_fastq == true) {
-  publish_pattern_fastq = "{*.fastq}";
+publish_pattern_fastq_dump = "{none}";
+if (params.output.publish_downloaded_fastq == true) {
+  publish_pattern_fastq_dump = "{*.fastq}";
 }
 
 
@@ -463,7 +463,7 @@ SRA_TO_CLEAN = SRA_TO_CLEAN_ASCP.mix(SRA_TO_CLEAN_PREFETCH)
  * Extracts FASTQ files from downloaded SRA files.
  */
 process fastq_dump {
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq, saveAs: { "${sample_id}/${it}" }
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${sample_id}/${it}" }
   tag { sample_id }
   label "sratoolkit"
 
@@ -1132,7 +1132,7 @@ process clean_downloaded_fastq {
     set val(sample_id), val(files_list) from DOWNLOADED_FASTQ_CLEANUP_READY
 
   when:
-    params.output.publish_fastq == false
+    params.output.publish_downloaded_fastq == false
 
   script:
     template "clean_work_files.sh"
@@ -1160,7 +1160,7 @@ process clean_merged_fastq {
     set val(sample_id), val(files_list) from MERGED_FASTQ_CLEANUP_READY
 
   when:
-    params.output.publish_fastq == false
+    params.output.publish_downloaded_fastq == false
 
   script:
     template "clean_work_files.sh"
