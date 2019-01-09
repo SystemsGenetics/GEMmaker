@@ -134,7 +134,7 @@ process {
     time = "24h"
   }
   withLabel:multiqc {
-    container = "ewels/multiqc:v1.7"
+    container = "systemsgenetics/multiqc:1.7"
   }
   withLabel:python3 {
     container = "systemsgenetics/python:3.5.1"
