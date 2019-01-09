@@ -78,7 +78,7 @@ def download_runs_meta(srr_file):
             # Get the list of experiments from the query.
             experiments = response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]
 
-            # If we only have one experiment then we have to convert it to an 
+            # If we only have one experiment then we have to convert it to an
             # array for our for loop below.
             if (isinstance(experiments, list) == False):
               experiments = []
