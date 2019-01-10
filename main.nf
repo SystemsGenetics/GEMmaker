@@ -16,8 +16,6 @@
  *   A workflow for processing a large amount of RNA-seq data
  */
 
-
-
 println """\
 
 ===================================
@@ -28,6 +26,7 @@ General Information:
 --------------------
   Profile(s):         ${workflow.profile}
   Container Engine:   ${workflow.containerEngine}
+  Working Directory:  ${workflow.workDir}
 
 
 Input Parameters:
@@ -173,10 +172,10 @@ ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
 
 // Create the directories we'll use for running
 // batches
-file("${NXF_WORK}/GEMmaker").mkdir()
-file("${NXF_WORK}/GEMmaker/stage").mkdir()
-file("${NXF_WORK}/GEMmaker/process").mkdir()
-file("${NXF_WORK}/GEMmaker/done").mkdir()
+file("${workflow.workDir}/GEMmaker").mkdir()
+file("${workflow.workDir}/GEMmaker/stage").mkdir()
+file("${workflow.workDir}/GEMmaker/process").mkdir()
+file("${workflow.workDir}/GEMmaker/done").mkdir()
 
 // Channels to bootstrap post-processing of
 // sample results if a resume is performed when
@@ -222,7 +221,7 @@ process write_stage_files {
 
   exec:
     // Create a file for each samples.
-    sample_file = file("${NXF_WORK}/GEMmaker/stage/" + sample[0] + '.sample.csv')
+    sample_file = file("${workflow.workDir}/GEMmaker/stage/" + sample[0] + '.sample.csv')
     sample_file.withWriter {
 
       // Get the sample type: local or remote.
@@ -263,11 +262,11 @@ process start_first_batch {
   exec:
     // Move the first set of sample file into the processing directory
     // so that we jumpstart the workflow.
-    sample_files = file("${NXF_WORK}/GEMmaker/stage/*.sample.csv");
+    sample_files = file("${workflow.workDir}/GEMmaker/stage/*.sample.csv");
     start_samples = sample_files.sort().take(params.execution.queue_size)
     if (sample_files.size() > 0 ) {
       for (sample in start_samples) {
-        sample.moveTo("${NXF_WORK}/GEMmaker/process")
+        sample.moveTo("${workflow.workDir}/GEMmaker/process")
       }
    }
    // If there are no staged files then we need to
@@ -290,7 +289,7 @@ process start_first_batch {
 // for new files. When a new sample file is added
 // it will be read it and sent it through the workflow.
 NEXT_SAMPLE = Channel
-   .watchPath("${NXF_WORK}/GEMmaker/process")
+   .watchPath("${workflow.workDir}/GEMmaker/process")
 
 /**
  * Opens the sample file and prints it's contents to
@@ -359,17 +358,17 @@ process next_sample {
 
   exec:
     // Move the finished sample to the done directory.
-    sample_file = file("${NXF_WORK}/GEMmaker/process/" + sample_id + '.sample.csv')
-    sample_file.moveTo("${NXF_WORK}/GEMmaker/done")
+    sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
+    sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
 
     // Move the next sample file into the processing directory
     // which will trigger the start of the next sample.
-    staged_files = file("${NXF_WORK}/GEMmaker/stage/*")
+    staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
     if (staged_files.size() > 0) {
-      staged_files.first().moveTo("${NXF_WORK}/GEMmaker/process")
+      staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
     }
     else {
-      processing_files = file("${NXF_WORK}/GEMmaker/process/*.sample.csv")
+      processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
       if (processing_files.size() == 0) {
         NEXT_SAMPLE.close()
         NEXT_SAMPLE_SIGNAL.close()
