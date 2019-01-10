@@ -90,7 +90,7 @@ Most HPC clusters do not allow users to run docker, but singularity should be
 allowed. On your own, or with the help of your HPC administrator, install
 singularity and nextflow if they are not already installed. After Nextflow and
 singuarity are installed, clone GEMmaker into your desired directory as shown
-below. GEMmaker will then install all of the dependencies the first time it is
+. GEMmaker will then install all of the dependencies the first time it is
 run.
 
 Downloading GEMmaker
@@ -127,5 +127,5 @@ at:** :ref:`nextflow_config_instructions`.
 
 
 
-.. |DOI| image:: https://zenodo.org/badge/114067776.svg :target:
-https://zenodo.org/badge/latestdoi/114067776
+.. |DOI| image:: https://zenodo.org/badge/114067776.svg
+   :target: https://zenodo.org/badge/latestdoi/114067776

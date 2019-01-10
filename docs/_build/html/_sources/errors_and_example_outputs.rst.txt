@@ -119,6 +119,7 @@ Example Files
 After the example is run, the output directory should contain these directories:
 
 .. code:: bash
+
   1/
   2/
   3/
@@ -126,4 +127,4 @@ After the example is run, the output directory should contain these directories:
   reports/
   SRX218012/
 
-In 
+In

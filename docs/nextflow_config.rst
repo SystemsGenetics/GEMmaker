@@ -3,7 +3,6 @@
 Customizing the Workflow
 ------------------------
 
-
 GEMmaker is a nextflow workflow. All nextflow workflows have a
 ``nextflow.config`` file. It is where parameters for the workflow can be customized.
 
@@ -76,7 +75,7 @@ For Hisat2:
 1) Hisat2 index files for the reference, created with hisat2-bulid from the reference genome.
 2) A GTF file containing the genes annotated from the reference genome.
 
-To generate the hisat2 files, download the reference genome and run this command (This example uses the arabidopsis genome from `TAIR<>`__):
+To generate the hisat2 files, download the reference genome and run this command (This example uses the arabidopsis genome from TAIR ):
 
 .. code:: bash
 
@@ -194,17 +193,53 @@ publish_mode
 publish mode for publishDir
 
 Options are the standard nextflow stage options:
+
 - ``"link"``     Recommended, creates a hardlink for each published file
 - ``"rellink"``  Use when hardlink is not possible.
 - ``"symlink"``  Use when hardlink is not possible (currently not compatible with iRODS).
-- ``"copy"``     Not recommended, copies each published file to publshDir after it is
-                 created in the pipeline. This option may slow the pipeline significantly.
+- ``"copy"``     Not recommended, copies each published file to publshDir after it is created in the pipeline. This option may slow the pipeline significantly.
 
 Default:
 
 .. code:: bash
 
   publish_mode = "link"
+
+publish_downloaded_fastq
+========================
+
+Parameter that determines if the downloaded SRAs from NCBI be saved
+locally. Default is ``true``. Turn to ``false`` if space is going to
+be an issue.
+
+publish_trimmed_fastq
+=====================
+
+Parameter that determines if the trimmed files should be saved, or if they
+should be deleted after they are no longer needed in the  pipeline. Default is
+``true``. Turn to ``false`` if space is going to  be an issue.
+
+publish_bam
+===========
+
+Parameter that determines if the bam files should be saved, or if they should
+be deleted after they are no longer needed. Default is ``true``. Turn to
+``false`` if space is going to  be an issue.
+
+publish_fpkm
+============
+
+Parameter that determines if the fpkm files should be saved at the end
+of the run. Default is ``true``. The fpkm GEM will be saved even if this
+process is set to false.
+
+publish_tpm
+===========
+
+Parameter that determines if the tpm files should be saved, or if
+they should be deleted after they are no longer needed. Default is ``true``. The
+tpm GEM will be saved even if this  process is set to false.
+
 
 Execution
 ~~~~~~~~~
@@ -233,7 +268,9 @@ Default:
 
 max_retries
 ===========
-Number of times to resubmit a failed process before invoking the error strategy defined by ``error_strategy``.
+
+Number of times to resubmit a failed process before invoking the error strategy
+defined by ``error_strategy``.
 
 Default:
 
@@ -251,11 +288,144 @@ Default:
 
   error_strategy = "ignore"
 
+software
+~~~~~~~~
+
+trimmomatic
+===========
+
+Software parameters for trimmomatic run (trimmomatic is only run when
+hisat2 is run, not with Kallisto or Salmon).
+
+These are the same as in the `Trimmomatic Manual <http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf>`__
+with the exception of ``MINLEN``. Since GEMmaker can run many different samples
+and experiments at once, ``MINLEN`` has been changed from a concrete number to a
+percent of read. For example the default is ``MINLEN = "0.7"``, which means that
+a read must be at least 70% of its original length after trimming to be kept in
+the final trimmed file.
+
+Alignment
+=========
+
+Where the user selects which alignment tool they wish to use. The options are
+Hisat2, Kallisto and Salmon. Default is Hisat2. You must set based on their number.
+
+For Hisat2:
+
+.. code::bash
+
+  which_alignment = 0
+
+For Kallisto:
+
+.. code::bash
+
+  which_alignment = 1
+
+For Salmon:
+
+.. code::bash
+
+  which_alignment = 2
+
+report
+~~~~~~
+
+Where the nextflow generated report on how the run went should be written
+
+default:
+
+.. code::bash
+
+  file = "${params.output.dir}/reports/report.html"
 
 
-  You may want to refer to the
-  `Nextflow configuration documentation <https://www.nextflow.io/docs/latest/config.html>`__
-  to set proper profile settings for your environment. For example, to run the
-  workflow on an HPC system you will have to specify the "executor" that
-  corresponds to your system's scheduler (such as ``pbs``, ``slurm``, etc), as
-  well as any other properties specific to your system, such as your job queue.
+timeline
+~~~~~~~~
+
+Where the nextflow generated timeline on how much each process should be written
+
+default:
+
+.. code::bash
+
+  file = "${params.output.dir}/reports/timeline.html"
+
+Image of an Example Timeline:
+
+.. figure:: /images/Timeline.png
+  :alt: MultiQC_Report
+
+
+docker
+~~~~~~
+
+Parameters for running Docker
+
+process
+~~~~~~~
+
+Lists all of the docker containers that will be used in the GEMmaker run. These
+are compiled by the GEMmaker team, and GEMmaker will automatically download these
+from Docker Hub. If you would like to use a different version, you can make your
+own Docker image, and put the address of it in the spot that corresponds to the
+process you wish to replace.
+
+profiles
+~~~~~~~~
+Several profiles come packaged with GEMmaker. They can be added to your run
+command. For example, if you want to run with the ``standard`` option and the
+``localDocker`` profile , you would run GEMmaker with this command:
+
+.. code::bash
+
+  nextflow run main.nf -profile standard,localDockler
+
+This is our reccommended way of running GEMmaker for most users. When running
+on HPC, you may want to customize.
+
+standard
+~~~~~~~~
+
+This profile is for running on local machines.
+
+localDocker
+~~~~~~~~~~~
+
+This profile is for running GEMmaker with Docker.
+
+localSingularity
+~~~~~~~~~~~~~~~~
+
+This profile is for running GEMmaker with Singularity
+
+testing
+~~~~~~~
+
+This is for running Docker in testing mode. It will not retry any steps.
+This is mainly for the developers.
+
+pbs
+~~~
+
+Clemson's Palmetto cluster uses the PBS scheduler. Here we provide
+an example for execution of this workflow on Palmetto with some
+defaults for all steps of the workflow.
+
+slurm
+~~~~~
+
+WSU's Kamiak cluster uses the SLURM scheduler. Here we provide
+an example for execution of this workflow on Kamiak with some
+defaults for all steps of the workflow.
+
+
+HPC additional instructions:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You may want to refer to the
+`Nextflow configuration documentation <https://www.nextflow.io/docs/latest/config.html>`__
+to set proper profile settings for your environment. For example, to run the
+workflow on an HPC system you will have to specify the "executor" that
+corresponds to your system's scheduler (such as ``pbs``, ``slurm``, etc), as
+well as any other properties specific to your system, such as your job queue.

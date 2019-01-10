@@ -29,8 +29,8 @@ workflow run the following:
 
 .. code:: bash
 
-    nextflow run main.nf -profile standard,inDocker
- 
+    nextflow run main.nf -profile standard,localDocker
+
 You should see an output that looks like this: :ref:`example_output`
 
 
@@ -62,7 +62,7 @@ editor (here we use the `vim <https://www.vim.org/>` editor on the command line,
 but you can edit it using a gui based editor if you like. It just needs to be
 able to edit a text file)
 
-..code::bash
+.. code::bash
 
   vim nextflow.config
 
@@ -71,30 +71,30 @@ salmon
 
 Here is what it should look like to run the example with Kallisto
 
-..code::bash
+.. code::bash
 
-      /**
-     * Alignment
-     *
-     * User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
-     * processes "samtools_sort", "samtools_index" and "stringtie" will also be
-     * done. All processes will end with a gene abundance file.
-     * Aligns reads to the reference genome.
-     */
-    alignment {
-      //
-      // hisat2 = 0
-      // Kallisto = 1
-      // Salmon = 2
-      //
-      which_alignment = 1
-    }
+  /**
+  * Alignment
+  *
+  * User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
+  * processes "samtools_sort", "samtools_index" and "stringtie" will also be
+  * done. All processes will end with a gene abundance file.
+  * Aligns reads to the reference genome.
+  */
+  alignment {
+    //
+    // hisat2 = 0
+    // Kallisto = 1
+    // Salmon = 2
+    //
+    which_alignment = 1
+  }
 
 After that, save your file and run the worklow:
 
 .. code:: bash
 
-    nextflow run main.nf -profile standard,inDocker
+    nextflow run main.nf -profile standard,localDocker
 
 Inputs explained
 ~~~~~~~~~~~~~~~~
@@ -135,6 +135,7 @@ For local runs:
 For remote runs:
 
 .. code:: bash
+
   /GEMmaker/examples/RemoteRunExample/
 
 The Local runs directory contains 3 `FASTQ

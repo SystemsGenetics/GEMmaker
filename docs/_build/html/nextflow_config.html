@@ -95,6 +95,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#dir">dir</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sample-dir">sample_dir</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#publish-mode">publish_mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#publish-downloaded-fastq">publish_downloaded_fastq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#publish-trimmed-fastq">publish_trimmed_fastq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#publish-bam">publish_bam</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#publish-fpkm">publish_fpkm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#publish-tpm">publish_tpm</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#execution">Execution</a><ul>
@@ -104,6 +109,23 @@
 <li class="toctree-l3"><a class="reference internal" href="#error-strategy">error_strategy</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#software">software</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#trimmomatic">trimmomatic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alignment">Alignment</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#report">report</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#timeline">timeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#docker">docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#process">process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#profiles">profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#standard">standard</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#localdocker">localDocker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#localsingularity">localSingularity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing">testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pbs">pbs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#slurm">slurm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hpc-additional-instructions">HPC additional instructions:</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="preparing_and_running.html">Running your Data</a></li>
@@ -233,7 +255,7 @@ in a single directory.The reference files will vary based on which alignment you
 <li>Hisat2 index files for the reference, created with hisat2-bulid from the reference genome.</li>
 <li>A GTF file containing the genes annotated from the reference genome.</li>
 </ol>
-<p>To generate the hisat2 files, download the reference genome and run this command (This example uses the arabidopsis genome from <a href="#id1"><span class="problematic" id="id2">`TAIR&lt;&gt;`__</span></a>):</p>
+<p>To generate the hisat2 files, download the reference genome and run this command (This example uses the arabidopsis genome from TAIR ):</p>
 <div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">hisat2</span><span class="o">-</span><span class="n">build</span> <span class="o">-</span><span class="n">f</span> <span class="n">TAIR10_Araport11</span><span class="o">.</span><span class="n">fna</span> <span class="n">TAIR10_Araport11</span> <span class="o">|</span> <span class="n">tee</span> <span class="o">&gt;</span> <span class="n">hisat2</span><span class="o">-</span><span class="n">build</span><span class="o">.</span><span class="n">log</span>
 </pre></div>
 </div>
@@ -327,17 +349,47 @@ your needs.</p>
 <div class="section" id="publish-mode">
 <h3>publish_mode<a class="headerlink" href="#publish-mode" title="Permalink to this headline">¶</a></h3>
 <p>publish mode for publishDir</p>
-<p>Options are the standard nextflow stage options:
-- <code class="docutils literal"><span class="pre">&quot;link&quot;</span></code>     Recommended, creates a hardlink for each published file
-- <code class="docutils literal"><span class="pre">&quot;rellink&quot;</span></code>  Use when hardlink is not possible.
-- <code class="docutils literal"><span class="pre">&quot;symlink&quot;</span></code>  Use when hardlink is not possible (currently not compatible with iRODS).
-- <code class="docutils literal"><span class="pre">&quot;copy&quot;</span></code>     Not recommended, copies each published file to publshDir after it is</p>
-<blockquote>
-<div>created in the pipeline. This option may slow the pipeline significantly.</div></blockquote>
+<p>Options are the standard nextflow stage options:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">&quot;link&quot;</span></code>     Recommended, creates a hardlink for each published file</li>
+<li><code class="docutils literal"><span class="pre">&quot;rellink&quot;</span></code>  Use when hardlink is not possible.</li>
+<li><code class="docutils literal"><span class="pre">&quot;symlink&quot;</span></code>  Use when hardlink is not possible (currently not compatible with iRODS).</li>
+<li><code class="docutils literal"><span class="pre">&quot;copy&quot;</span></code>     Not recommended, copies each published file to publshDir after it is created in the pipeline. This option may slow the pipeline significantly.</li>
+</ul>
 <p>Default:</p>
 <div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">publish_mode</span> <span class="o">=</span> <span class="s2">&quot;link&quot;</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="publish-downloaded-fastq">
+<h3>publish_downloaded_fastq<a class="headerlink" href="#publish-downloaded-fastq" title="Permalink to this headline">¶</a></h3>
+<p>Parameter that determines if the downloaded SRAs from NCBI be saved
+locally. Default is <code class="docutils literal"><span class="pre">true</span></code>. Turn to <code class="docutils literal"><span class="pre">false</span></code> if space is going to
+be an issue.</p>
+</div>
+<div class="section" id="publish-trimmed-fastq">
+<h3>publish_trimmed_fastq<a class="headerlink" href="#publish-trimmed-fastq" title="Permalink to this headline">¶</a></h3>
+<p>Parameter that determines if the trimmed files should be saved, or if they
+should be deleted after they are no longer needed in the  pipeline. Default is
+<code class="docutils literal"><span class="pre">true</span></code>. Turn to <code class="docutils literal"><span class="pre">false</span></code> if space is going to  be an issue.</p>
+</div>
+<div class="section" id="publish-bam">
+<h3>publish_bam<a class="headerlink" href="#publish-bam" title="Permalink to this headline">¶</a></h3>
+<p>Parameter that determines if the bam files should be saved, or if they should
+be deleted after they are no longer needed. Default is <code class="docutils literal"><span class="pre">true</span></code>. Turn to
+<code class="docutils literal"><span class="pre">false</span></code> if space is going to  be an issue.</p>
+</div>
+<div class="section" id="publish-fpkm">
+<h3>publish_fpkm<a class="headerlink" href="#publish-fpkm" title="Permalink to this headline">¶</a></h3>
+<p>Parameter that determines if the fpkm files should be saved at the end
+of the run. Default is <code class="docutils literal"><span class="pre">true</span></code>. The fpkm GEM will be saved even if this
+process is set to false.</p>
+</div>
+<div class="section" id="publish-tpm">
+<h3>publish_tpm<a class="headerlink" href="#publish-tpm" title="Permalink to this headline">¶</a></h3>
+<p>Parameter that determines if the tpm files should be saved, or if
+they should be deleted after they are no longer needed. Default is <code class="docutils literal"><span class="pre">true</span></code>. The
+tpm GEM will be saved even if this  process is set to false.</p>
 </div>
 </div>
 <div class="section" id="execution">
@@ -360,7 +412,8 @@ your needs.</p>
 </div>
 <div class="section" id="max-retries">
 <h3>max_retries<a class="headerlink" href="#max-retries" title="Permalink to this headline">¶</a></h3>
-<p>Number of times to resubmit a failed process before invoking the error strategy defined by <code class="docutils literal"><span class="pre">error_strategy</span></code>.</p>
+<p>Number of times to resubmit a failed process before invoking the error strategy
+defined by <code class="docutils literal"><span class="pre">error_strategy</span></code>.</p>
 <p>Default:</p>
 <div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">max_retries</span> <span class="o">=</span> <span class="s2">&quot;2&quot;</span>
 </pre></div>
@@ -370,19 +423,104 @@ your needs.</p>
 <h3>error_strategy<a class="headerlink" href="#error-strategy" title="Permalink to this headline">¶</a></h3>
 <p>Error strategy for when a process fails <code class="docutils literal"><span class="pre">max_retries</span></code> times. Can be <code class="docutils literal"><span class="pre">&quot;terminate&quot;</span></code>, <code class="docutils literal"><span class="pre">&quot;finish&quot;</span></code>, or <code class="docutils literal"><span class="pre">&quot;ignore&quot;</span></code>.</p>
 <p>Default:</p>
-<div class="code bash highlight-default"><div class="highlight"><pre><span></span>error_strategy = &quot;ignore&quot;
-
-
-
-You may want to refer to the
-`Nextflow configuration documentation &lt;https://www.nextflow.io/docs/latest/config.html&gt;`__
-to set proper profile settings for your environment. For example, to run the
-workflow on an HPC system you will have to specify the &quot;executor&quot; that
-corresponds to your system&#39;s scheduler (such as ``pbs``, ``slurm``, etc), as
-well as any other properties specific to your system, such as your job queue.
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">error_strategy</span> <span class="o">=</span> <span class="s2">&quot;ignore&quot;</span>
 </pre></div>
 </div>
 </div>
+</div>
+<div class="section" id="software">
+<h2>software<a class="headerlink" href="#software" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="trimmomatic">
+<h3>trimmomatic<a class="headerlink" href="#trimmomatic" title="Permalink to this headline">¶</a></h3>
+<p>Software parameters for trimmomatic run (trimmomatic is only run when
+hisat2 is run, not with Kallisto or Salmon).</p>
+<p>These are the same as in the <a class="reference external" href="http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf">Trimmomatic Manual</a>
+with the exception of <code class="docutils literal"><span class="pre">MINLEN</span></code>. Since GEMmaker can run many different samples
+and experiments at once, <code class="docutils literal"><span class="pre">MINLEN</span></code> has been changed from a concrete number to a
+percent of read. For example the default is <code class="docutils literal"><span class="pre">MINLEN</span> <span class="pre">=</span> <span class="pre">&quot;0.7&quot;</span></code>, which means that
+a read must be at least 70% of its original length after trimming to be kept in
+the final trimmed file.</p>
+</div>
+<div class="section" id="alignment">
+<h3>Alignment<a class="headerlink" href="#alignment" title="Permalink to this headline">¶</a></h3>
+<p>Where the user selects which alignment tool they wish to use. The options are
+Hisat2, Kallisto and Salmon. Default is Hisat2. You must set based on their number.</p>
+<p>For Hisat2:</p>
+<p>For Kallisto:</p>
+<p>For Salmon:</p>
+</div>
+</div>
+<div class="section" id="report">
+<h2>report<a class="headerlink" href="#report" title="Permalink to this headline">¶</a></h2>
+<p>Where the nextflow generated report on how the run went should be written</p>
+<p>default:</p>
+</div>
+<div class="section" id="timeline">
+<h2>timeline<a class="headerlink" href="#timeline" title="Permalink to this headline">¶</a></h2>
+<p>Where the nextflow generated timeline on how much each process should be written</p>
+<p>default:</p>
+<p>Image of an Example Timeline:</p>
+<div class="figure">
+<img alt="MultiQC_Report" src="_images/Timeline.png" />
+</div>
+</div>
+<div class="section" id="docker">
+<h2>docker<a class="headerlink" href="#docker" title="Permalink to this headline">¶</a></h2>
+<p>Parameters for running Docker</p>
+</div>
+<div class="section" id="process">
+<h2>process<a class="headerlink" href="#process" title="Permalink to this headline">¶</a></h2>
+<p>Lists all of the docker containers that will be used in the GEMmaker run. These
+are compiled by the GEMmaker team, and GEMmaker will automatically download these
+from Docker Hub. If you would like to use a different version, you can make your
+own Docker image, and put the address of it in the spot that corresponds to the
+process you wish to replace.</p>
+</div>
+<div class="section" id="profiles">
+<h2>profiles<a class="headerlink" href="#profiles" title="Permalink to this headline">¶</a></h2>
+<p>Several profiles come packaged with GEMmaker. They can be added to your run
+command. For example, if you want to run with the <code class="docutils literal"><span class="pre">standard</span></code> option and the
+<code class="docutils literal"><span class="pre">localDocker</span></code> profile , you would run GEMmaker with this command:</p>
+<p>This is our reccommended way of running GEMmaker for most users. When running
+on HPC, you may want to customize.</p>
+</div>
+<div class="section" id="standard">
+<h2>standard<a class="headerlink" href="#standard" title="Permalink to this headline">¶</a></h2>
+<p>This profile is for running on local machines.</p>
+</div>
+<div class="section" id="localdocker">
+<h2>localDocker<a class="headerlink" href="#localdocker" title="Permalink to this headline">¶</a></h2>
+<p>This profile is for running GEMmaker with Docker.</p>
+</div>
+<div class="section" id="localsingularity">
+<h2>localSingularity<a class="headerlink" href="#localsingularity" title="Permalink to this headline">¶</a></h2>
+<p>This profile is for running GEMmaker with Singularity</p>
+</div>
+<div class="section" id="testing">
+<h2>testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h2>
+<p>This is for running Docker in testing mode. It will not retry any steps.
+This is mainly for the developers.</p>
+</div>
+<div class="section" id="pbs">
+<h2>pbs<a class="headerlink" href="#pbs" title="Permalink to this headline">¶</a></h2>
+<p>Clemson’s Palmetto cluster uses the PBS scheduler. Here we provide
+an example for execution of this workflow on Palmetto with some
+defaults for all steps of the workflow.</p>
+</div>
+<div class="section" id="slurm">
+<h2>slurm<a class="headerlink" href="#slurm" title="Permalink to this headline">¶</a></h2>
+<p>WSU’s Kamiak cluster uses the SLURM scheduler. Here we provide
+an example for execution of this workflow on Kamiak with some
+defaults for all steps of the workflow.</p>
+</div>
+<div class="section" id="hpc-additional-instructions">
+<h2>HPC additional instructions:<a class="headerlink" href="#hpc-additional-instructions" title="Permalink to this headline">¶</a></h2>
+<p>You may want to refer to the
+<a class="reference external" href="https://www.nextflow.io/docs/latest/config.html">Nextflow configuration documentation</a>
+to set proper profile settings for your environment. For example, to run the
+workflow on an HPC system you will have to specify the “executor” that
+corresponds to your system’s scheduler (such as <code class="docutils literal"><span class="pre">pbs</span></code>, <code class="docutils literal"><span class="pre">slurm</span></code>, etc), as
+well as any other properties specific to your system, such as your job queue.</p>
 </div>
 </div>
 

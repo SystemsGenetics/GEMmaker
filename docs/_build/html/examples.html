@@ -184,7 +184,7 @@ GEMmaker with the example data. If you have not already, you must rename the
 <p>The nextflow.config.example is already configured with the proper
 settings to run the samples described above. To execute the
 workflow run the following:</p>
-<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">nextflow</span> <span class="n">run</span> <span class="n">main</span><span class="o">.</span><span class="n">nf</span> <span class="o">-</span><span class="n">profile</span> <span class="n">standard</span><span class="p">,</span><span class="n">inDocker</span>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">nextflow</span> <span class="n">run</span> <span class="n">main</span><span class="o">.</span><span class="n">nf</span> <span class="o">-</span><span class="n">profile</span> <span class="n">standard</span><span class="p">,</span><span class="n">localDocker</span>
 </pre></div>
 </div>
 <p>You should see an output that looks like this: <a class="reference internal" href="errors_and_example_outputs.html#example-output"><span class="std std-ref">Example Output</span></a></p>
@@ -210,40 +210,11 @@ example using Salmon or Kallisto.</p>
 editor (here we use the <cite>vim &lt;https://www.vim.org/&gt;</cite> editor on the command line,
 but you can edit it using a gui based editor if you like. It just needs to be
 able to edit a text file)</p>
-<p>..code::bash</p>
-<blockquote>
-<div>vim nextflow.config</div></blockquote>
 <p>Then edit the Alignment section of the file. Change to 1 for Kallisto, and 2 for
 salmon</p>
 <p>Here is what it should look like to run the example with Kallisto</p>
-<p>..code::bash</p>
-<blockquote>
-<div><blockquote>
-<div><blockquote>
-<div>/**</div></blockquote>
-<ul class="simple">
-<li>Alignment</li>
-<li></li>
-<li>User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,</li>
-<li>processes “samtools_sort”, “samtools_index” and “stringtie” will also be</li>
-<li>done. All processes will end with a gene abundance file.</li>
-<li>Aligns reads to the reference genome.</li>
-</ul>
-<p><a href="#id2"><span class="problematic" id="id3">*</span></a>/</p>
-</div></blockquote>
-<dl class="docutils">
-<dt>alignment {</dt>
-<dd>//
-// hisat2 = 0
-// Kallisto = 1
-// Salmon = 2
-//
-which_alignment = 1</dd>
-</dl>
-<p>}</p>
-</div></blockquote>
 <p>After that, save your file and run the worklow:</p>
-<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">nextflow</span> <span class="n">run</span> <span class="n">main</span><span class="o">.</span><span class="n">nf</span> <span class="o">-</span><span class="n">profile</span> <span class="n">standard</span><span class="p">,</span><span class="n">inDocker</span>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">nextflow</span> <span class="n">run</span> <span class="n">main</span><span class="o">.</span><span class="n">nf</span> <span class="o">-</span><span class="n">profile</span> <span class="n">standard</span><span class="p">,</span><span class="n">localDocker</span>
 </pre></div>
 </div>
 </div>
@@ -278,6 +249,9 @@ directories in the examples directory.</p>
 </pre></div>
 </div>
 <p>For remote runs:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">GEMmaker</span><span class="o">/</span><span class="n">examples</span><span class="o">/</span><span class="n">RemoteRunExample</span><span class="o">/</span>
+</pre></div>
+</div>
 <p>The Local runs directory contains 3 <a class="reference external" href="https://en.wikipedia.org/wiki/FASTQ_format">FASTQ</a> files for CORG containing
 RNA-seq data. These are examples of local unpaired data, and are each in a directory
 of their own. The file naming format for these reads is “?_1.fastq” where the “?”
@@ -321,7 +295,7 @@ using a heatmap. The following heatmap is the Local Example’s fpkm
 values divided by 1000 in heatmap form. We can see that gene_Zeta
 remained constant across all three samples, gene_Beta decreased, and
 gene_Alpha increased.</p>
-<div class="figure" id="id4">
+<div class="figure" id="id2">
 <img alt="heatmap" src="_images/heatmap.png" />
 <p class="caption"><span class="caption-text">heatmap</span></p>
 </div>

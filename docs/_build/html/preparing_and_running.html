@@ -86,7 +86,11 @@
 <li class="toctree-l1"><a class="reference internal" href="nextflow_config.html">Customizing the Workflow</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Running your Data</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#step-1-rna-seq-sample-location">Step 1) RNA-seq sample location</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#step-2-acquire-reference-genome-files">Step 2) Acquire Reference Genome Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-2-acquire-reference-genome-files">Step 2) Acquire Reference Genome Files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#for-hisat2">For Hisat2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#for-salmon-and-kallisto">For Salmon and Kallisto</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#step-3-executing-the-workflow">Step 3) Executing the Workflow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#performance-considerations">Performance Considerations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#generating-a-summary-report">Generating a Summary Report</a></li>
@@ -193,14 +197,20 @@ Configuration</a>).</p>
 <div class="section" id="step-2-acquire-reference-genome-files">
 <h2>Step 2) Acquire Reference Genome Files<a class="headerlink" href="#step-2-acquire-reference-genome-files" title="Permalink to this headline">¶</a></h2>
 <p>Download the genome annotation/reference files. These will differ depending on
-your organism that you are performing the analysis on. You must have the
-following:</p>
+your organism that you are performing the analysis on. The files neccesary will
+also be different  depending on if you decide to run Hisat2, Salmon or Kallisto.
+The following instructions will go over how to make the proper files for each
+of these programs.</p>
+<div class="section" id="for-hisat2">
+<h3>For Hisat2<a class="headerlink" href="#for-hisat2" title="Permalink to this headline">¶</a></h3>
+<p>You must aquire these 2 files from the internet:</p>
 <ul>
 <li><p class="first">A FASTA file containing the full genomic sequence (either
 pseudomolecules or scaffolds). Note, if your genome file is extremely
 large with hundreds of thousands of contigs/scaffolds, you may want
 to reduce the size of the FASTA file to contain only those
-contigs/scaffolds with predicted annotated genes.</p>
+contigs/scaffolds with predicted annotated genes. This will be converted into
+the hisat2 index files using the commands below.</p>
 </li>
 <li><p class="first">A <a class="reference external" href="https://uswest.ensembl.org/info/website/upload/gff.html">GTF</a>
 file containing the gene models.</p>
@@ -253,6 +263,34 @@ directory must be identified in <code class="docutils literal"><span class="pre"
 <code class="docutils literal"><span class="pre">ref</span> <span class="pre">&gt;</span> <span class="pre">path</span></code> paramter.</p>
 </li>
 </ul>
+</div>
+<div class="section" id="for-salmon-and-kallisto">
+<h3>For Salmon and Kallisto<a class="headerlink" href="#for-salmon-and-kallisto" title="Permalink to this headline">¶</a></h3>
+<p>The process for both of these is rather similar.</p>
+<p>You must aquire this file from the internet:</p>
+<ul class="simple">
+<li>FASTA file containing the individual transcripts of the organism of interest.
+This should be formatted so that the name of each transcript is before the
+sequence of its corresponding transcipt. This is different from the FASTA file
+used for HISAT2.</li>
+</ul>
+<p>This file then needs to be converted into the proper index file for that program
+using the following commands. (assume the name of the transcript FASTA file is
+<code class="docutils literal"><span class="pre">YourFasta.transcrits.fna</span></code>)</p>
+<p>For Salmon:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">salmon</span> <span class="n">index</span> <span class="o">-</span><span class="n">t</span> <span class="n">YourFasta</span><span class="o">.</span><span class="n">transcrits</span><span class="o">.</span><span class="n">fna</span> <span class="o">-</span><span class="n">i</span> <span class="n">YourFasta</span><span class="o">.</span><span class="n">transcrits</span><span class="o">.</span><span class="n">Salmon</span><span class="o">.</span><span class="n">indexed</span>
+</pre></div>
+</div>
+<p>For Kallisto:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">kallisto</span> <span class="n">index</span> <span class="o">-</span><span class="n">i</span> <span class="n">YourFasta</span><span class="o">.</span><span class="n">transcripts</span><span class="o">.</span><span class="n">Kalisto</span><span class="o">.</span><span class="n">indexed</span> <span class="n">YourFasta</span><span class="o">.</span><span class="n">transcrits</span><span class="o">.</span><span class="n">fna</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you are running GEMmaker with Docker Images, you will have to run these commands
+within the docker image. To get inside the docker image, NEEDS TO BE COMPLETED,
+CONTACT GEMmaker creators for details!</p>
+</div>
 <p>The GEMmaker repo contains an <code class="docutils literal"><span class="pre">examples</span></code> directory which contains
 several small example setups. The <code class="docutils literal"><span class="pre">LocalRunExample</span></code> contains a
 <code class="docutils literal"><span class="pre">reference</span></code> directory whose files have the same prefix of <code class="docutils literal"><span class="pre">CORG</span></code>.
@@ -260,6 +298,7 @@ This prefix is set for the <code class="docutils literal"><span class="pre">pref
 <code class="docutils literal"><span class="pre">nextflow.config.example</span></code>. The <code class="docutils literal"><span class="pre">RemoteRunExample</span></code> also contains an
 <code class="docutils literal"><span class="pre">SRA_IDS.txt</span></code> file which contains a list of SRA fastq_run_IDs to
 download from NCBI.</p>
+</div>
 </div>
 <div class="section" id="step-3-executing-the-workflow">
 <h2>Step 3) Executing the Workflow<a class="headerlink" href="#step-3-executing-the-workflow" title="Permalink to this headline">¶</a></h2>
@@ -302,45 +341,21 @@ the queue limits of your system.</li>
 </div>
 <div class="section" id="generating-a-summary-report">
 <h2>Generating a Summary Report<a class="headerlink" href="#generating-a-summary-report" title="Permalink to this headline">¶</a></h2>
-<p>The <a class="reference external" href="http://multiqc.info">MultiQC</a> tool can be used with GEMmaker to
-generate a summary report of results from Trimmomatic, Hisat2 and
-samtools. This report allows you to explore the quality of the data,
-trimming and alignments. To generate the report you must have <a class="reference external" href="http://multiqc.info/docs/#installing-multiqc">MultiQC
-installed</a>. Once
-installed, you can generate the report with the following command inside
-of the GEMmaker directory where your workflow was executed:</p>
-<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">multiqc</span> <span class="o">.</span>
-</pre></div>
-</div>
+<p>The <a class="reference external" href="http://multiqc.info">MultiQC</a> tool will automatically generate a report
+on how each process ran.</p>
 </div>
 <div class="section" id="generating-the-gene-expression-matrix-gem">
 <h2>Generating the Gene Expression Matrix (GEM)<a class="headerlink" href="#generating-the-gene-expression-matrix-gem" title="Permalink to this headline">¶</a></h2>
-<p>After GEMmaker completes, the results for each sample are stored in a
-directory specific to that sample. The final output for each sample is a
-Gene Expression Vector (GEV) in the form of an FPKM or TPM file. To
-compile all GEVs into a Gene Expression Matrix (GEM) you can use the
-<code class="docutils literal"><span class="pre">create_GEM.py</span></code> script in the <code class="docutils literal"><span class="pre">scripts</span></code> directory.</p>
-<p>To see help documentation for this script:</p>
-<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">./</span><span class="n">scripts</span><span class="o">/</span><span class="n">create_GEM</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">h</span>
-</pre></div>
-</div>
-<p>To create a GEM file from the TPM files produced by GEMmaker:</p>
-<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">./</span><span class="n">scripts</span><span class="o">/</span><span class="n">create_GEM</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">source</span> <span class="o">./</span> <span class="o">--</span><span class="nb">type</span> <span class="n">TPM</span> <span class="o">--</span><span class="n">prefix</span> <span class="n">my_project</span>
-</pre></div>
-</div>
-<p>The script will produce a GEM file called <code class="docutils literal"><span class="pre">my_project.GEM.TPM.txt</span></code>. Be
-sure to change <code class="docutils literal"><span class="pre">my_project</span></code> to a meaningful prefix for your project.</p>
-<p>You can combine the results of multiple GEMmaker runs into a single GEM
-by providing a list of directories to the <code class="docutils literal"><span class="pre">--source</span></code> argument. This
-feature may be useful if you split a set of input files into several
-GEMmaker runs and now you need to combine then. The script will produce
-a file named <code class="docutils literal"><span class="pre">GEM.txt</span></code> in the working directory.</p>
+<p>After GEMmaker completes, the resulting GEM will be output to GEMmaker/output/GEM
+(assuming that you didnt change the output directory location). This directory
+contains the final GEM matrix, in raw, TPM and FPKM form. These can be used for
+further analysis.</p>
 </div>
 <div class="section" id="using-the-gem-in-other-analysis">
 <h2>Using the GEM in other Analysis<a class="headerlink" href="#using-the-gem-in-other-analysis" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="dge-analysis">
 <h3>DGE Analysis<a class="headerlink" href="#dge-analysis" title="Permalink to this headline">¶</a></h3>
-<p>Need to do research on:</p>
+<p>The raw GEM matrix can be used for DGE analysis in edgeR and other DGE software.</p>
 </div>
 <div class="section" id="network-analysis">
 <h3>Network Analysis<a class="headerlink" href="#network-analysis" title="Permalink to this headline">¶</a></h3>
