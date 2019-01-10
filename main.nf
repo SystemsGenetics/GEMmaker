@@ -16,8 +16,6 @@
  *   A workflow for processing a large amount of RNA-seq data
  */
 
-
-
 println """\
 
 ===================================
@@ -28,6 +26,7 @@ General Information:
 --------------------
   Profile(s):         ${workflow.profile}
   Container Engine:   ${workflow.containerEngine}
+  Working Directory:  ${workflow.workDir}
 
 
 Input Parameters:
@@ -173,10 +172,10 @@ ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
 
 // Create the directories we'll use for running
 // batches
-file('work/GEMmaker').mkdir()
-file('work/GEMmaker/stage').mkdir()
-file('work/GEMmaker/process').mkdir()
-file('work/GEMmaker/done').mkdir()
+file("${workflow.workDir}/GEMmaker").mkdir()
+file("${workflow.workDir}/GEMmaker/stage").mkdir()
+file("${workflow.workDir}/GEMmaker/process").mkdir()
+file("${workflow.workDir}/GEMmaker/done").mkdir()
 
 // Channels to bootstrap post-processing of
 // sample results if a resume is performed when
@@ -184,25 +183,24 @@ file('work/GEMmaker/done').mkdir()
 MULTIQC_BOOTSTRAP = Channel.create()
 CREATE_GEM_BOOTSTRAP = Channel.create()
 
+// Clean up any files left over from a previous run by moving them
+// back to the stage directory.
+existing_files = file('work/GEMmaker/process/*')
+for (existing_file in existing_files) {
+  existing_file.moveTo('work/GEMmaker/stage')
+}
+
 // Check to see if we have any files left in the
 // stage directory. If so we need to keep processing
 // samples
 staged_files = file('work/GEMmaker/stage/*')
-if (staged_files.size() > 0) {
-  // Clean up any files left over from a previous run by moving them
-  // back to the stage directory.
-  existing_files = file('work/GEMmaker/process/*')
-  for (existing_file in existing_files) {
-    existing_file.moveTo('work/GEMmaker/stage')
-  }
-}
-// If there are no staged files then the workflow will
-// end because it only proceeds when there are samples
-// in the processed directory.  However suppose the workflow
-// fails on multiqc and needs to be resumed.  The
-// following bootstraps the post-processsing portion of
-// the workflow
-else {
+if (staged_files.size() == 0) {
+  // If there are no staged files then the workflow will
+  // end because it only proceeds when there are samples
+  // in the processed directory.  However suppose the workflow
+  // fails on multiqc and needs to be resumed.  The
+  // following bootstraps the post-processsing portion of
+  // the workflow
   MULTIQC_BOOTSTRAP.bind(1)
   CREATE_GEM_BOOTSTRAP.bind(1)
 }
@@ -223,7 +221,7 @@ process write_stage_files {
 
   exec:
     // Create a file for each samples.
-    sample_file = file('work/GEMmaker/stage/' + sample[0] + '.sample.csv')
+    sample_file = file("${workflow.workDir}/GEMmaker/stage/" + sample[0] + '.sample.csv')
     sample_file.withWriter {
 
       // Get the sample type: local or remote.
@@ -264,11 +262,11 @@ process start_first_batch {
   exec:
     // Move the first set of sample file into the processing directory
     // so that we jumpstart the workflow.
-    sample_files = file('work/GEMmaker/stage/*.sample.csv');
+    sample_files = file("${workflow.workDir}/GEMmaker/stage/*.sample.csv");
     start_samples = sample_files.sort().take(params.execution.queue_size)
     if (sample_files.size() > 0 ) {
       for (sample in start_samples) {
-        sample.moveTo('work/GEMmaker/process')
+        sample.moveTo("${workflow.workDir}/GEMmaker/process")
       }
    }
    // If there are no staged files then we need to
@@ -291,7 +289,7 @@ process start_first_batch {
 // for new files. When a new sample file is added
 // it will be read it and sent it through the workflow.
 NEXT_SAMPLE = Channel
-   .watchPath('work/GEMmaker/process')
+   .watchPath("${workflow.workDir}/GEMmaker/process")
 
 /**
  * Opens the sample file and prints it's contents to
@@ -360,26 +358,27 @@ process next_sample {
 
   exec:
     // Move the finished sample to the done directory.
-    sample_file = file('work/GEMmaker/process/' + sample_id + '.sample.csv')
-    sample_file.moveTo('work/GEMmaker/done')
+    sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
+    sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
 
     // Move the next sample file into the processing directory
     // which will trigger the start of the next sample.
-    sample_files = file('work/GEMmaker/stage/*')
-    if (sample_files.size() > 0) {
-      sample_files.first().moveTo('work/GEMmaker/process')
+    staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
+    if (staged_files.size() > 0) {
+      staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
     }
-    // If there are no more samples left then close the
-    // channels that perform our looping or we'll hang.
-    if (sample_files.size() == 0) {
-      NEXT_SAMPLE.close()
-      NEXT_SAMPLE_SIGNAL.close()
-      HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
-      KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
-      SALMON_SAMPLE_COMPLETE_SIGNAL.close()
-      SAMPLE_COMPLETE_SIGNAL.close()
-      MULTIQC_BOOTSTRAP.close()
-      CREATE_GEM_BOOTSTRAP.close()
+    else {
+      processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
+      if (processing_files.size() == 0) {
+        NEXT_SAMPLE.close()
+        NEXT_SAMPLE_SIGNAL.close()
+        HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
+        KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
+        SALMON_SAMPLE_COMPLETE_SIGNAL.close()
+        SAMPLE_COMPLETE_SIGNAL.close()
+        MULTIQC_BOOTSTRAP.close()
+        CREATE_GEM_BOOTSTRAP.close()
+      }
     }
 }
 
