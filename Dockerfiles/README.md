@@ -10,12 +10,12 @@ https://github.com/docker-library/official-images
 docker build -t {TAG NAME} {PATH TO DOCKERFILE}
 
 # example
-cd Dockerfiles/sratoolkit/2.9.2
-docker build -t systemsgenetics/sratoolkit:2.9.2 .
+docker build -t systemsgenetics/gemmaker     Dockerfiles/base/1.0/
+docker build -t systemsgenetics/aspera:3.8.1 Dockerfiles/aspera/3.8.1/
 ```
 
 ## Get Shell into Docker Image
 
 ```bash
-docker run --rm -it systemsgenetics/sratoolkit:2.9.2 /bin/bash
+docker run --rm -it systemsgenetics/aspera:3.8.1 /bin/bash
 ```

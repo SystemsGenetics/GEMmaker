@@ -41,6 +41,7 @@ Input Parameters:
 Output Parameters:
 ------------------
   Output directory:           ${params.output.dir}
+  Publish SRA:                ${params.output.publish_sra}
   Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
   Publish BAM:                ${params.output.publish_bam}
@@ -100,7 +101,7 @@ else {
 
 
 /**
- * Set the pattern for publishing downloaded files
+ * Set the pattern for publishing downloaded FASTQ files
  */
 publish_pattern_fastq_dump = "{none}";
 if (params.output.publish_downloaded_fastq == true) {
@@ -110,7 +111,7 @@ if (params.output.publish_downloaded_fastq == true) {
 
 
 /**
- * Set the pattern for publishing trimmed files
+ * Set the pattern for publishing trimmed FASTQ files
  */
 publish_pattern_trimmomatic = "{*.trim.log}";
 if (params.output.publish_trimmed_fastq == true) {
@@ -172,10 +173,10 @@ ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
 
 // Create the directories we'll use for running
 // batches
-file('work/GEMmaker').mkdir()
-file('work/GEMmaker/stage').mkdir()
-file('work/GEMmaker/process').mkdir()
-file('work/GEMmaker/done').mkdir()
+file("${NXF_WORK}/GEMmaker").mkdir()
+file("${NXF_WORK}/GEMmaker/stage").mkdir()
+file("${NXF_WORK}/GEMmaker/process").mkdir()
+file("${NXF_WORK}/GEMmaker/done").mkdir()
 
 // Channels to bootstrap post-processing of
 // sample results if a resume is performed when
@@ -221,7 +222,7 @@ process write_stage_files {
 
   exec:
     // Create a file for each samples.
-    sample_file = file('work/GEMmaker/stage/' + sample[0] + '.sample.csv')
+    sample_file = file("${NXF_WORK}/GEMmaker/stage/" + sample[0] + '.sample.csv')
     sample_file.withWriter {
 
       // Get the sample type: local or remote.
@@ -262,11 +263,11 @@ process start_first_batch {
   exec:
     // Move the first set of sample file into the processing directory
     // so that we jumpstart the workflow.
-    sample_files = file('work/GEMmaker/stage/*.sample.csv');
+    sample_files = file("${NXF_WORK}/GEMmaker/stage/*.sample.csv");
     start_samples = sample_files.sort().take(params.execution.queue_size)
     if (sample_files.size() > 0 ) {
       for (sample in start_samples) {
-        sample.moveTo('work/GEMmaker/process')
+        sample.moveTo("${NXF_WORK}/GEMmaker/process")
       }
    }
    // If there are no staged files then we need to
@@ -289,7 +290,7 @@ process start_first_batch {
 // for new files. When a new sample file is added
 // it will be read it and sent it through the workflow.
 NEXT_SAMPLE = Channel
-   .watchPath('work/GEMmaker/process')
+   .watchPath("${NXF_WORK}/GEMmaker/process")
 
 /**
  * Opens the sample file and prints it's contents to
@@ -358,14 +359,14 @@ process next_sample {
 
   exec:
     // Move the finished sample to the done directory.
-    sample_file = file('work/GEMmaker/process/' + sample_id + '.sample.csv')
-    sample_file.moveTo('work/GEMmaker/done')
+    sample_file = file("${NXF_WORK}/GEMmaker/process/" + sample_id + '.sample.csv')
+    sample_file.moveTo("${NXF_WORK}/GEMmaker/done")
 
     // Move the next sample file into the processing directory
     // which will trigger the start of the next sample.
-    sample_files = file('work/GEMmaker/stage/*')
+    sample_files = file("${NXF_WORK}/GEMmaker/stage/*")
     if (sample_files.size() > 0) {
-      sample_files.first().moveTo('work/GEMmaker/process')
+      sample_files.first().moveTo("${NXF_WORK}/GEMmaker/process")
     }
     else {
       processing = file('work/GEMmaker/process/*.sample.csv')
@@ -382,27 +383,103 @@ process next_sample {
     }
 }
 
+
+
 /**
- * Downloads FASTQ files from the NCBI SRA.
+ * Route the REMOTE_SAMPLES channel to the appropriate process
+ * to download SRA files.
  */
-process fastq_dump {
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${exp_id}/${it}" }
-  tag { exp_id }
+REMOTE_SAMPLES_ASCP = Channel.create()
+REMOTE_SAMPLES_PREFETCH = Channel.create()
+
+REMOTE_SAMPLES.choice(REMOTE_SAMPLES_ASCP, REMOTE_SAMPLES_PREFETCH) { params.software.sra_download }
+
+
+
+/**
+ * Downloads SRA files from NCBI using Aspera.
+ */
+process ascp {
+  tag { sample_id }
+  label "aspera"
+  label "retry"
+
+  input:
+    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_ASCP
+
+  output:
+    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT_ASCP
+    set val(sample_id), file("*.sra") into SRA_TO_CLEAN_ASCP
+
+  script:
+  """
+  ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
+  for id in \$ids; do
+    prefix=`echo \$id | perl -p -e 's/^([SDE]RR)\\d+\$/\$1/'`
+    sixchars=`echo \$id | perl -p -e 's/^([SDE]RR\\d{1,3}).*\$/\$1/'`
+    url="/sra/sra-instant/reads/ByRun/sra/\$prefix/\$sixchars/\$id/\$id.sra"
+    ascp -i /home/gemdocker/.aspera/connect/etc/asperaweb_id_dsa.openssh -k 1 -T -l 1000m anonftp@ftp.ncbi.nlm.nih.gov:\$url .
+  done
+  """
+}
+
+
+
+/**
+ * Downloads SRA files from NCBI using the SRA Toolkit.
+ */
+process prefetch {
+  tag { sample_id }
   label "sratoolkit"
   label "retry"
 
   input:
-    set val(exp_id), val(run_ids), val(type) from REMOTE_SAMPLES
+    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_PREFETCH
 
   output:
-    set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_COMBINATION
-    set val(exp_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_CLEANING
+    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT_PREFETCH
+    set val(sample_id), file("*.sra") into SRA_TO_CLEAN_PREFETCH
 
   script:
   """
   ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
   for run_id in \$ids; do
-    fastq-dump --split-files \$run_id
+    prefetch --output-directory . \$run_id
+  done
+  """
+}
+
+
+
+/**
+ * Merge the output channels from each SRA downloader process.
+ */
+SRA_TO_EXTRACT = SRA_TO_EXTRACT_ASCP.mix(SRA_TO_EXTRACT_PREFETCH)
+SRA_TO_CLEAN = SRA_TO_CLEAN_ASCP.mix(SRA_TO_CLEAN_PREFETCH)
+
+
+
+/**
+ * Extracts FASTQ files from downloaded SRA files.
+ */
+process fastq_dump {
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${sample_id}/${it}" }
+  tag { sample_id }
+  label "sratoolkit"
+
+  input:
+    set val(sample_id), val(sra_files) from SRA_TO_EXTRACT
+
+  output:
+    set val(sample_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_MERGING
+    set val(sample_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_CLEANING
+    set val(sample_id), val(1) into CLEAN_SRA_SIGNAL
+
+  script:
+  """
+  files=`echo $sra_files | perl -p -e 's/[\\[,\\]]//g'`
+  for sra_file in \$files; do
+    fastq-dump --split-files \$sra_file
   done
   """
 }
@@ -412,11 +489,11 @@ process fastq_dump {
 /**
  * This process merges the fastq files based on their sample_id number.
  */
-process SRR_combine {
+process fastq_merge {
   tag { sample_id }
 
   input:
-    set val(sample_id), file(grouped) from DOWNLOADED_FASTQ_FOR_COMBINATION
+    set val(sample_id), file(grouped) from DOWNLOADED_FASTQ_FOR_MERGING
 
   output:
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_COUNTING
@@ -1014,8 +1091,32 @@ process createGEM {
  */
 
 
+
 /**
- * Merge the fastq_dump files with SRR_combine signal
+ * Cleans downloaded SRA files
+ */
+SRA_TO_CLEAN
+  .mix(CLEAN_SRA_SIGNAL)
+  .groupTuple(size: 2)
+  .set { CLEAN_SRA_READY }
+
+process clean_sra {
+  tag { sample_id }
+
+  input:
+    set val(sample_id), val(files_list) from CLEAN_SRA_READY
+
+  when:
+    params.output.publish_sra == false
+
+  script:
+    template "clean_work_files.sh"
+}
+
+
+
+/**
+ * Merge the fastq_dump files with fastq_merge signal
  * so that we can remove these files.
  */
 
@@ -1044,7 +1145,7 @@ process clean_downloaded_fastq {
  * Merge the merged fastq files with the signals from hista2,
  * kallisto, salmon and fastqc_1 to clean up merged fastq files. This
  * is only needed for remote files that were downloaded
- * and then merged into a single sample in the SRR_combine
+ * and then merged into a single sample in the fastq_merge
  * process.
  */
 MFCLEAN = MERGED_FASTQ_FOR_CLEANING.mix(CLEAN_MERGED_FASTQ_HISAT_SIGNAL, CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL, CLEAN_MERGED_FASTQ_SALMON_SIGNAL, CLEAN_MERGED_FASTQ_FASTQC_SIGNAL)
