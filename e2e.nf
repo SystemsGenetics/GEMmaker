@@ -366,9 +366,7 @@ process process_sample {
       -T temp
 
     # remove SAM file if it will not be published
-    if [[ ${params.output.publish_sam} == false ]]; then
-      rm -f *.sam
-    fi
+    rm -f *.sam
 
     # index BAM alignment file
     samtools index ${sample_id}_vs_${params.input.reference_prefix}.bam
