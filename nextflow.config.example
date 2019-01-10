@@ -113,7 +113,8 @@ docker {
 
 
 singularity {
-  runOptions = ""
+  autoMounts = true
+  cacheDir = "${PWD}/work-singularity"
 }
 
 
@@ -225,12 +226,10 @@ profiles {
     process {
       executor = "pbs"
       time = "8h"
+      clusterOptions = "-l select=1:mem=2gb:ncpus=2"
 
-      withLabel: "multithreaded" {
+      withLabel:multithreaded {
         clusterOptions = "-l select=1:mem=8gb:ncpus=${params.execution.threads}"
-      }
-      withLabel: "!multithreaded" {
-        clusterOptions = "-l select=1:mem=2gb:ncpus=2"
       }
 
       withLabel:aspera {
@@ -273,12 +272,10 @@ profiles {
       executor = "slurm"
       queue = "ficklin"
       time = "24h"
+      cpus = 1
 
-      withLabel: "multithreaded" {
+      withLabel:multithreaded {
         cpus = "${params.execution.threads}"
-      }
-      withLabel: "!multithreaded" {
-        cpus = 1
       }
 
       withLabel:aspera {
