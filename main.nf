@@ -364,13 +364,13 @@ process next_sample {
 
     // Move the next sample file into the processing directory
     // which will trigger the start of the next sample.
-    sample_files = file("${NXF_WORK}/GEMmaker/stage/*")
-    if (sample_files.size() > 0) {
-      sample_files.first().moveTo("${NXF_WORK}/GEMmaker/process")
+    staged_files = file("${NXF_WORK}/GEMmaker/stage/*")
+    if (staged_files.size() > 0) {
+      staged_files.first().moveTo("${NXF_WORK}/GEMmaker/process")
     }
     else {
-      processing = file('work/GEMmaker/process/*.sample.csv')
-      if (processing.size() == 0) {
+      processing_files = file("${NXF_WORK}/GEMmaker/process/*.sample.csv")
+      if (processing_files.size() == 0) {
         NEXT_SAMPLE.close()
         NEXT_SAMPLE_SIGNAL.close()
         HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
