@@ -202,8 +202,8 @@ Default:
 Software
 ~~~~~~~~
 
-which_alignment
-===============
+alignment
+=========
 
 User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
 processes "samtools_sort", "samtools_index" and "stringtie" will also be
@@ -218,4 +218,4 @@ Default:
 
 .. code:: bash
 
-  which_alignment = 0
+  alignment = 0

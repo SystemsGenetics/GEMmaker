@@ -136,11 +136,11 @@ if (params.output.publish_bam == true) {
 /**
  * Make sure that at least one output format is enabled.
  */
-if ( params.software.alignment.which_alignment == 0 && params.output.publish_raw == false && params.output.publish_fpkm == false && params.output.publish_tpm == false ) {
+if ( params.software.alignment == 0 && params.output.publish_raw == false && params.output.publish_fpkm == false && params.output.publish_tpm == false ) {
   error "Error: at least one output format (raw, fpkm, tpm) must be enabled for hisat2"
 }
 
-if ( params.software.alignment.which_alignment != 0 && params.output.publish_raw == false && params.output.publish_tpm == false ) {
+if ( params.software.alignment != 0 && params.output.publish_raw == false && params.output.publish_tpm == false ) {
   error "Error: at least one output format (raw, tpm) must be enabled for kallisto / salmon"
 }
 
@@ -588,7 +588,7 @@ process fastqc_1 {
 HISAT2_CHANNEL = Channel.create()
 KALLISTO_CHANNEL = Channel.create()
 SALMON_CHANNEL = Channel.create()
-COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment.which_alignment }
+COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment }
 
 
 
@@ -666,6 +666,7 @@ process kallisto_tpm {
 process salmon {
   publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
+  label "multithreaded"
   label "salmon"
 
   input:
@@ -685,7 +686,7 @@ process salmon {
       -l A \
       -1 ${sample_id}_1.fastq \
       -2 ${sample_id}_2.fastq \
-      -p 8 \
+      -p ${params.execution.threads} \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   else
@@ -693,7 +694,7 @@ process salmon {
       -i . \
       -l A \
       -r ${sample_id}_1.fastq \
-      -p 8 \
+      -p ${params.execution.threads} \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   fi
@@ -965,7 +966,6 @@ process samtools_index {
  */
 process stringtie {
   tag { sample_id }
-
   label "multithreaded"
   label "stringtie"
 
@@ -1115,7 +1115,7 @@ process createGEM {
   script:
   """
   # FPKM format is only generated if hisat2 is used
-  if [[ ${params.output.publish_fpkm} == true && ${params.software.alignment.which_alignment} == 0 ]]; then
+  if [[ ${params.output.publish_fpkm} == true && ${params.software.alignment} == 0 ]]; then
     create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
   fi;
 

@@ -14,7 +14,6 @@ manifest {
 
 
 params {
-
   project {
     name = "CORG RNA-Seq example"
     machine_name = "CORG_vs_samples"
@@ -57,6 +56,13 @@ params {
     //
     sra_download = 0
 
+    //
+    // hisat2 = 0
+    // Kallisto = 1
+    // Salmon = 2
+    //
+    alignment = 0
+
     trimmomatic {
       clip_path = "${PWD}/files/fasta_adapter.txt"
       MINLEN = "0.7"
@@ -64,23 +70,6 @@ params {
       SLIDINGWINDOW = "4:15"
       LEADING = "3"
       TRAILING = "6"
-    }
-
-    /**
-     * Alignment
-     *
-     * User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
-     * processes "samtools_sort", "samtools_index" and "stringtie" will also be
-     * done. All processes will end with a gene abundance file.
-     * Aligns reads to the reference genome.
-     */
-    alignment {
-      //
-      // hisat2 = 0
-      // Kallisto = 1
-      // Salmon = 2
-      //
-      which_alignment = 0
     }
   }
 }
@@ -193,9 +182,7 @@ profiles {
   // using Docker.
   localDocker {
     docker {
-        enabled = true
-        fixOwnership = true
-        runOptions = '-u $(id -u):$(id -g)'
+      enabled = true
     }
   }
 
@@ -203,7 +190,7 @@ profiles {
   // using singularity.
   localSingularity {
     singularity {
-        enabled = true
+      enabled = true
     }
   }
 
