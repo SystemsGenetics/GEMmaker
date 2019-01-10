@@ -36,8 +36,11 @@ params {
     publish_downloaded_fastq = true
     publish_trimmed_fastq = true
     publish_bam = true
+    publish_raw = true
     publish_fpkm = true
     publish_tpm = true
+    multiqc = true
+    create_gem = true
   }
 
   execution {

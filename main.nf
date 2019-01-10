@@ -99,6 +99,7 @@ else {
 }
 
 
+
 /**
  * Set the pattern for publishing downloaded FASTQ files
  */
@@ -131,6 +132,20 @@ if (params.output.publish_bam == true) {
 }
 
 
+
+/**
+ * Make sure that at least one output format is enabled.
+ */
+if ( params.software.alignment.which_alignment == 0 && params.output.publish_raw == false && params.output.publish_fpkm == false && params.output.publish_tpm == false ) {
+  error "Error: at least one output format (raw, fpkm, tpm) must be enabled for hisat2"
+}
+
+if ( params.software.alignment.which_alignment != 0 && params.output.publish_raw == false && params.output.publish_tpm == false ) {
+  error "Error: at least one output format (raw, tpm) must be enabled for kallisto / salmon"
+}
+
+
+
 /**
  * Retrieves metadata for all of the remote samples
  * and maps SRA runs to SRA experiments.
@@ -151,6 +166,8 @@ process retrieve_sample_metadata {
     retrieve_SRA_metadata.py $srr_file
     """
 }
+
+
 
 /**
  * Splits the SRR2XRX mapping file
@@ -205,6 +222,8 @@ if (staged_files.size() == 0) {
   CREATE_GEM_BOOTSTRAP.bind(1)
 }
 
+
+
 /**
  * Writes the batch files and stores them in the
  * stage directory.
@@ -245,9 +264,13 @@ process write_stage_files {
     }
 }
 
+
+
 // When all batch files are created we need to then
 // move the first file into the process directory.
 SAMPLES_READY_SIGNAL.collect().set { FIRST_SAMPLE_START_SIGNAL }
+
+
 
 /**
  * Moves the first set of sample files into the process directory.
@@ -285,11 +308,14 @@ process start_first_batch {
 }
 
 
+
 // Create the channel that will watch the process directory
 // for new files. When a new sample file is added
 // it will be read it and sent it through the workflow.
 NEXT_SAMPLE = Channel
    .watchPath("${workflow.workDir}/GEMmaker/process")
+
+
 
 /**
  * Opens the sample file and prints it's contents to
@@ -312,6 +338,8 @@ process read_sample_file {
     """
 }
 
+
+
 // Split our sample file contents into two different
 // channels, one for remote samples and another for local.
 LOCAL_SAMPLES = Channel.create()
@@ -332,6 +360,7 @@ LOCAL_SAMPLES
   .into {LOCAL_SAMPLES_FOR_FASTQC_1; LOCAL_SAMPLES_FOR_COUNTING}
 
 
+
 // Create the channels needed for signalling when
 // samples are completed.
 HISAT2_SAMPLE_COMPLETE_SIGNAL = Channel.create()
@@ -344,6 +373,8 @@ SAMPLE_COMPLETE_SIGNAL = Channel.create()
 SAMPLE_COMPLETE_SIGNAL
   .mix(HISAT2_SAMPLE_COMPLETE_SIGNAL, KALLISTO_SAMPLE_COMPLETE_SIGNAL, SALMON_SAMPLE_COMPLETE_SIGNAL)
   .into { NEXT_SAMPLE_SIGNAL; MULTIQC_READY_SIGNAL; CREATE_GEM_READY_SIGNAL }
+
+
 
 /**
  * Handles the end of a sample by moving a new sample
@@ -547,6 +578,7 @@ process fastqc_1 {
 }
 
 
+
 /**
  * THIS IS WHERE THE SPLIT HAPPENS FOR hisat2 vs Kallisto vs Salmon
  *
@@ -616,8 +648,13 @@ process kallisto_tpm {
 
   script:
   """
-  awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
-  awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.raw
+  if [[ ${params.output.publish_tpm} == true ]]; then
+    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+  fi
+
+  if [[ ${params.output.publish_raw} == true ]]; then
+    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.raw
+  fi
   """
 }
 
@@ -682,8 +719,13 @@ process salmon_tpm {
 
   script:
   """
-  awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.tpm
-  awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.raw
+  if [[ ${params.output.publish_tpm} == true ]]; then
+    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+  fi
+
+  if [[ ${params.output.publish_raw} == true ]]; then
+    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.raw
+  fi
   """
 }
 
@@ -952,6 +994,8 @@ process stringtie {
     """
 }
 
+
+
 /**
  * Generate raw counts from Hisat2/stringtie
  */
@@ -966,26 +1010,28 @@ process hisat2_raw {
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.raw" into RAW_COUNTS
 
+  when:
+    params.output.publish_raw == true
+
   script:
   """
-    # Run the prepDE.py script provided by stringtie to get the raw counts.
-    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_prefix}.gtf" > gtf_files
-    prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_prefix}.raw.pre
+  # Run the prepDE.py script provided by stringtie to get the raw counts.
+  echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_prefix}.gtf" > gtf_files
+  prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_prefix}.raw.pre
 
-    # Reformat the raw file to be the same as the TPM/FKPM files.
-    cat ${sample_id}_vs_${params.input.reference_prefix}.raw.pre | \
-      grep -v gene_id | \
-      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_prefix}.raw
-
+  # Reformat the raw file to be the same as the TPM/FKPM files.
+  cat ${sample_id}_vs_${params.input.reference_prefix}.raw.pre | \
+    grep -v gene_id | \
+    perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_prefix}.raw
   """
 }
 
 
 
 /**
- * Generates the final FPKM file
+ * Generates the final FPKM / TPM files from Hisat2
  */
-process fpkm_or_tpm {
+process hisat2_fpkm_tpm {
   publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
 
@@ -995,25 +1041,21 @@ process fpkm_or_tpm {
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.fpkm" optional true into FPKMS
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into TPM
-    val sample_id   into HISAT2_SAMPLE_COMPLETE_SIGNAL
+    val sample_id into HISAT2_SAMPLE_COMPLETE_SIGNAL
 
   script:
-  if ( params.output.publish_fpkm == true && params.output.publish_tpm == true )
-    """
+  """
+  if [[ ${params.output.publish_fpkm} == true ]]; then
     awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
+  fi
+  
+  if [[ ${params.output.publish_tpm} == true ]]; then
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
-    """
-  else if ( params.output.publish_fpkm == true )
-    """
-    awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
-    """
-  else if ( params.output.publish_tpm == true )
-    """
-    awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
-    """
-  else
-    error "Please choose at least one output and resume GEMmaker"
+  fi
+  """
 }
+
+
 
 /**
  * The multiqc process should run when all samples have
@@ -1026,7 +1068,6 @@ MULTIQC_RUN = MULTIQC_READY_SIGNAL.mix(MULTIQC_BOOTSTRAP)
  * Process to generate the multiqc report once everything is completed
  */
 process multiqc {
-
   label "multiqc"
   publishDir "${params.output.dir}/reports", mode: params.output.publish_mode
 
@@ -1037,11 +1078,16 @@ process multiqc {
     file "multiqc_data" into MULTIQC_DATA
     file "multiqc_report.html" into MULTIQC_REPORT
 
+  when:
+    params.output.multiqc == true
+
   script:
     """
     multiqc --ignore ${params.output.dir}/GEM --ignore ${params.output.dir}/reports ${params.output.dir}
     """
 }
+
+
 
 /**
  * The createGEM process should run when all samples have
@@ -1063,18 +1109,27 @@ process createGEM {
   output:
     file "*.GEM.*.txt" into GEM_FILES
 
+  when:
+    params.output.create_gem == true
+
   script:
   """
-    # If the alignment tool is hisat then we need to generate both
-    # TPM and FPKM
-    if [ ${params.software.alignment.which_alignment} == 0 ]; then
-      create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
-    fi;
-    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type raw
-    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
-  """
+  # FPKM format is only generated if hisat2 is used
+  if [[ ${params.output.publish_fpkm} == true && ${params.software.alignment.which_alignment} == 0 ]]; then
+    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
+  fi;
 
+  if [[ ${params.output.publish_raw} == true ]]; then
+    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type raw
+  fi
+
+  if [[ ${params.output.publish_tpm} == true ]]; then
+    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
+  fi
+  """
 }
+
+
 
 /**
  * PROCESSES FOR CLEANING LARGE FILES
@@ -1209,9 +1264,6 @@ process clean_sam {
 
   input:
     set val(sample_id), val(files_list) from SAM_CLEANUP_READY
-
-  when:
-    params.output.publish_bam == false
 
   script:
     template "clean_work_files.sh"
