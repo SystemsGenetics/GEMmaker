@@ -148,6 +148,21 @@ if ( params.output.publish_fpkm == false && params.output.publish_tpm == false )
 
 
 /**
+ * Create channel for index files based on the selected aligner.
+ */
+if ( params.software.alignment.which_alignment == 0 ) {
+  INDEXES = HISAT2_INDEXES
+}
+else if ( params.software.alignment.which_alignment == 1 ) {
+  INDEXES = KALLISTO_INDEX
+}
+else if ( params.software.alignment.which_alignment == 2 ) {
+  INDEXES = SALMON_INDEXES
+}
+
+
+
+/**
  * Process a single sample end-to-end.
  *
  * This process requires that the ILLUMINACLIP_PATH environment
@@ -167,9 +182,7 @@ process process_sample {
 
   input:
     set val(sample_id), val(type), val(remote_ids), val(local_files) from ALL_SAMPLES
-    file hisat2_indexes from HISAT2_INDEXES
-    file kallisto_index from KALLISTO_INDEX
-    file salmon_indexes from SALMON_INDEXES
+    file indexes from INDEXES
     file gtf_file from GTF_FILE
 
   output:
