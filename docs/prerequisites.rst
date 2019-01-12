@@ -8,21 +8,12 @@
 Software Prerequisites
 ----------------------
 
-
-GEMmaker is a `Nextflow <https://www.nextflow.io/>`__ workflow for large-scale
-gene expression sample processing, expression-level quantification and Gene
-Expression Matrix (GEM) construction. Results from GEMmaker are useful for
-differential gene expression (DGE) and gene co-expression network (GCN)
-analyses. The GEMmaker workflow currently supports Illumina RNA-seq datasets.
-GEMmaker is intended to be run on a linux based operating system, the defacto
-operating system of bioinformatics.
-
 GEMmaker is compatible with `Docker <https://www.docker.com/>`__ and
 `Singularity <https://www.sylabs.io/docs/>`__. **Running with either Docker or
 Singularity is the recommended way to run GEMmaker**, as GEMmaker will
 automatically pull each of the images that it needs to run.
 
-.. note::
+.. warning::
 
   Nextflow (The workflow language GEMmaker uses) does not support Singualrity
   version 3.0 and higher as of yet. You must use a version of singularity that
@@ -33,9 +24,11 @@ verified to work with GEMmaker. They are split into 2 sections. **Section 1**
 are prerequisites of GEMmaker, and must be installed manually by the user
 previous to running GEMmaker. **Section 2** are software contained in Docker
 images that GEMmaker will automatically download. Most users of GEMmaker do not
-need to worry about programs in section 2 unless a different version of the
-software is required. NOTE: newer versions of these tools are assumed to also
-work, and older versions may work but have not been tested:
+need to worry about programs in section 2 unless you would like to  run GEMmaker
+without using Docker or Singularity.
+
+.. note::
+  Newer versions of these tools are assumed to also work, and older versions may work but have not been tested:
 
 **Section 1**: Required Prerequisites:
 
@@ -72,26 +65,27 @@ downloaded by GEMmaker using Docker or Singularity:
 -  `MultiQC <http://multiqc.info/>`__ (optional) v1.5: Generate a full
    summary report for the entire workflow.
 
-If a user requires a different version of software contained in **Section 2**,
-please reference **different software versions**
 
-Local machine
-~~~~~~~~~~~~~
+Running on a stand-alone machine
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-GEMmaker can be ran on a local desktop machine, assuming that the machine is
-running linux, (we like `ubuntu 18.04 <https://www.ubuntu.com/>`__) has a
-reasonable amount of  memory and has docker or singularity installed.
+GEMmaker can be ran on a local stand-alone desktop machine, assuming that the machine is
+running linux, (specifically it has been tested on `ubuntu 18.04 <https://www.ubuntu.com/>`__) has a
+reasonable amount of RAM and has docker or singularity installed.
 
+.. note::
 
-High-Performance Computing (HPC) cluster
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Only experiments with small sample sizes (e.g. 30 or less) should use a local stand alone machine as they do not have sufficient storage or CPU power.
 
-Most HPC clusters do not allow users to run docker, but singularity should be
-allowed. On your own, or with the help of your HPC administrator, install
+Running on a High-Performance Computing (HPC) cluster
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Most HPC clusters do not allow users to run docker, but singularity is often
+allowed. On your own, if you have permissions, or with the help of your HPC administrator, install
 singularity and nextflow if they are not already installed. After Nextflow and
-singuarity are installed, clone GEMmaker into your desired directory as shown
-. GEMmaker will then install all of the dependencies the first time it is
-run.
+singuarity are installed, clone GEMmaker into your desired directory as shown. GEMmaker will then install all of the dependencies the first time it is run.
+
+If your HPC does not support singlurity, GEMmaker can still run on your HPC if you have the Lua module system.  In such as case you would need to work with your HPC administrator to install the necessary software and make it available via the module system.
 
 Downloading GEMmaker
 ~~~~~~~~~~~~~~~~~~~~
@@ -107,13 +101,15 @@ To clone the workflow into a directory:
 
 Note that you should change ``target-dir`` to your target directory.
 
-As with all Nextflow workflows, you can configure the behavior of the workflow
+As with all Nextflow workflows, you should configure the behavior of the workflow
 by creating a ``nextflow.config`` file. The GEMmaker workflow provides an
 example file (``nextflow.config.example``) which you can copy to get started:
 
 .. code:: bash
 
     cp nextflow.config.example nextflow.config
+
+The example workflow comes setup to execute example data that accompanies GEMmaker.
 
 After Installation
 ~~~~~~~~~~~~~~~~~~

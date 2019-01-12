@@ -1,22 +1,12 @@
 .. _running_the_examples:
 
-Running the Examples
---------------------
+Testing GEMmaker
+----------------
 
-The GEMmaker example run will run a small set of local files (downloaded when
-you cloned GEMmaker) and a remote file (automatically downloaded from `NCBI's
-SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__.) This demonstrates how
-GEMmaker handles local and remote files.
-
-This data set is very small so it can be run on a desktop machine in a short
-amount of time. GEMmaker must be cloned to your machine, and it's
-:ref:`software_prerequisites` must be installed before running these examples.
-
-Executing the examples (what you came here for)
-===============================================
+The GEMmaker example run will with a small set of local files (contained with the GEMmaker package) and a remote file (automatically downloaded from `NCBI's SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__).  These samples are extremly small and only meant to demonstrate usage for a mixed set of local and remote files.
 
 Once the :ref:`software_prerequisites` are installed, you can run
-GEMmaker with the example data. If you have not already, you must rename the
+GEMmaker with the example data. If you have not already done so, you must rename the
 **nextflow.config.example** file as **nextflow.config**:
 
 .. code:: bash
@@ -34,7 +24,7 @@ workflow run the following:
 You should see an output that looks like this: :ref:`example_output`
 
 
-Explination of the run
+Explanation of the run
 ~~~~~~~~~~~~~~~~~~~~~~
 
 This example uses the imaginary organism "Cool Organism" (CORG). For the local

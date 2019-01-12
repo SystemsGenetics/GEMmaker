@@ -6,7 +6,7 @@ Customizing the Workflow
 GEMmaker is a nextflow workflow. All nextflow workflows have a
 ``nextflow.config`` file. It is where parameters for the workflow can be customized.
 
-For GEMmaker, the ``nextflow.config`` file is in 3 main parts:
+For GEMmaker, the ``nextflow.config`` file is divided into 3 main sections:
 
 - params - the largest section, contains information on the input files, output
   files and software
@@ -25,7 +25,7 @@ Input
 remote_list_path
 ================
 
-The path (full or relative) to the list of fastq_ids to be downloaded
+The path (full or relative) to the list of SRA Run IDs to be downloaded
 from NCBI. This must be a text file with one SRR/DRR/ERR number per line.
 No blank lines are allowed
 If no remote files are to be downloaded, set parameter as "none"
@@ -85,7 +85,7 @@ Example of Hisat2 reference directory:
 
 .. code:: bash
 
- TAIR10_Araport11.1.ht2
+  TAIR10_Araport11.1.ht2
   TAIR10_Araport11.2.ht2
   TAIR10_Araport11.3.ht2
   TAIR10_Araport11.4.ht2
@@ -312,19 +312,19 @@ Hisat2, Kallisto and Salmon. Default is Hisat2. You must set based on their numb
 
 For Hisat2:
 
-.. code::bash
+.. code:: bash
 
   which_alignment = 0
 
 For Kallisto:
 
-.. code::bash
+.. code:: bash
 
   which_alignment = 1
 
 For Salmon:
 
-.. code::bash
+.. code:: bash
 
   which_alignment = 2
 
@@ -335,7 +335,7 @@ Where the nextflow generated report on how the run went should be written
 
 default:
 
-.. code::bash
+.. code:: bash
 
   file = "${params.output.dir}/reports/report.html"
 
@@ -347,7 +347,7 @@ Where the nextflow generated timeline on how much each process should be written
 
 default:
 
-.. code::bash
+.. code:: bash
 
   file = "${params.output.dir}/reports/timeline.html"
 
@@ -377,7 +377,7 @@ Several profiles come packaged with GEMmaker. They can be added to your run
 command. For example, if you want to run with the ``standard`` option and the
 ``localDocker`` profile , you would run GEMmaker with this command:
 
-.. code::bash
+.. code:: bash
 
   nextflow run main.nf -profile standard,localDockler
 

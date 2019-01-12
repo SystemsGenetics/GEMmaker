@@ -1,8 +1,3 @@
-Error troubleshooting and Example Outputs
------------------------------------------
-
-.. _example_output:
-
 Example Output
 ==============
 When the example data is ran using this command:
@@ -126,5 +121,3 @@ After the example is run, the output directory should contain these directories:
   GEM/
   reports/
   SRX218012/
-
-In
