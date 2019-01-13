@@ -1,7 +1,3 @@
-branches:
-  only:
-    - issue_38_docker_integration
-
 sudo: required
 jdk: openjdk8
 
@@ -24,10 +20,12 @@ before_script:
 script:
   # Build the images.
   - docker build -t systemsgenetics/gemmaker:latest  Dockerfiles/base/1.0/
+  - docker build -t systemsgenetics/aspera:3.8.1     Dockerfiles/aspera/3.8.1/
   - docker build -t systemsgenetics/fastqc:0.11.7    Dockerfiles/fastqc/0.11.7/
   - docker build -t systemsgenetics/hisat2:2.1.0     Dockerfiles/hisat2/2.1.0/
   - docker build -t systemsgenetics/kallisto:0.45.0  Dockerfiles/kallisto/0.45.0/
   - docker build -t systemsgenetics/python:3.5.1     Dockerfiles/python/3.5.1/
+  - docker build -t systemsgenetics/multiqc:1.7      Dockerfiles/multiqc/1.7
   - docker build -t systemsgenetics/salmon:0.12.0    Dockerfiles/salmon/0.12.0/
   - docker build -t systemsgenetics/samtools:1.9     Dockerfiles/samtools/1.9/
   - docker build -t systemsgenetics/sratoolkit:2.9.2 Dockerfiles/sratoolkit/2.9.2/
