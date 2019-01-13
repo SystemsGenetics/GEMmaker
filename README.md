@@ -68,6 +68,12 @@ GEMmaker is a collaborative project of the [Ficklin](http://ficklinlab.cahnrs.ws
 
 GEMmaker is funded by the [NSF SciDAS](http://scidas.org/) project, [award #1659300](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1659300)
 
-!["WSU"](images/WSU.png) !["Clemson"](images/clemson.png)
+!["WSU"](images/WSU.png)
+
+!["Clemson"](images/clemson.png)
+
 !["RENCI"](images/renci.png)
-!["NSF"](images/NSF.png)
+
+!["NSF"](images/NSF.png) 
+
+!["SciDAS"](images/SciDAS.png)
