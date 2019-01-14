@@ -1,9 +1,12 @@
+.. _running_your_data:
+
 Running your Data
 -----------------
 
 
 Step 1) RNA-seq sample location
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 GEMmaker supports processing of sample files that are already present on
 your local computer or samples that are stored in the `NCBI SRA
@@ -27,18 +30,26 @@ repository <https://www.ncbi.nlm.nih.gov/sra>`__.
   by running ``vdb-config -i`` (see `SRA Toolkit
   Configuration <https://github.com/ncbi/sra-tools/wiki/Toolkit-Configuration>`__).
 
-Step 2) Aquire Reference Genome Files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Step 2) Acquire Reference Genome Files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Download the genome annotation/reference files. These will differ depending on
-your organism that you are performing the analysis on. You must have the
-following:
+your organism that you are performing the analysis on. The files neccesary will
+also be different  depending on if you decide to run Hisat2, Salmon or Kallisto.
+The following instructions will go over how to make the proper files for each
+of these programs.
+
+For Hisat2
+==========
+
+You must aquire these 2 files from the internet:
 
 -  A FASTA file containing the full genomic sequence (either
    pseudomolecules or scaffolds). Note, if your genome file is extremely
    large with hundreds of thousands of contigs/scaffolds, you may want
    to reduce the size of the FASTA file to contain only those
-   contigs/scaffolds with predicted annotated genes.
+   contigs/scaffolds with predicted annotated genes. This will be converted into
+   the hisat2 index files using the commands below.
 -  A `GTF <https://uswest.ensembl.org/info/website/upload/gff.html>`__
    file containing the gene models.
 
@@ -90,6 +101,41 @@ Additional considerations:
 -  All of the genome annotation files must be in a directory and this
    directory must be identified in ``nextflow.config`` using the
    ``ref > path`` paramter.
+
+For Salmon and Kallisto
+=======================
+
+The process for both of these is rather similar.
+
+You must aquire this file from the internet:
+
+- FASTA file containing the individual transcripts of the organism of interest.
+  This should be formatted so that the name of each transcript is before the
+  sequence of its corresponding transcipt. This is different from the FASTA file
+  used for HISAT2.
+
+This file then needs to be converted into the proper index file for that program
+using the following commands. (assume the name of the transcript FASTA file is
+``YourFasta.transcrits.fna``)
+
+For Salmon:
+
+.. code:: bash
+
+  salmon index -t YourFasta.transcrits.fna -i YourFasta.transcrits.Salmon.indexed
+
+For Kallisto:
+
+.. code:: bash
+
+  kallisto index -i YourFasta.transcripts.Kalisto.indexed YourFasta.transcrits.fna
+
+.. note::
+
+  If you are running GEMmaker with Docker Images, you will have to run these commands
+  within the docker image. To get inside the docker image, NEEDS TO BE COMPLETED,
+  CONTACT GEMmaker creators for details!
+
 
 The GEMmaker repo contains an ``examples`` directory which contains
 several small example setups. The ``LocalRunExample`` contains a
@@ -149,54 +195,24 @@ increase performance based on the capabilities of your system:
 Generating a Summary Report
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `MultiQC <http://multiqc.info>`__ tool can be used with GEMmaker to
-generate a summary report of results from Trimmomatic, Hisat2 and
-samtools. This report allows you to explore the quality of the data,
-trimming and alignments. To generate the report you must have `MultiQC
-installed <http://multiqc.info/docs/#installing-multiqc>`__. Once
-installed, you can generate the report with the following command inside
-of the GEMmaker directory where your workflow was executed:
-
-.. code:: bash
-
-    multiqc .
+The `MultiQC <http://multiqc.info>`__ tool will automatically generate a report
+on how each process ran.
 
 Generating the Gene Expression Matrix (GEM)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After GEMmaker completes, the results for each sample are stored in a
-directory specific to that sample. The final output for each sample is a
-Gene Expression Vector (GEV) in the form of an FPKM or TPM file. To
-compile all GEVs into a Gene Expression Matrix (GEM) you can use the
-``create_GEM.py`` script in the ``scripts`` directory.
-
-To see help documentation for this script:
-
-.. code:: bash
-
-    python ./scripts/create_GEM.py -h
-
-To create a GEM file from the TPM files produced by GEMmaker:
-
-.. code:: bash
-
-    python ./scripts/create_GEM.py --source ./ --type TPM --prefix my_project
-
-The script will produce a GEM file called ``my_project.GEM.TPM.txt``. Be
-sure to change ``my_project`` to a meaningful prefix for your project.
-
-You can combine the results of multiple GEMmaker runs into a single GEM
-by providing a list of directories to the ``--source`` argument. This
-feature may be useful if you split a set of input files into several
-GEMmaker runs and now you need to combine then. The script will produce
-a file named ``GEM.txt`` in the working directory.
+After GEMmaker completes, the resulting GEM will be output to GEMmaker/output/GEM
+(assuming that you didnt change the output directory location). This directory
+contains the final GEM matrix, in raw, TPM and FPKM form. These can be used for
+further analysis.
 
 Using the GEM in other Analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 DGE Analysis
 ============
-Need to do research on:
+
+The raw GEM matrix can be used for DGE analysis in edgeR and other DGE software.
 
 Network Analysis
 ================
