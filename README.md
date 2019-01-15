@@ -5,14 +5,14 @@
 
 GEMmaker is a [Nextflow](https://www.nextflow.io/) workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression (DGE) and gene co-expression network (GCN) analyses. This report is the MultiQC summary of the GEMmaker workflow results. The GEMmaker workflow currently supports Illumina RNA-seq datasets.
 
-## Gemaker is:
+## GEMmaker is:
 
 ### Easy to Use
 ![Ease of Use](images/ease_of_use.png)
 1. No bioinformatics software installation required.
 2. Runs on a stand-alone computer or High Performance Compute (HPC) cluster.
 3. Simple configuration file setup.
-4. Resulting data is ready for Differential Gene Expression (DEG) or Gene Co-Expression Network (GCN) analysis.
+4. Resulting data is ready for Differential Gene Expression (DGE) or Gene Co-Expression Network (GCN) analysis.
 5. Full online documentation.
 
 ### Reproducible
@@ -48,7 +48,7 @@ GEMmaker uses the following tools:
 
 - [python3](https://www.python.org)
 - [nextflow](https://www.nextflow.io/) v0.32:  Executes the workflow.
-- [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/) v2.8.0:  Downloads SRA files from NCBI using the SRA Run IDs.
+- [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/) v2.9.2:  Downloads SRA files from NCBI using the SRA Run IDs.
 - [fastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) v0.11.7:  Generates read quality statistics for FASTQ files used by the workflow.
 - [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) v0.38:  Removes low-quality bases from the ends of reads and removes adapter sequences.
 - [hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml) v2.1.0:  Aligns cleaned reads to the reference genome.
@@ -58,10 +58,10 @@ GEMmaker uses the following tools:
 
 
 ## Installation
-See the online GEMmaker [Documentation](https://gemmaker.readthedocs.io/en/latest/)
+See the online GEMmaker [documentation](https://gemmaker.readthedocs.io/en/latest/)
 
-## Execution
-See the online GEMmaker [Documentation](https://gemmaker.readthedocs.io/en/latest/)
+## Usage
+See the online GEMmaker [documentation](https://gemmaker.readthedocs.io/en/latest/)
 
 ## Acknowledgments
 GEMmaker is a collaborative project of the [Ficklin](http://ficklinlab.cahnrs.wsu.edu/) and [Feltus](https://www.clemson.edu/science/departments/genetics-biochemistry/people/profiles/ffeltus) programs at [Washington State University](http://www.wsu.edu) and [Clemson University](http://www.clemson.edu) respectively with guidance from [RENCI](https://renci.org/).
