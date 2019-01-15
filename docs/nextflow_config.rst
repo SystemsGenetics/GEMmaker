@@ -287,3 +287,24 @@ Default:
 .. code:: bash
 
   error_strategy = "ignore"
+
+Software
+~~~~~~~~
+
+alignment
+=========
+
+User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
+processes "samtools_sort", "samtools_index" and "stringtie" will also be
+done. All processes will end with a gene abundance file. Aligns reads to
+the reference genome.
+
+- ``0``: hisat2
+- ``1``: kallisto
+- ``2``: salmon
+
+Default:
+
+.. code:: bash
+
+  alignment = 0
