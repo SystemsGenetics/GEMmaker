@@ -112,7 +112,7 @@ singularity {
 
 
 process {
-  container = "systemsgenetics/gemmaker"
+  container = "systemsgenetics/gemmaker:1.0"
 
   withLabel:rate_limit {
     maxForks = 1
