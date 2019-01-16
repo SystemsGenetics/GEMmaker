@@ -59,17 +59,15 @@ def download_runs_meta(srr_file):
 
         # Now that we have our Ids we can make the bulk query. But there is a
         # limit of 10,000 at a time so we have to "page" our queries.
-        page_size = 100;
-        pages = int(len(srr_ids) / page_size + 1)
-        for page in range(0, pages):
+        page_size = 100
+        for idx in range(0, len(srr_ids), page_size):
+            ids = srr_ids[idx : (idx + page_size)]
 
             url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi'
             data = urllib.parse.urlencode({
-              'retmod' : 'xml',
-              'db' : 'sra',
-              'retstart' : page * page_size,
-              'retmax' : page_size,
-              'id' : ','.join(srr_ids)
+              'retmod': 'xml',
+              'db': 'sra',
+              'id': ','.join(ids)
             }).encode()
             request = urllib.request.Request(url, data)
             response_obj = urllib.request.urlopen(request)
@@ -88,7 +86,7 @@ def download_runs_meta(srr_file):
             # Now loop through the experiments to handle the metadata.
             for i in range(0, len(experiments)):
                 experiment = experiments[i]
-                run_id = srr_ids[page * page_size + i]
+                run_id = ids[i]
                 exp_id = experiment["EXPERIMENT"]["IDENTIFIERS"]["PRIMARY_ID"];
                 if exp_id in srx_ids:
                   srx_ids[exp_id].append(run_id)
