@@ -1,4 +1,4 @@
-FROM systemsgenetics/gemmaker:latest
+FROM systemsgenetics/gemmaker:1.0
 
 RUN groupadd -g 61000 gemdocker \
   && useradd -g 61000 --no-log-init --create-home --shell /bin/bash -u 61000 gemdocker

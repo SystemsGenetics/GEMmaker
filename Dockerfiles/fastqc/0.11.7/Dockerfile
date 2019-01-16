@@ -1,4 +1,4 @@
-FROM systemsgenetics/gemmaker:latest
+FROM systemsgenetics/gemmaker:1.0
 
 RUN apt-get install -qq -y default-jre perl
 
