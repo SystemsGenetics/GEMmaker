@@ -17,6 +17,7 @@ import re
 import pprint
 import pandas as pd
 import json
+import codecs
 
 Script, File = sys.argv
 
@@ -187,7 +188,7 @@ def save_gemmaker_meta(experiment, sample, run):
     # Biological Sample
     annots['sep:00195'] = {}
     annots['sep:00195']['data:2091'] = sample['@accession']
-    annots['sep:00195']['schema:title'] = sample['TITLE']
+    annots['sep:00195']['schema:title'] = sample['TITLE'] if 'TITLE' in sample else ''
     annots['sep:00195']['schema:name'] = sample['@alias']
     annots['sep:00195']['obi:organism'] =  {}
     annots['sep:00195']['obi:organism']['rdfs:label'] =  sample['SAMPLE_NAME']['SCIENTIFIC_NAME']
@@ -266,7 +267,7 @@ def save_gemmaker_meta(experiment, sample, run):
 
     # Save a flattened CSV file
     tabfilename = annots['local:SRX_id'] + '.GEMmaker.meta.tab'
-    with open(tabfilename, 'w') as tabfile:
+    with codecs.open(tabfilename, 'w', "utf-8") as tabfile:
       tabfile.write(
         annots["data:2091"]
         + "\t" + annots["local:SRX_id"]
