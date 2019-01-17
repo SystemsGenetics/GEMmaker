@@ -1,9 +1,3 @@
-.. figure:: images/GEMmaker-logo-sm.png
-  :alt: GEMmaker Logo
-
-.. image:: https://zenodo.org/badge/114067776.svg
-  :target: https://zenodo.org/badge/latestdoi/114067776
-
 .. _installation:
 
 Installation
