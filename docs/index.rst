@@ -23,6 +23,7 @@ supports Illumina RNA-seq datasets.
    nextflow_config
    preparing_and_running
    errors_and_example_outputs
+   troubleshooting
    getting_help
 
 .. |DOI| image:: https://zenodo.org/badge/114067776.svg
