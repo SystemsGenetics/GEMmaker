@@ -8,12 +8,14 @@ GEMmaker is a very powerful tool, especially when coupled with its underlying te
 **Problem**: I received the following error:
 
 .. code:: bash
-    ERROR ~ Cannot get property 'remote_list_path' on null object
+
+  ERROR ~ Cannot get property 'remote_list_path' on null object
 
 **Solution**: You forgot to create ``nextflow.config`` from the example config:
 
 .. code:: bash
-    cp nextflow.config.example nextflow.config
+
+  cp nextflow.config.example nextflow.config
 
 Get Help or Suggest Improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
