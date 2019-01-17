@@ -24,7 +24,6 @@ supports Illumina RNA-seq datasets.
    preparing_and_running
    errors_and_example_outputs
    troubleshooting
-   getting_help
 
 .. |DOI| image:: https://zenodo.org/badge/114067776.svg
    :target: https://zenodo.org/badge/latestdoi/114067776
