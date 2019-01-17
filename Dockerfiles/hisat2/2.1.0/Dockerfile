@@ -1,4 +1,4 @@
-FROM systemsgenetics/gemmaker:latest
+FROM systemsgenetics/gemmaker:1.0
 
 # Install hisat2
 RUN wget -q ftp://ftp.ccb.jhu.edu/pub/infphilo/hisat2/downloads/hisat2-2.1.0-Linux_x86_64.zip \

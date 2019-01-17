@@ -1,22 +1,23 @@
+.. _nextflow_config_instructions:
+
 Customizing the Workflow
 ------------------------
 
+GEMmaker is a nextflow workflow. All nextflow workflows have a
+``nextflow.config`` file. It is where parameters for the workflow can be customized.
 
-All nextflow workflows have a ``nextflow.config`` file. It is where parameters for
-the workflow can be customized.
+For GEMmaker, the ``nextflow.config`` file is divided into 3 main sections:
 
-For GEMmaker, the ``nextflow.config`` file is in 3 main parts:
+- params - the largest section, contains information on the input files, output
+  files and software
+- performance - contains sections on the performance of the workflow
+- profiles - nextflow can run on multiple different HPC systems, this is
+  where you modify this parameter. Refer to the `Nextflow
+  documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__
+  to modify the profile for your system
 
-- Parameters: command-line parameters which are used by the rest of the config
-  file and the pipeline script to control input, output, execution, etc.
-- Configuration: default settings for various things including execution
-  reports, Docker / Singularity, and default process directives.
-- Profiles: settings that are specific to an environment, such as a particular
-  HPC system. nextflow can use a number of different HPC systems. Refer to the `Nextflow
-  documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`
-  to see what options are available for your system.
-
-The following gives detailed information on each parameter in the ``nextflow.config`` file.
+The following gives detailed information on each parameter in the
+``nextflow.config`` file.
 
 Input
 ~~~~~
@@ -24,7 +25,7 @@ Input
 remote_list_path
 ================
 
-The path (full or relative) to the list of fastq_ids to be downloaded
+The path (full or relative) to the list of SRA Run IDs to be downloaded
 from NCBI. This must be a text file with one SRR/DRR/ERR number per line.
 No blank lines are allowed
 If no remote files are to be downloaded, set parameter as "none"
@@ -33,7 +34,19 @@ Default:
 
 .. code:: bash
 
-  remote_list_path = "none"
+  remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
+
+Example of format:
+
+.. code:: bash
+
+ SRR360147
+  SRR493289
+  SRR1696865
+  SRR2086505
+  SRR2086497
+  SRR1184187
+  SRR1184188
 
 local_samples_path
 ==================
@@ -53,13 +66,51 @@ Default:
 reference_path
 ==============
 
-The full file system path of the directory containing the genome reference
+The full system path to the directory containing the genome reference
 files. The reference genome is provided to this workflow via a set of files
-in a single directory. The list of files includes:
+in a single directory.The reference files will vary based on which alignment you wish to use. Requirment for each of the alignment methods (Hisat2, Slamon and Kallisto)
 
-1) A FASTA file containing the genomic sequence
-2) Hisat2 index files for the reference, which must be created with bisat2-bulid
-3) A GTF file containing the genes annotated within hte genome
+For Hisat2:
+
+1) Hisat2 index files for the reference, created with hisat2-bulid from the reference genome.
+2) A GTF file containing the genes annotated from the reference genome.
+
+To generate the hisat2 files, download the reference genome and run this command (This example uses the arabidopsis genome from TAIR ):
+
+.. code:: bash
+
+  hisat2-build -f TAIR10_Araport11.fna TAIR10_Araport11 | tee > hisat2-build.log
+
+Example of Hisat2 reference directory:
+
+.. code:: bash
+
+  TAIR10_Araport11.1.ht2
+  TAIR10_Araport11.2.ht2
+  TAIR10_Araport11.3.ht2
+  TAIR10_Araport11.4.ht2
+  TAIR10_Araport11.5.ht2
+  TAIR10_Araport11.6.ht2
+  TAIR10_Araport11.7.ht2
+  TAIR10_Araport11.8.ht2
+  TAIR10_Araport11.gtf
+  TAIR10_Araport11.fna
+
+For Salmon:
+
+Example of Salmon reference directory:
+
+.. code:: bash
+
+  TAIR10_Araport11.transcripts.Salmon.indexed/
+
+For Kallisto:
+
+Example of Kallisto reference directory:
+
+.. code:: bash
+
+  TAIR10_Araport11.transcripts.Kallisto.indexed
 
 All files for the reference genome must begin with the same file prefix. For
 example, if the prefix is TAIR10_Araport11 then the following files should be
@@ -142,17 +193,53 @@ publish_mode
 publish mode for publishDir
 
 Options are the standard nextflow stage options:
+
 - ``"link"``     Recommended, creates a hardlink for each published file
 - ``"rellink"``  Use when hardlink is not possible.
 - ``"symlink"``  Use when hardlink is not possible (currently not compatible with iRODS).
-- ``"copy"``     Not recommended, copies each published file to publshDir after it is
-                 created in the pipeline. This option may slow the pipeline significantly.
+- ``"copy"``     Not recommended, copies each published file to publshDir after it is created in the pipeline. This option may slow the pipeline significantly.
 
 Default:
 
 .. code:: bash
 
   publish_mode = "link"
+
+publish_downloaded_fastq
+========================
+
+Parameter that determines if the downloaded SRAs from NCBI be saved
+locally. Default is ``true``. Turn to ``false`` if space is going to
+be an issue.
+
+publish_trimmed_fastq
+=====================
+
+Parameter that determines if the trimmed files should be saved, or if they
+should be deleted after they are no longer needed in the  pipeline. Default is
+``true``. Turn to ``false`` if space is going to  be an issue.
+
+publish_bam
+===========
+
+Parameter that determines if the bam files should be saved, or if they should
+be deleted after they are no longer needed. Default is ``true``. Turn to
+``false`` if space is going to  be an issue.
+
+publish_fpkm
+============
+
+Parameter that determines if the fpkm files should be saved at the end
+of the run. Default is ``true``. The fpkm GEM will be saved even if this
+process is set to false.
+
+publish_tpm
+===========
+
+Parameter that determines if the tpm files should be saved, or if
+they should be deleted after they are no longer needed. Default is ``true``. The
+tpm GEM will be saved even if this  process is set to false.
+
 
 Execution
 ~~~~~~~~~
@@ -181,13 +268,15 @@ Default:
 
 max_retries
 ===========
-Number of times to resubmit a failed process before invoking the error strategy defined by ``error_strategy``.
+
+Number of times to resubmit a failed process before invoking the error strategy
+defined by ``error_strategy``.
 
 Default:
 
 .. code:: bash
 
-  max_retries = 2
+  max_retries = "2"
 
 error_strategy
 ==============
@@ -202,8 +291,8 @@ Default:
 Software
 ~~~~~~~~
 
-which_alignment
-===============
+alignment
+=========
 
 User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
 processes "samtools_sort", "samtools_index" and "stringtie" will also be
@@ -218,4 +307,4 @@ Default:
 
 .. code:: bash
 
-  which_alignment = 0
+  alignment = 0

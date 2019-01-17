@@ -14,7 +14,6 @@ manifest {
 
 
 params {
-
   project {
     name = "CORG RNA-Seq example"
     machine_name = "CORG_vs_samples"
@@ -36,8 +35,11 @@ params {
     publish_downloaded_fastq = true
     publish_trimmed_fastq = true
     publish_bam = true
+    publish_raw = true
     publish_fpkm = true
     publish_tpm = true
+    multiqc = true
+    create_gem = true
   }
 
   execution {
@@ -54,6 +56,13 @@ params {
     //
     sra_download = 0
 
+    //
+    // hisat2 = 0
+    // Kallisto = 1
+    // Salmon = 2
+    //
+    alignment = 0
+
     trimmomatic {
       clip_path = "${PWD}/files/fasta_adapter.txt"
       MINLEN = "0.7"
@@ -61,23 +70,6 @@ params {
       SLIDINGWINDOW = "4:15"
       LEADING = "3"
       TRAILING = "6"
-    }
-
-    /**
-     * Alignment
-     *
-     * User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
-     * processes "samtools_sort", "samtools_index" and "stringtie" will also be
-     * done. All processes will end with a gene abundance file.
-     * Aligns reads to the reference genome.
-     */
-    alignment {
-      //
-      // hisat2 = 0
-      // Kallisto = 1
-      // Salmon = 2
-      //
-      which_alignment = 0
     }
   }
 }
@@ -120,7 +112,7 @@ singularity {
 
 
 process {
-  container = "systemsgenetics/gemmaker"
+  container = "systemsgenetics/gemmaker:1.0"
 
   withLabel:rate_limit {
     maxForks = 1
@@ -194,9 +186,7 @@ profiles {
   // using Docker.
   localDocker {
     docker {
-        enabled = true
-        fixOwnership = true
-        runOptions = '-u $(id -u):$(id -g)'
+      enabled = true
     }
   }
 
@@ -204,7 +194,7 @@ profiles {
   // using singularity.
   localSingularity {
     singularity {
-        enabled = true
+      enabled = true
     }
   }
 
