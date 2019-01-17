@@ -8,16 +8,19 @@ The GEMmaker example run will with a small set of local files (provided in the G
 Once GEMmaker and its dependencies have been installed, you can run GEMmaker with the example data. First, copy the example config file to ``nextflow.config``:
 
 .. code:: bash
+
   cp nextflow.config.example nextflow.config
 
 The ``nextflow.config.example`` file is already configured to run the example provided in the GEMmaker repo. Execute the workflow using the following command:
 
 .. code:: bash
+
   nextflow run main.nf -profile standard -with-docker
 
 You should see an output that looks like this:
 
 .. code:: bash
+
   N E X T F L O W  ~  version 18.10.1
   Launching `main.nf` [peaceful_gutenberg] - revision: 137bc7ccff
 
@@ -118,6 +121,7 @@ You should see an output that looks like this:
 Additionally, you should see a directory called ``output`` with the following subdirectories:
 
 .. code:: bash
+
   output/
     1/
     2/
@@ -139,11 +143,13 @@ Using Salmon or Kallisto
 The example uses Hisat2 by default. If you would like to use Salmon or Kallisto instead you must edit ``nextflow.config`` and change the alignment type. In the GEMmaker directory, edit ``nextflow.config`` using your favorite text editor. Here we use `vim <https://www.vim.org/>`__ on the command line:
 
 .. code:: bash
+
   vim nextflow.config
 
 Then edit ``params.software.alignment`` in the config file. Change to ``1`` for Kallisto, and ``2`` for salmon. For example, to use Kallisto:
 
 .. code:: bash
+
   //
   // hisat2 = 0
   // Kallisto = 1
@@ -154,7 +160,8 @@ Then edit ``params.software.alignment`` in the config file. Change to ``1`` for 
 After that, save your file and run the worklow:
 
 .. code:: bash
-  nextflow run main.nf -profile standard,localDocker
+
+  nextflow run main.nf -profile standard -with-docker
 
 Explanation of the Inputs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -167,6 +174,7 @@ Reference directory
 The reference directory for the example is located at:
 
 .. code:: bash
+
   GEMmaker/examples/reference/
 
 This directory contains the
@@ -188,16 +196,18 @@ There are two sample data directories:
 For local runs:
 
 .. code:: bash
+
   GEMmaker/examples/LocalRunExample/
 
 For remote runs:
 
 .. code:: bash
+
   GEMmaker/examples/RemoteRunExample/
 
-The `LocalRunExample` directory contains three `FASTQ <https://en.wikipedia.org/wiki/FASTQ_format>`__ files for CORG containing RNA-seq data. These are examples of local unpaired data, and are each in a directory of their own. The file naming format for these reads is "?\_1.fastq" where the "?" is the number of the sample. GEM-maker finds these files through the glob pattern assigned to the ``local_samples_path`` in ``nextflow.config``.
+The ``LocalRunExample`` directory contains three `FASTQ <https://en.wikipedia.org/wiki/FASTQ_format>`__ files for CORG containing RNA-seq data. These are examples of local unpaired data, and are each in a directory of their own. The file naming format for these reads is "?\_1.fastq" where the "?" is the number of the sample. GEM-maker finds these files through the glob pattern assigned to the ``local_samples_path`` in ``nextflow.config``.
 
-The `RemoteRunExample` directory contains the file ``SRA_IDs.txt`` which contains a list of names for remote files to be downloaded by GEMmaker from `NCBI's SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__. In this case, there is only one run ID.
+The ``RemoteRunExample`` directory contains the file ``SRA_IDs.txt`` which contains a list of names for remote files to be downloaded by GEMmaker from `NCBI's SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__. In this case, there is only one run ID.
 
 Explanation of the Outputs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

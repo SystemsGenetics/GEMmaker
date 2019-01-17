@@ -28,6 +28,7 @@ You must aquire two files from the Internet:
   Sometimes a genome assembly does not provide a GTF file, but rather provides a `GFF3 <https://uswest.ensembl.org/info/website/upload/gff.html>`__ file. You can convert the GFF file to a GTF file using the ``gffread`` tool from `cufflinks <http://cole-trapnell-lab.github.io/cufflinks/file_formats/>`__, which you may have to download separately. Here is an example command-line to convert a GFF3 to GTF:
 
   .. code:: bash
+
     gffread <gff_file> -T -o <gtf_file>
 
   The arguments ``<gff_file>`` and ``<gtf_file>`` should be substituted for the names of your GFF3 and desired GTF file respectively.
@@ -37,11 +38,13 @@ Additional considerations:
 -  You must have hisat2 index files of your genome sequence. These are constructed by using the ``hisat2-build`` command.
 
   .. code:: bash
+
     hisat2-build -f YourFastaFile.fna YourPrefix | tee > hisat2-build.log
 
 -  The GTF file and the hisat2 index files must have the same prefix and this prefix must be specified by ``reference_prefix`` in ``nextflow.config``.
 
   .. code:: bash
+
     CORG.1.ht2
     CORG.2.ht2
     CORG.3.ht2
@@ -69,17 +72,20 @@ This file needs to be converted into the proper index file for either Salmon or 
 For Salmon:
 
 .. code:: bash
+
   salmon index -t YourFasta.transcripts.fna -i YourFasta.transcripts.Salmon.indexed
 
 For Kallisto:
 
 .. code:: bash
+
   kallisto index -i YourFasta.transcripts.Kalisto.indexed YourFasta.transcripts.fna
 
 .. note::
   If you are running GEMmaker with Docker images, you will have to run these commands from within the corresponding Docker image:
 
   .. code:: bash
+
     # with docker
     docker run --rm -it systemsgenetics/hisat:2.1.0 bash
 
@@ -92,16 +98,19 @@ For Kallisto:
 To execute the workflow on a local machine:
 
 .. code:: bash
+
   nextflow run main.nf -profile standard
 
 To resume a workflow in the event of a failure:
 
 .. code:: bash
+
   nextflow run main.nf -profile standard -resume
 
 To execute the workflow and generate trace, timeline and execution reports:
 
 .. code:: bash
+
   nextflow run main.nf -profile standard -with-report -with-timeline -with-trace
 
 To execute the workflow on an HPC system you must edit ``nextflow.config`` and add an appropriate profile for your system. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__. You can then use any of the above commands by changing the ``-profile`` argument to use your profile.
@@ -137,6 +146,3 @@ Network Analysis
 ================
 
 Any GEM can be used to construct a gene-coexpression network (GCN). `KINC <https://github.com/SystemsGenetics/KINC>`__ (Knowledge Independent Network Construction) is a high-performance application that can construct networks using Pearson or Spearman for pairwise correlation, as well as Gassian mixture models (GMMs) for pairwise clustering. KINC is a Qt/`ACE <https://github.com/SystemsGenetics/ACE>`__ application that is capable of running on CPUs and GPUs, which means that it can scale to larger workloads.
-
-.. |DOI| image:: https://zenodo.org/badge/114067776.svg
-  :target: https://zenodo.org/badge/latestdoi/114067776

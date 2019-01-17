@@ -57,4 +57,5 @@ Installing GEMmaker
 Once all of the necessary software dependencies have been installed, clone GEMmaker into your working directory:
 
 .. code:: bash
+
   nextflow clone SystemsGenetics/GEMmaker
