@@ -3,21 +3,12 @@
 Customizing the Workflow
 ------------------------
 
-GEMmaker is a nextflow workflow. All nextflow workflows have a
-``nextflow.config`` file. It is where parameters for the workflow can be customized.
+Like all nextflow workflows, GEMmaker has a ``nextflow.config`` file which allows the workflow to be customized. For GEMmaker, the ``nextflow.config`` file is divided into 3 main sections:
 
-For GEMmaker, the ``nextflow.config`` file is divided into 3 main sections:
+- ``params``: Contains config parameters for input files, output files, and software.
+- ``profiles``: Contains several example profiles for running GEMmaker on different environments such as a HPC system.
 
-- params - the largest section, contains information on the input files, output
-  files and software
-- performance - contains sections on the performance of the workflow
-- profiles - nextflow can run on multiple different HPC systems, this is
-  where you modify this parameter. Refer to the `Nextflow
-  documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__
-  to modify the profile for your system
-
-The following gives detailed information on each parameter in the
-``nextflow.config`` file.
+The following sections give detailed information on each parameter in ``nextflow.config``. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ for more information on what is available in the config file, and what HPC environments are supported.
 
 Input
 ~~~~~
@@ -25,22 +16,17 @@ Input
 remote_list_path
 ================
 
-The path (full or relative) to the list of SRA Run IDs to be downloaded
-from NCBI. This must be a text file with one SRR/DRR/ERR number per line.
-No blank lines are allowed
-If no remote files are to be downloaded, set parameter as "none"
+The path to the list of SRA Run IDs to be downloaded from NCBI. This must be a text file with one SRR/DRR/ERR ID per line. No blank lines are allowed. If no remote files are to be downloaded, set this parameter to ``"none"``.
 
 Default:
 
 .. code:: bash
-
   remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
 
-Example of format:
+Example of ``SRA_IDs.txt`` format:
 
 .. code:: bash
-
- SRR360147
+  SRR360147
   SRR493289
   SRR1696865
   SRR2086505
@@ -51,90 +37,71 @@ Example of format:
 local_samples_path
 ==================
 
-The glob that retrieves locally stored "fastq" files
-An example of a proper glob to retreive files can be seen below as the
-default. This glob pattern will find all files that have an ending of
-"_1.fastq" or "_2.fastq" in the subdirectories of the folder "Sample".
-If no local files are to be used, set parameter as "none"
+The glob that retrieves locally stored fastq files. An example of a proper glob to retrieve files can be seen below as the default. This glob pattern will find all files that have an ending of ``_1.fastq`` or ``_2.fastq`` in the subdirectories of the folder ``Sample``. If no local files are to be used, set this parameter to ``"none"``.
 
 Default:
 
 .. code:: bash
-
-  local_samples_path = "${PWD}/examples/LocalRunExample/Data/Sample*/*_{1,2}.fastq"
+  local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
 
 reference_path
 ==============
 
-The full system path to the directory containing the genome reference
-files. The reference genome is provided to this workflow via a set of files
-in a single directory.The reference files will vary based on which alignment you wish to use. Requirment for each of the alignment methods (Hisat2, Slamon and Kallisto)
+The path to the directory containing the genome reference files. The reference genome is provided to this workflow via a set of files in a single directory. The required reference files will vary based on which alignment you use (Hisat2, Salmon and Kallisto).
 
 For Hisat2:
 
-1) Hisat2 index files for the reference, created with hisat2-bulid from the reference genome.
-2) A GTF file containing the genes annotated from the reference genome.
+1. Hisat2 index files created from the reference genome with ``hisat2-build``.
+2. A GTF file containing the genes annotated from the reference genome.
 
-To generate the hisat2 files, download the reference genome and run this command (This example uses the arabidopsis genome from TAIR ):
+To generate the hisat2 files, download the reference genome and run this command (This example uses the Arabidopsis genome from TAIR):
 
 .. code:: bash
-
   hisat2-build -f TAIR10_Araport11.fna TAIR10_Araport11 | tee > hisat2-build.log
 
 Example of Hisat2 reference directory:
 
 .. code:: bash
-
-  TAIR10_Araport11.1.ht2
-  TAIR10_Araport11.2.ht2
-  TAIR10_Araport11.3.ht2
-  TAIR10_Araport11.4.ht2
-  TAIR10_Araport11.5.ht2
-  TAIR10_Araport11.6.ht2
-  TAIR10_Araport11.7.ht2
-  TAIR10_Araport11.8.ht2
-  TAIR10_Araport11.gtf
-  TAIR10_Araport11.fna
-
-For Salmon:
+  reference/
+    TAIR10_Araport11.1.ht2
+    TAIR10_Araport11.2.ht2
+    TAIR10_Araport11.3.ht2
+    TAIR10_Araport11.4.ht2
+    TAIR10_Araport11.5.ht2
+    TAIR10_Araport11.6.ht2
+    TAIR10_Araport11.7.ht2
+    TAIR10_Araport11.8.ht2
+    TAIR10_Araport11.gtf
+    TAIR10_Araport11.fna
 
 Example of Salmon reference directory:
 
 .. code:: bash
-
-  TAIR10_Araport11.transcripts.Salmon.indexed/
-
-For Kallisto:
+  reference/
+    TAIR10_Araport11.transcripts.Salmon.indexed/
 
 Example of Kallisto reference directory:
 
 .. code:: bash
+  reference/
+    TAIR10_Araport11.transcripts.Kallisto.indexed
 
-  TAIR10_Araport11.transcripts.Kallisto.indexed
-
-All files for the reference genome must begin with the same file prefix. For
-example, if the prefix is TAIR10_Araport11 then the following files should be
-present all with "TAIR10_Araport11" as the file prefix:
-TAIR10_Araport11.fna, TAIR10_Araport11.1.ht2, TAIR10_Araport11.2.ht2, (with
-potentially more hisat2 index files), and TAIR10_Araport11.gtf.
+All files for the reference genome must begin with the same file prefix. For example, if the prefix is ``TAIR10_Araport11`` then every file listed above (for hisat2) should be prefixed with ``TAIR10_Araport11``.
 
 Default:
 
 .. code:: bash
-
-  reference_path = "${PWD}/examples/LocalRunExample/reference/"
+  reference_path = "${PWD}/examples/reference/"
 
 reference_prefix
 ================
 
-The prefix (used by hisat2-build) for the genome reference files. Note:
-all files in the reference directory must have this prefix as well.
+The prefix (used by hisat2-build) for the genome reference files. All files in the reference directory must have this prefix.
 
 Default:
 
 .. code:: bash
-
-  dir = "${PWD}/output"
+  reference_prefix = "CORG"
 
 Output
 ~~~~~~
@@ -142,103 +109,71 @@ Output
 dir
 ===
 
-All results and reports generated by nextflow are stored in a single
-output directory to make it easier to transfer results to long-term
-storage such as iRODS.
+All results and reports generated by nextflow are stored in a single output directory to make it easier to transfer results to long-term storage such as iRODS.
 
 Default:
 
 .. code:: bash
-
   dir = "${PWD}/output"
 
 sample_dir
 ==========
 
-Results generated by this workflow are stored in directories that use
-"sample_id". as directory name. If the "fastq_run_id" is not associated
-with a "sample_id" (for example, with local files), then a "sample_id"
-will be automatically assigned by adding "Sample\_" to the begining of the
-"fastq_run_id" (for example, "123_file1_1.fastq" would be assigned the
-sample_id "Sample_123_file1_1"). The default storage pattern is to make
-one directory for each "sample_id", with the parameter set as:
+Results generated by this workflow are stored in directories that are named by sample ID. If the fastq file is not associated with a sample ID (for example, with local files), then the "sample ID" is simply the basename of the fastq file.
 
-    .. code:: bash
+The default naming pattern is to make one directory for each sample ID. However, if you have a large amount of samples (1000s or more), it may be problematic to have so many sample directories in one place. To deal with this issue you can use a pattern that organizes the results into a multi-level directory tree. For example:
 
-       sample_dir = { "${params.output.dir}/${sample_id}" }
+.. code:: bash
+  sample_dir = { "${params.output.dir}/${sample_id[0..2]}/${sample_id[3..4]}/${sample_id.drop(5)}/${sample_id}" }
 
-However, if you have a large amount of samples (typically 1000 +), it may
-be problematic to have hundreds or thousands of sample directories in
-one place. To fix this you can assign a glob pattern to organize the
-results into a cascading file system. For example, the following:
-
-    .. code:: bash
-
-       sample_dir = { "${params.output.dir}/${sample_id[0..2]}/${sample_id[3..4]}/${sample_id.drop(5)}/${sample_id}" }
-
-Will organize files downloaded from NCBI in a nesting fashion. The
-output of the sample_id "SRX0123456" would be put in the directory
-"/SRX/12/34/56/SRX123456/". You can modify the above glob patterns for
-your needs.
+This pattern will organize sample directories into three levels of subdirectories. For example, the output of the sample ``SRX0123456`` would be put in the directory ``SRX/12/34/56/SRX123456/``. You can modify the above patterns for your needs.
 
 Default:
 
 .. code:: bash
-
   sample_dir = { "${params.output.dir}/${sample_id}" }
 
 publish_mode
 ============
 
-publish mode for publishDir
+Mode for publishing output files.
 
 Options are the standard nextflow stage options:
 
-- ``"link"``     Recommended, creates a hardlink for each published file
-- ``"rellink"``  Use when hardlink is not possible.
-- ``"symlink"``  Use when hardlink is not possible (currently not compatible with iRODS).
-- ``"copy"``     Not recommended, copies each published file to publshDir after it is created in the pipeline. This option may slow the pipeline significantly.
+- ``"link"``: Recommended, creates a hardlink for each published file.
+- ``"rellink"``: Use when hardlink is not possible.
+- ``"symlink"``: Use when hardlink is not possible (currently not compatible with iRODS).
+- ``"copy"``: Not recommended, copies each published file to ``publshDir`` after it is created in the pipeline. This option may slow the pipeline significantly.
 
 Default:
 
 .. code:: bash
-
   publish_mode = "link"
 
 publish_downloaded_fastq
 ========================
 
-Parameter that determines if the downloaded SRAs from NCBI be saved
-locally. Default is ``true``. Turn to ``false`` if space is going to
-be an issue.
+Parameter that determines whether to save the downloaded fastq files from NCBI. Default is ``true``. Set to ``false`` if space is going to be an issue.
 
 publish_trimmed_fastq
 =====================
 
-Parameter that determines if the trimmed files should be saved, or if they
-should be deleted after they are no longer needed in the  pipeline. Default is
-``true``. Turn to ``false`` if space is going to  be an issue.
+Parameter that determines whether to save the trimmed fastq files. Default is ``true``. Set to ``false`` if space is going to be an issue.
 
 publish_bam
 ===========
 
-Parameter that determines if the bam files should be saved, or if they should
-be deleted after they are no longer needed. Default is ``true``. Turn to
-``false`` if space is going to  be an issue.
+Parameter that determines whether to save the BAM files. Default is ``true``. Set to ``false`` if space is going to be an issue.
 
 publish_fpkm
 ============
 
-Parameter that determines if the fpkm files should be saved at the end
-of the run. Default is ``true``. The fpkm GEM will be saved even if this
-process is set to false.
+Parameter that determines whether to create FPKM files at the end. Default is ``true``.
 
 publish_tpm
 ===========
 
-Parameter that determines if the tpm files should be saved, or if
-they should be deleted after they are no longer needed. Default is ``true``. The
-tpm GEM will be saved even if this  process is set to false.
+Parameter that determines whether to create TPM files at the end. Default is ``true``.
 
 
 Execution
@@ -252,7 +187,6 @@ Maximum number of processes to execute at once.
 Default:
 
 .. code:: bash
-
   queue_size = 100
 
 threads
@@ -263,7 +197,6 @@ Number of threads for multi-threaded processes.
 Default:
 
 .. code:: bash
-
   threads = 1
 
 max_retries
@@ -275,17 +208,16 @@ defined by ``error_strategy``.
 Default:
 
 .. code:: bash
-
-  max_retries = "2"
+  max_retries = 2
 
 error_strategy
 ==============
+
 Error strategy for when a process fails ``max_retries`` times. Can be ``"terminate"``, ``"finish"``, or ``"ignore"``.
 
 Default:
 
 .. code:: bash
-
   error_strategy = "ignore"
 
 Software
@@ -294,10 +226,7 @@ Software
 alignment
 =========
 
-User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
-processes "samtools_sort", "samtools_index" and "stringtie" will also be
-done. All processes will end with a gene abundance file. Aligns reads to
-the reference genome.
+User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen, processes ``samtools_sort``, ``samtools_index`` and ``stringtie`` will also be done. All processes will end with a gene abundance file. Aligns reads to the reference genome.
 
 - ``0``: hisat2
 - ``1``: kallisto
@@ -306,5 +235,4 @@ the reference genome.
 Default:
 
 .. code:: bash
-
   alignment = 0

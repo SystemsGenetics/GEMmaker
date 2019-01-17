@@ -1,17 +1,13 @@
 Example Output
 ==============
-When the example data is ran using this command:
+
+When the example data is run using this command:
 
 .. code:: bash
+  nextflow run main.nf -profile standard,inDocker
 
-    nextflow run main.nf -profile standard,inDocker
-
-
-you should see this output on the command line:
-
-
+You should see this output on the command line:
 .. code:: bash
-
   N E X T F L O W  ~  version 18.10.1
   Launching `main.nf` [peaceful_gutenberg] - revision: 137bc7ccff
 
@@ -114,10 +110,10 @@ Example Files
 After the example is run, the output directory should contain these directories:
 
 .. code:: bash
-
-  1/
-  2/
-  3/
-  GEM/
-  reports/
-  SRX218012/
+  output/
+    1/
+    2/
+    3/
+    GEM/
+    reports/
+    SRX218012/

@@ -15,56 +15,39 @@ automatically pull each of the images that it needs to run.
 
 .. warning::
 
-  Nextflow (The workflow language GEMmaker uses) does not support Singualrity
-  version 3.0 and higher as of yet. You must use a version of singularity that
-  is higher than 2.3.x, but less than 3.0.x
+  Nextflow (the workflow language that GEMmaker uses) does not support Singularity 3.0
+  or later as of yet. You must use Singularity version 2.4 or later, but earlier than 3.0.
 
 The following list provides the set of software and versions that have been
-verified to work with GEMmaker. They are split into 2 sections. **Section 1**
-are prerequisites of GEMmaker, and must be installed manually by the user
-previous to running GEMmaker. **Section 2** are software contained in Docker
-images that GEMmaker will automatically download. Most users of GEMmaker do not
-need to worry about programs in section 2 unless you would like to  run GEMmaker
+verified to work with GEMmaker. They are split into two sections. **Section 1**
+lists the prerequisites of GEMmaker, which must be installed manually by the user
+before running GEMmaker. **Section 2** lists the software contained in Docker
+images that GEMmaker will automatically download. You most likely do not
+need to worry about programs in Section 2 unless you would like to run GEMmaker
 without using Docker or Singularity.
 
 .. note::
-  Newer versions of these tools are assumed to also work, and older versions may work but have not been tested:
+  Other versions of these tools may work but have not been tested:
 
-**Section 1**: Required Prerequisites:
+**Section 1: Required Prerequisites**
 
--  `java <https://www.java.com/en/>`__ v8 or later: prerequisite of nextflow
--  `nextflow <https://www.nextflow.io/>`__ v18.10.1: Executes the workflow. Must
-   be installed on system by user.
--  either `Docker <https://www.docker.com/>`__
-   v18.09.0 or `Singularity <https://www.sylabs.io/docs/>`__ v2.5 - 2.6 NOT
-   v3.0!: Automatically downloads and runs the docker images of the following
-   programs:
+-  `java <https://www.java.com/en/>`__ v1.80 or later: Prerequisite of nextflow.
+-  `nextflow <https://www.nextflow.io/>`__ v18.10.1: Executes the workflow.
+-  `Docker <https://www.docker.com/>`__ v18.09.0: Automatically downloads and runs the containerized dependencies.
+-  `Singularity <https://www.sylabs.io/docs/>`__ v2.4 - v2.6: Alternative to Docker on systems where Docker is not available.
 
-**Section 2**: Programs contained in Docker Images that will be automatically
-downloaded by GEMmaker using Docker or Singularity:
+**Section 2: Containerized Prerequisites**
 
 -  `python3 <https://www.python.org>`__
--  `sratoolkit <https://www.ncbi.nlm.nih.gov/books/NBK158900/>`__
-   v2.8.0: Downloads SRA files from NCBI using the SRA Run IDs.
--  `fastQC <https://www.bioinformatics.babraham.ac.uk/projects/fastqc/>`__
-   v0.11.7: Generates read quality statistics for FASTQ files used by
-   the workflow.
--  `trimmomatic <http://www.usadellab.org/cms/?page=trimmomatic>`__
-   v0.38: Removes low-quality bases from the ends of reads and removes
-   adapter sequences.
--  `hisat2 <https://ccb.jhu.edu/software/hisat2/index.shtml>`__ v2.1.0:
-   Aligns cleaned reads to the reference genome.
--  `salmon <https://combine-lab.github.io/salmon/>`__ v0.12.0:
-   Performs quasi alignment of reads and quantifies
--  `kallisto <https://pachterlab.github.io/kallisto/>`__ v 0.45.0
-   Performs pseudo alignment of reads and quantifies
--  `samtools <http://www.htslib.org/>`__ v1.3.1: Used for indexing and
-   sorting of BAM files created by Hisat2.
--  `stringTie <http://www.ccb.jhu.edu/software/stringtie/>`__ v1.3.4d:
-   Performs gene expression quantification.
--  `MultiQC <http://multiqc.info/>`__ (optional) v1.5: Generate a full
-   summary report for the entire workflow.
-
+-  `sratoolkit <https://www.ncbi.nlm.nih.gov/books/NBK158900/>`__ v2.9.2: Downloads SRA files from NCBI using the SRA Run IDs.
+-  `fastQC <https://www.bioinformatics.babraham.ac.uk/projects/fastqc/>`__ v0.11.7: Generates read quality statistics for FASTQ files used by the workflow.
+-  `trimmomatic <http://www.usadellab.org/cms/?page=trimmomatic>`__ v0.38: Removes low-quality bases from the ends of reads and removes adapter sequences.
+-  `hisat2 <https://ccb.jhu.edu/software/hisat2/index.shtml>`__ v2.1.0: Aligns cleaned reads to the reference genome.
+-  `salmon <https://combine-lab.github.io/salmon/>`__ v0.12.0: Performs quasi-alignment of reads and quantifies
+-  `kallisto <https://pachterlab.github.io/kallisto/>`__ v0.45.0: Performs pseudo-alignment of reads and quantifies
+-  `samtools <http://www.htslib.org/>`__ v1.3.1: Used for indexing and sorting of BAM files created by Hisat2.
+-  `stringTie <http://www.ccb.jhu.edu/software/stringtie/>`__ v1.3.4d: Performs gene expression quantification.
+-  `MultiQC <http://multiqc.info/>`__ (optional) v1.5: Generate a full summary report for the entire workflow.
 
 Running on a stand-alone machine
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,17 +58,14 @@ reasonable amount of RAM and has docker or singularity installed.
 
 .. note::
 
-  Only experiments with small sample sizes (e.g. 30 or less) should use a local stand alone machine as they do not have sufficient storage or CPU power.
+  Generally speaking, local machines will not scale well to experiments larger than 10s of samples due to the amount of storage and CPU cores needed for large experiments.
 
 Running on a High-Performance Computing (HPC) cluster
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Most HPC clusters do not allow users to run docker, but singularity is often
-allowed. On your own, if you have permissions, or with the help of your HPC administrator, install
-singularity and nextflow if they are not already installed. After Nextflow and
-singuarity are installed, clone GEMmaker into your desired directory as shown. GEMmaker will then install all of the dependencies the first time it is run.
+Most HPC clusters do not allow users to run Docker, but Singularity is often allowed. On your own, if you have permissions, or with the help of your HPC administrator, install Singularity and nextflow if they are not already installed. After Nextflow and Singularity are installed, clone GEMmaker into your desired directory as shown. GEMmaker will then install all of the dependencies the first time it is run.
 
-If your HPC does not support singlurity, GEMmaker can still run on your HPC if you have the Lua module system.  In such as case you would need to work with your HPC administrator to install the necessary software and make it available via the module system.
+If your HPC environment does not support Singularity, you can still run GEMmaker by installing the containerized dependencies as Environment Modules. You may need to work with your HPC administrator to install the necessary software and make it available via the module system.
 
 Downloading GEMmaker
 ~~~~~~~~~~~~~~~~~~~~
@@ -97,19 +77,17 @@ To clone the workflow into a directory:
 
 .. code:: bash
 
-    nextflow clone SystemsGenetics/GEMmaker /target-dir/
+    nextflow clone SystemsGenetics/GEMmaker target-dir/
 
 Note that you should change ``target-dir`` to your target directory.
 
-As with all Nextflow workflows, you should configure the behavior of the workflow
-by creating a ``nextflow.config`` file. The GEMmaker workflow provides an
-example file (``nextflow.config.example``) which you can copy to get started:
+As with all Nextflow workflows, you should configure the behavior of the workflow by creating a ``nextflow.config`` file. The GEMmaker workflow provides an example file (``nextflow.config.example``) which you can copy to get started:
 
 .. code:: bash
 
     cp nextflow.config.example nextflow.config
 
-The example workflow comes setup to execute example data that accompanies GEMmaker.
+The example workflow is set up to execute example data that is provided in the GEMmaker repo.
 
 After Installation
 ~~~~~~~~~~~~~~~~~~
