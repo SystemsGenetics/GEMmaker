@@ -44,6 +44,7 @@ Output Parameters:
   Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
   Publish BAM:                ${params.output.publish_bam}
+  Publish RAW:                ${params.output.publish_raw}
   Publish FPKM:               ${params.output.publish_fpkm}
   Publish TPM:                ${params.output.publish_tpm}
 
@@ -150,7 +151,7 @@ if ( params.software.alignment != 0 && params.output.publish_raw == false && par
  * Retrieves metadata for all of the remote samples
  * and maps SRA runs to SRA experiments.
  */
-process retrieve_sample_metadata {
+process retrieve_sra_metadata {
   publishDir params.output.dir, mode: params.output.publish_mode, pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
   label "python3"
 
@@ -163,7 +164,7 @@ process retrieve_sample_metadata {
 
   script:
     """
-    retrieve_SRA_metadata.py $srr_file
+    retrieve-sra-metadata.py ${srr_file}
     """
 }
 
@@ -1099,7 +1100,7 @@ CREATE_GEM_RUN = CREATE_GEM_READY_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
 /**
  * Creates the GEM file from all the FPKM/TPM outputs
  */
-process createGEM {
+process create_gem {
   label "python3"
   publishDir "${params.output.dir}/GEM", mode: params.output.publish_mode
 
@@ -1116,15 +1117,15 @@ process createGEM {
   """
   # FPKM format is only generated if hisat2 is used
   if [[ ${params.output.publish_fpkm} == true && ${params.software.alignment} == 0 ]]; then
-    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
+    create-gem.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
   fi;
 
   if [[ ${params.output.publish_raw} == true ]]; then
-    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type raw
+    create-gem.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type raw
   fi
 
   if [[ ${params.output.publish_tpm} == true ]]; then
-    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
+    create-gem.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
   fi
   """
 }

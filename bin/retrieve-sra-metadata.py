@@ -140,13 +140,13 @@ def save_gemmaker_meta(experiment, sample, run):
 
     # Biological Sample
     annots["sep:00195"] = {}
-    annots["sep:00195"]["data:2091"] = sample["@accession"]
-    annots["sep:00195"]["schema:title"] = sample["TITLE"] if "TITLE" in sample else ""
-    annots["sep:00195"]["schema:name"] = sample["@alias"]
-    annots["sep:00195"]["obi:organism"] =  {}
-    annots["sep:00195"]["obi:organism"]["rdfs:label"] =  sample["SAMPLE_NAME"]["SCIENTIFIC_NAME"]
-    annots["sep:00195"]["obi:organism"]["NCIT:C43459"] =  sample["SAMPLE_NAME"]["SCIENTIFIC_NAME"]
-    annots["sep:00195"]["obi:organism"]["data:1179"] =  sample["SAMPLE_NAME"]["TAXON_ID"]
+    annots["sep:00195"]["data:2091"] = sample.get("@accession", "")
+    annots["sep:00195"]["schema:title"] = sample.get("TITLE", "")
+    annots["sep:00195"]["schema:name"] = sample.get("@alias", "")
+    annots["sep:00195"]["obi:organism"] = {}
+    annots["sep:00195"]["obi:organism"]["rdfs:label"] = sample["SAMPLE_NAME"].get("SCIENTIFIC_NAME", "")
+    annots["sep:00195"]["obi:organism"]["NCIT:C43459"] = sample["SAMPLE_NAME"].get("SCIENTIFIC_NAME", "")
+    annots["sep:00195"]["obi:organism"]["data:1179"] = sample["SAMPLE_NAME"].get("TAXON_ID", "")
 
     # Set defaults
     annots["sep:00195"]["NCIT:C25150"] = ""
@@ -248,14 +248,14 @@ if __name__ == "__main__":
     # load SRA run IDs
     srr_file = open(args.SRR_ID_FILE, "r")
     run_ids = [line.strip() for line in srr_file]
-    run_ids = [id for id in run_ids if id]
+    run_ids = [run_id for run_id in run_ids if run_id]
 
     # make sure that each SRA run ID is correct
     sra_pattern = re.compile("^[SED]RR\d+$")
 
-    for id in run_ids:
-      if not sra_pattern.match(id):
-          raise ValueError("Improper SRA run ID: %s" % (id))
+    for run_id in run_ids:
+      if not sra_pattern.match(run_id):
+          raise ValueError("Improper SRA run ID: %s" % (run_id))
 
     # download metadata for each SRA run ID
     download_runs_meta(run_ids)
