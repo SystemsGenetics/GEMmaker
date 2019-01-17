@@ -3,16 +3,16 @@
 Workflow Execution
 ------------------
 
-1. Acquire RNA-seq Samples
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Acquiring RNA-seq Samples
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 GEMmaker supports processing of sample files from your local computer and from the `NCBI SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__.
 
 -  For local samples, identify a `glob pattern <https://en.wikipedia.org/wiki/Glob_(programming)>`__ that finds these files.
 -  For remote samples, identify the NCBI SRA run IDs of the samples you want to process. The run IDs typically start with an SRR, ERR, or DRR prefix. These run IDs must be placed, one per line, in a file and the filename should be set in ``remote_list_path`` of ``nextflow.config``.
 
-2. Acquire Reference Genome Files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Acquiring Reference Genome Files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Download the genome annotation/reference files. These will differ depending on your organism that you are considering. The necessary files will also be different  depending on whether you use Hisat2, Salmon or Kallisto. The following instructions will describe how to make the proper files for each of these programs.
 
@@ -92,8 +92,8 @@ For Kallisto:
     # with singularity
     singularity shell work-singularity/systemsgenetics-hisat2-2.1.0.img
 
-3. Execute the Workflow
-~~~~~~~~~~~~~~~~~~~~~~~
+Executing the Workflow
+~~~~~~~~~~~~~~~~~~~~~~
 
 To execute the workflow on a local machine:
 
@@ -134,8 +134,8 @@ Generating a Gene Expression Matrix (GEM)
 
 After GEMmaker completes, the resulting GEMs will be output to ``output/GEMs/`` by default. This directory contains the final gene-expression matrices in raw, TPM and FPKM form, depending on which output formats are enabled in ``nextflow.config``.
 
-4. Using GEMs in Other Workflows
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using GEMs in Other Workflows
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 DGE Analysis
 ============
