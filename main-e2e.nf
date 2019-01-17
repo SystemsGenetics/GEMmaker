@@ -16,8 +16,6 @@
  *   A workflow for processing a large amount of RNA-seq data
  */
 
-
-
 println """\
 
 ===================================
@@ -28,6 +26,7 @@ General Information:
 --------------------
   Profile(s):         ${workflow.profile}
   Container Engine:   ${workflow.containerEngine}
+  Working Directory:  ${workflow.workDir}
 
 
 Input Parameters:
@@ -45,6 +44,7 @@ Output Parameters:
   Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
   Publish BAM:                ${params.output.publish_bam}
+  Publish RAW:                ${params.output.publish_raw}
   Publish FPKM:               ${params.output.publish_fpkm}
   Publish TPM:                ${params.output.publish_tpm}
 
@@ -99,10 +99,23 @@ else {
 
 
 /**
+ * Make sure that at least one output format is enabled.
+ */
+if ( params.software.alignment == 0 && params.output.publish_raw == false && params.output.publish_fpkm == false && params.output.publish_tpm == false ) {
+  error "Error: at least one output format (raw, fpkm, tpm) must be enabled for hisat2"
+}
+
+if ( params.software.alignment != 0 && params.output.publish_raw == false && params.output.publish_tpm == false ) {
+  error "Error: at least one output format (raw, tpm) must be enabled for kallisto / salmon"
+}
+
+
+
+/**
  * Retrieves metadata for all of the remote samples
  * and maps SRA runs to SRA experiments.
  */
-process retrieve_sample_metadata {
+process retrieve_sra_metadata {
   publishDir params.output.dir, mode: params.output.publish_mode, pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
   label "python3"
 
@@ -114,9 +127,9 @@ process retrieve_sample_metadata {
     file "*.GEMmaker.meta.*"
 
   script:
-  """
-  retrieve_SRA_metadata.py $srr_file
-  """
+    """
+    retrieve-sra-metadata.py ${srr_file}
+    """
 }
 
 
@@ -139,24 +152,15 @@ ALL_SAMPLES = REMOTE_SAMPLES.mix(LOCAL_SAMPLES)
 
 
 /**
- * Make sure that at least one type of output is specified
- */
-if ( params.output.publish_fpkm == false && params.output.publish_tpm == false ) {
-  error "At least one of FPKM or TPM should be enabled."
-}
-
-
-
-/**
  * Create channel for index files based on the selected aligner.
  */
-if ( params.software.alignment.which_alignment == 0 ) {
+if ( params.software.alignment == 0 ) {
   INDEXES = HISAT2_INDEXES
 }
-else if ( params.software.alignment.which_alignment == 1 ) {
+else if ( params.software.alignment == 1 ) {
   INDEXES = KALLISTO_INDEX
 }
-else if ( params.software.alignment.which_alignment == 2 ) {
+else if ( params.software.alignment == 2 ) {
   INDEXES = SALMON_INDEXES
 }
 
@@ -262,7 +266,7 @@ process process_sample {
   fastqc \$MERGED_FASTQ_FILES
 
   # use hisat2 for alignment
-  if [[ ${params.software.alignment.which_alignment} == 0 ]]; then
+  if [[ ${params.software.alignment} == 0 ]]; then
     # perform trimmomatic on all fastq files
     # This script calculates average length of fastq files.
     total=0
@@ -420,7 +424,7 @@ process process_sample {
     fi
 
   # or use kallisto
-  elif [[ ${params.software.alignment.which_alignment} == 1 ]]; then
+  elif [[ ${params.software.alignment} == 1 ]]; then
     # perform Kallisto alignment of fastq files
     if [ -e ${sample_id}_2.fastq ]; then
       kallisto quant \
@@ -439,11 +443,16 @@ process process_sample {
     fi
 
     # generate TPM and raw count files
-    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
-    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.raw
-  
+    if [[ ${params.output.publish_tpm} == true ]]; then
+      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+    fi
+
+    if [[ ${params.output.publish_raw} == true ]]; then
+      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.raw
+    fi
+
   # or use salmon
-  elif [[ ${params.software.alignment.which_alignment} == 2 ]]; then
+  elif [[ ${params.software.alignment} == 2 ]]; then
     # perform SALMON alignment of fastq files
     if [ -e ${sample_id}_2.fastq ]; then
       salmon quant \
@@ -465,8 +474,13 @@ process process_sample {
     fi
 
     # generate final TPM and raw count files
-    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.tpm
-    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.raw
+    if [[ ${params.output.publish_tpm} == true ]]; then
+      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+    fi
+
+    if [[ ${params.output.publish_raw} == true ]]; then
+      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.raw
+    fi
   fi
   """
 }
@@ -494,10 +508,13 @@ process multiqc {
     file "multiqc_data" into MULTIQC_DATA
     file "multiqc_report.html" into MULTIQC_REPORT
 
+  when:
+    params.output.multiqc == true
+
   script:
-  """
-  multiqc --ignore ${params.output.dir}/GEM --ignore ${params.output.dir}/reports ${params.output.dir}
-  """
+    """
+    multiqc --ignore ${params.output.dir}/GEM --ignore ${params.output.dir}/reports ${params.output.dir}
+    """
 }
 
 
@@ -515,14 +532,22 @@ process create_gem {
   output:
     file "*.GEM.*.txt" into GEM_FILES
 
+  when:
+    params.output.create_gem == true
+
   script:
   """
-  # If the alignment tool is hisat then we need to generate both
-  # TPM and FPKM
-  if [ ${params.software.alignment.which_alignment} == 0 ]; then
-    create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
+  # FPKM format is only generated if hisat2 is used
+  if [[ ${params.output.publish_fpkm} == true && ${params.software.alignment} == 0 ]]; then
+    create-gem.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
   fi;
-  create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type raw
-  create_GEM.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
+
+  if [[ ${params.output.publish_raw} == true ]]; then
+    create-gem.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type raw
+  fi
+
+  if [[ ${params.output.publish_tpm} == true ]]; then
+    create-gem.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
+  fi
   """
 }
