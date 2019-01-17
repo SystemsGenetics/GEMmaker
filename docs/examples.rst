@@ -1,4 +1,4 @@
-.. _running_the_examples:
+.. _examples:
 
 Example Usage
 -------------

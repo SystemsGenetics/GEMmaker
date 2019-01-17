@@ -1,7 +1,7 @@
-.. _running_your_data:
+.. _execution:
 
-Running your Data
------------------
+Workflow Execution
+------------------
 
 1. Acquire RNA-seq Samples
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,8 +125,8 @@ Generating a Gene Expression Matrix (GEM)
 
 After GEMmaker completes, the resulting GEMs will be output to ``output/GEMs/`` by default. This directory contains the final gene-expression matrices in raw, TPM and FPKM form, depending on which output formats are enabled in ``nextflow.config``.
 
-Using GEMs in Other Workflows
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+4. Using GEMs in Other Workflows
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 DGE Analysis
 ============

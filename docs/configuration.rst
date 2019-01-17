@@ -1,12 +1,12 @@
-.. _nextflow_config_instructions:
+.. _configuration:
 
-Customizing the Workflow
-------------------------
+Workflow Configuration
+----------------------
 
-Like all nextflow workflows, GEMmaker has a ``nextflow.config`` file which allows the workflow to be customized. For GEMmaker, the ``nextflow.config`` file is divided into 3 main sections:
+Like all nextflow workflows, GEMmaker has a ``nextflow.config`` file which allows the workflow to be customized. The config file has two main sections:
 
-- ``params``: Contains config parameters for input files, output files, and software.
-- ``profiles``: Contains several example profiles for running GEMmaker on different environments such as a HPC system.
+- ``params``: Parameters for input files, output files, and software.
+- ``profiles``: Example profiles for running GEMmaker on different environments such as a HPC system.
 
 The following sections give detailed information on each parameter in ``nextflow.config``. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ for more information on what is available in the config file, and what HPC environments are supported.
 
