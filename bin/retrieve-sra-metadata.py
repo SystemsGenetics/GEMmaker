@@ -241,7 +241,7 @@ if __name__ == "__main__":
     # parse command-line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("SRR_ID_FILE", help="SRA run ID file")
-    parser.add_argument("--page-size", default=100, help="number of SRA run IDs to query at a time", dest="PAGE_SIZE")
+    parser.add_argument("--page-size", type=int, default=100, help="number of SRA run IDs to query at a time", dest="PAGE_SIZE")
 
     args = parser.parse_args()
 
@@ -258,4 +258,4 @@ if __name__ == "__main__":
           raise ValueError("Improper SRA run ID: %s" % (run_id))
 
     # download metadata for each SRA run ID
-    download_runs_meta(run_ids)
+    download_runs_meta(run_ids, page_size=args.PAGE_SIZE)
