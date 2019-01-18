@@ -17,7 +17,7 @@ params {
   project {
     name = "CORG RNA-Seq example"
     machine_name = "CORG_vs_samples"
-    description = "This is the default project settings for GEMmaker.  Change these to properly describe your project and provide a description that helps others understand the purpose of this analsis."
+    description = "This is the default project settings for GEMmaker. Use these setting to properly describe your project so that others can understand the purpose of your analysis."
   }
 
   input {
@@ -110,6 +110,14 @@ docker {
 singularity {
   autoMounts = true
   cacheDir = "${PWD}/work-singularity"
+}
+
+
+
+k8s {
+	launchDir = "${PWD}"
+	storageClaimName = "deepgtex-prp"
+	storageMountPath = "${PWD}"
 }
 
 

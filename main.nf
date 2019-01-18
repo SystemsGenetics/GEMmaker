@@ -26,6 +26,7 @@ General Information:
 --------------------
   Profile(s):         ${workflow.profile}
   Container Engine:   ${workflow.containerEngine}
+  Project Directory   ${workflow.projectDir}
   Working Directory:  ${workflow.workDir}
 
 
@@ -203,15 +204,15 @@ CREATE_GEM_BOOTSTRAP = Channel.create()
 
 // Clean up any files left over from a previous run by moving them
 // back to the stage directory.
-existing_files = file('work/GEMmaker/process/*')
+existing_files = file('${workflow.workDir}/GEMmaker/process/*')
 for (existing_file in existing_files) {
-  existing_file.moveTo('work/GEMmaker/stage')
+  existing_file.moveTo('${workflow.workDir}/GEMmaker/stage')
 }
 
 // Check to see if we have any files left in the
 // stage directory. If so we need to keep processing
 // samples
-staged_files = file('work/GEMmaker/stage/*')
+staged_files = file('${workflow.workDir}/GEMmaker/stage/*')
 if (staged_files.size() == 0) {
   // If there are no staged files then the workflow will
   // end because it only proceeds when there are samples
