@@ -1102,7 +1102,7 @@ CREATE_GEM_RUN = CREATE_GEM_READY_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
  */
 process create_gem {
   label "python3"
-  publishDir "${params.output.dir}/GEM", mode: params.output.publish_mode
+  publishDir "${params.output.dir}/GEMs", mode: params.output.publish_mode
 
   input:
     val signal from CREATE_GEM_RUN.collect()

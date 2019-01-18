@@ -77,18 +77,21 @@ params {
 
 
 report {
+  enabled = true
   file = "${params.output.dir}/reports/report.html"
 }
 
 
 
 timeline {
+  enabled = true
   file = "${params.output.dir}/reports/timeline.html"
 }
 
 
 
 trace {
+  enabled = true
   fields = "task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes"
   file = "${params.output.dir}/reports/trace.txt"
   raw = true
