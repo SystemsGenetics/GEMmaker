@@ -3,6 +3,9 @@
 Troubleshooting
 ---------------
 
+Common Problems (and Solutions)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 GEMmaker is a very powerful tool, especially when coupled with its underlying technologes such as Nextflow, Docker/Singularity and HPC environments. But there are also many moving parts, and as a result there are a few things that can go wrong when you set up your experiments. These issues usually have simple solutions, so some of the more common issues are documented here.
 
 **Problem**: I received the following error:

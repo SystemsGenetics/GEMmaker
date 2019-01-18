@@ -145,4 +145,4 @@ The raw GEM can be used for DGE analysis in edgeR and other DGE software.
 Network Analysis
 ================
 
-Any GEM can be used to construct a gene-coexpression network (GCN). `KINC <https://github.com/SystemsGenetics/KINC>`__ (Knowledge Independent Network Construction) is a high-performance application that can construct networks using Pearson or Spearman for pairwise correlation, as well as Gassian mixture models (GMMs) for pairwise clustering. KINC is a Qt/`ACE <https://github.com/SystemsGenetics/ACE>`__ application that is capable of running on CPUs and GPUs, which means that it can scale to larger workloads.
+Any GEM can be used to construct a gene-coexpression network (GCN). `KINC <https://github.com/SystemsGenetics/KINC>`__ is a high-performance application that can construct networks using Pearson or Spearman for pairwise correlation, as well as Gassian mixture models (GMMs) for pairwise clustering. KINC is a Qt/`ACE <https://github.com/SystemsGenetics/ACE>`__ application that is capable of running on CPUs and GPUs, which means that it can scale to larger workloads.

@@ -3,12 +3,12 @@
 Workflow Configuration
 ----------------------
 
-Like all nextflow workflows, GEMmaker has a ``nextflow.config`` file which allows the workflow to be customized. The config file has two main sections:
+Like all nextflow workflows, GEMmaker has a ``nextflow.config`` file which allows it to be customized. The config file has two main sections:
 
 - ``params``: Parameters for input files, output files, and software.
-- ``profiles``: Example profiles for running GEMmaker on different environments such as a HPC system.
+- ``profiles``: Example profiles for running on different environments such as an HPC system.
 
-The following sections give detailed information on each parameter in ``nextflow.config``. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ for more information on what is available in the config file, and what HPC environments are supported.
+The following sections give detailed information on each parameter in ``nextflow.config``. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ for more information on the language of the config file, and what HPC environments are supported.
 
 Input
 ~~~~~
@@ -45,19 +45,19 @@ Default:
 
 .. code:: bash
 
-  local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
+  local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/\*_{1,2}.fastq"
 
 reference_path
 ==============
 
-The path to the directory containing the genome reference files. The reference genome is provided to this workflow via a set of files in a single directory. The required reference files will vary based on which alignment you use (Hisat2, Salmon and Kallisto).
+The path to the directory containing the genome reference files. The reference genome is provided to this workflow via a set of files in a single directory. The required reference files will vary based on which alignment you use (Hisat2, Salmon, and Kallisto).
 
 For Hisat2:
 
 1. Hisat2 index files created from the reference genome with ``hisat2-build``.
 2. A GTF file containing the genes annotated from the reference genome.
 
-To generate the hisat2 files, download the reference genome and run this command (This example uses the Arabidopsis genome from TAIR):
+To generate the hisat2 files, download the reference genome and run this command (this example uses the Arabidopsis genome from TAIR):
 
 .. code:: bash
 
@@ -104,7 +104,7 @@ Default:
 reference_prefix
 ================
 
-The prefix (used by hisat2-build) for the genome reference files. All files in the reference directory must have this prefix.
+The prefix (used by ``hisat2-build``) for the genome reference files. All files in the reference directory must have this prefix.
 
 Default:
 
@@ -145,6 +145,9 @@ Default:
 
   sample_dir = { "${params.output.dir}/${sample_id}" }
 
+.. note::
+  The brackets in this example denote a `closure`, a language construct in nextflow which allows you to create more dynamic expressions using variables and even other config params. In this case, ``sample_id`` is a variable that will be defined for each process that uses this parameter, so that you can organize the sample directories by sample ID.
+
 publish_mode
 ============
 
@@ -163,6 +166,11 @@ Default:
 
   publish_mode = "link"
 
+publish_sra
+===========
+
+Parameter that determines whether to save the downloaded SRA files from NCBI. Default is ``true``. Set to ``false`` if space is going to be an issue.
+
 publish_downloaded_fastq
 ========================
 
@@ -178,6 +186,11 @@ publish_bam
 
 Parameter that determines whether to save the BAM files. Default is ``true``. Set to ``false`` if space is going to be an issue.
 
+publish_raw
+===========
+
+Parameter that determines whether to create raw files at the end. Default is ``true``.
+
 publish_fpkm
 ============
 
@@ -187,7 +200,6 @@ publish_tpm
 ===========
 
 Parameter that determines whether to create TPM files at the end. Default is ``true``.
-
 
 Execution
 ~~~~~~~~~
@@ -240,10 +252,24 @@ Default:
 Software
 ~~~~~~~~
 
+sra_download
+============
+
+Which tool to use for downloading remote SRA files.
+
+- ``0``: aspera
+- ``1``: sratoolkit
+
+Default:
+
+.. code:: bash
+
+  sra_download = 0
+
 alignment
 =========
 
-User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen, processes ``samtools_sort``, ``samtools_index`` and ``stringtie`` will also be done. All processes will end with a gene abundance file. Aligns reads to the reference genome.
+Which tool to use for gene alignment. If hisat2 is chosen, processes ``samtools_sort``, ``samtools_index`` and ``stringtie`` will also be done. All processes will end with a gene abundance file. Aligns reads to the reference genome.
 
 - ``0``: hisat2
 - ``1``: kallisto
