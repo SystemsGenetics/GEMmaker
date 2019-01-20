@@ -22,12 +22,14 @@ println """\
  G E M M A K E R   P I P E L I N E
 ===================================
 
-General Information:
---------------------
-  Profile(s):         ${workflow.profile}
-  Container Engine:   ${workflow.containerEngine}
-  Project Directory   ${workflow.projectDir}
+Workflow Information:
+---------------------
+  Project Directory:  ${workflow.projectDir}
+  Launch Directory:   ${workflow.launchDir}
   Working Directory:  ${workflow.workDir}
+  Config Files:       ${workflow.configFiles}
+  Container Engine:   ${workflow.containerEngine}
+  Profile(s):         ${workflow.profile}
 
 
 Input Parameters:
@@ -204,15 +206,15 @@ CREATE_GEM_BOOTSTRAP = Channel.create()
 
 // Clean up any files left over from a previous run by moving them
 // back to the stage directory.
-existing_files = file('${workflow.workDir}/GEMmaker/process/*')
+existing_files = file('work/GEMmaker/process/*')
 for (existing_file in existing_files) {
-  existing_file.moveTo('${workflow.workDir}/GEMmaker/stage')
+  existing_file.moveTo('work/GEMmaker/stage')
 }
 
 // Check to see if we have any files left in the
 // stage directory. If so we need to keep processing
 // samples
-staged_files = file('${workflow.workDir}/GEMmaker/stage/*')
+staged_files = file('work/GEMmaker/stage/*')
 if (staged_files.size() == 0) {
   // If there are no staged files then the workflow will
   // end because it only proceeds when there are samples
