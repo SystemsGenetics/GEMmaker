@@ -167,7 +167,7 @@ process retrieve_sra_metadata {
 
   script:
     """
-    retrieve-sra-metadata.py ${srr_file}
+    retrieve_sra_metadata.py ${srr_file}
     """
 }
 
@@ -1052,7 +1052,7 @@ process hisat2_fpkm_tpm {
   if [[ ${params.output.publish_fpkm} == true ]]; then
     awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
   fi
-  
+
   if [[ ${params.output.publish_tpm} == true ]]; then
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
   fi
