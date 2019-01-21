@@ -14,9 +14,9 @@ def test_missing_SRR():
         download_runs_meta(test_set1)
         lines = out.getvalue().strip().split("\n")
         # There must only be one line, even though we gave to SRRs.
-        assert len(lines) == 1
+        assert len(lines) == 1, "test_missing_SRR: must only return 1 line."
         # We should only get the mapping for the second SRR.
-        assert lines[0].strip() == "SRR4042625,SRX2033559"
+        assert lines[0].strip() == "SRR4042625,SRX2033559", "test_missing_SRR: %s != %s" % ("SRR4042625,SRX2033559", lines[0].strip())
 
 
 
