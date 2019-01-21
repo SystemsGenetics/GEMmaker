@@ -28,7 +28,6 @@ def download_runs_meta(run_ids, page_size=100):
 
     :param run_ids: the list of run IDs
     """
-    experiments = []
 
     # query the run IDs in "pages" because the NCBI endpoint is fragile
     for idx in range(0, len(run_ids), page_size):
@@ -52,42 +51,39 @@ def download_runs_meta(run_ids, page_size=100):
         response = xmltodict.parse(response_xml)
 
         # get the list of experiments from the query
-        page_experiments = response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]
+        experiments = response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]
 
-        # append page experiments to experiments list
-        if isinstance(page_experiments, list):
-            experiments += page_experiments
-        else:
-            experiments.append(page_experiments)
+        # Make sure we have an array of experiments for looping over,
+        # even if we only have one returned.
+        if not isinstance(experiments, list):
+            experiments = [experiments]
 
-    # process the metadata from each experiment
-    for run_id, experiment in zip(run_ids, experiments):
-        # Get the experiment ID
-        exp_id = experiment["EXPERIMENT"]["IDENTIFIERS"]["PRIMARY_ID"]
+        # process the metadata from each experiment
+        for experiment in experiments:
+            # Get the experiment ID
+            exp_id = experiment["EXPERIMENT"]["IDENTIFIERS"]["PRIMARY_ID"]
 
-        # Get the metadata for the sample
-        sample = experiment["SAMPLE"]
+            # Get the metadata for the sample
+            sample = experiment["SAMPLE"]
 
-        # Get the list of runs
-        runs = experiment["RUN_SET"]["RUN"]
-        if not isinstance(runs, list):
-            runs = [runs]
+            # Get the list of runs
+            runs = experiment["RUN_SET"]["RUN"]
+            if not isinstance(runs, list):
+                runs = [runs]
 
-        # Get the metadata for this run
-        run = []
-        for item in runs:
-            if item["@accession"] == run_id:
-                run = item
+            # If the run belongs to an ID we passed into the SRA lookup
+            # then we want to act on it.
+            for run in runs:
+                if run["@accession"] in ids:
 
-        # Write out the experiment details in JSON metadata files
-        save_ncbi_meta(experiment, sample, run)
+                    # Write out the experiment details in JSON metadata files
+                    save_ncbi_meta(experiment, sample, run)
 
-        # Convert the data to a JSON array of controlled vocabulary terms
-        save_gemmaker_meta(experiment, sample, run)
+                    # Convert the data to a JSON array of controlled vocabulary terms
+                    save_gemmaker_meta(experiment, sample, run)
 
-        # Write in CSV format to stdout
-        sys.stdout.write("%s,%s\n" % (run_id, exp_id))
-
+                    # Write in CSV format to stdout
+                    sys.stdout.write("%s,%s\n" % (run_id, exp_id))
 
 
 def save_ncbi_meta(experiment, sample, run):
