@@ -74,7 +74,8 @@ def download_runs_meta(run_ids, page_size=100):
             # If the run belongs to an ID we passed into the SRA lookup
             # then we want to act on it.
             for run in runs:
-                if run["@accession"] in ids:
+                run_id = run["@accession"]
+                if run_id in ids:
 
                     # Write out the experiment details in JSON metadata files
                     save_ncbi_meta(experiment, sample, run)
