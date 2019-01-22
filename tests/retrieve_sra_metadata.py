@@ -1,7 +1,13 @@
-from retrieve_sra_metadata import download_runs_meta
-from contextlib import contextmanager
-from io import StringIO
+import contextlib
+import io
+import os
 import sys
+
+sys.path.append(os.getcwd() + "/bin")
+
+import retrieve_sra_metadata
+
+
 
 def test_missing_SRR():
     """
@@ -11,7 +17,7 @@ def test_missing_SRR():
 
     with captured_output() as (out, err):
         test_set1 = ['SRR2927685', 'SRR4042625']
-        download_runs_meta(test_set1)
+        retrieve_sra_metadata.download_runs_meta(test_set1)
         lines = out.getvalue().strip().split("\n")
         # There must only be one line, even though we gave to SRRs.
         assert len(lines) == 1, "test_missing_SRR: must only return 1 line."
@@ -20,12 +26,12 @@ def test_missing_SRR():
 
 
 
-@contextmanager
+@contextlib.contextmanager
 def captured_output():
     """
     Helper function to capture STDOUT/STDERR.
     """
-    new_out, new_err = StringIO(), StringIO()
+    new_out, new_err = io.StringIO(), io.StringIO()
     old_out, old_err = sys.stdout, sys.stderr
     try:
         sys.stdout, sys.stderr = new_out, new_err
