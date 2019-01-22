@@ -3,9 +3,9 @@ import io
 import os
 import sys
 
-sys.path.append(os.getcwd() + "/bin")
+sys.path.append(os.getcwd())
 
-import retrieve_sra_metadata
+from bin.retrieve_sra_metadata import download_runs_meta
 
 
 
@@ -17,7 +17,7 @@ def test_missing_SRR():
 
     with captured_output() as (out, err):
         test_set1 = ['SRR2927685', 'SRR4042625']
-        retrieve_sra_metadata.download_runs_meta(test_set1)
+        download_runs_meta(test_set1)
         lines = out.getvalue().strip().split("\n")
         # There must only be one line, even though we gave to SRRs.
         assert len(lines) == 1, "test_missing_SRR: must only return 1 line."
@@ -38,3 +38,8 @@ def captured_output():
         yield sys.stdout, sys.stderr
     finally:
         sys.stdout, sys.stderr = old_out, old_err
+
+
+
+if __name__ == "__main__":
+    test_missing_SRR()
