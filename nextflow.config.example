@@ -238,6 +238,12 @@ profiles {
   // defaults for all steps of the workflow.
   //
   pbs {
+    docker {
+      enabled = true
+      fixOwnership = true
+      runOptions = "--init"
+      sudo = true
+    }
     process {
       executor = "pbs"
       time = "8h"
@@ -245,31 +251,6 @@ profiles {
 
       withLabel:multithreaded {
         clusterOptions = "-l select=1:mem=8gb:ncpus=${params.execution.threads}"
-      }
-
-      withLabel:aspera {
-        module = "aspera"
-      }
-      withLabel:fastqc {
-        module = "fastQC"
-      }
-      withLabel:hisat2 {
-        module = "hisat2"
-      }
-      withLabel:python3 {
-        module = "anaconda3"
-      }
-      withLabel:samtools {
-        module = "samtools"
-      }
-      withLabel:sratoolkit {
-        module = "sratoolkit"
-      }
-      withLabel:stringtie {
-        module = "stringtie"
-      }
-      withLabel:trimmomatic {
-        module = "trimmomatic"
       }
     }
     executor {
@@ -284,6 +265,7 @@ profiles {
   //
   slurm {
     process {
+      singularity.enabled = true
       executor = "slurm"
       queue = "ficklin"
       time = "24h"
@@ -292,34 +274,36 @@ profiles {
       withLabel:multithreaded {
         cpus = "${params.execution.threads}"
       }
-
-      withLabel:aspera {
-        module = "aspera"
-      }
-      withLabel:fastqc {
-        module = "fastQC"
-      }
-      withLabel:hisat2 {
-        module = "hisat2"
-      }
-      withLabel:python3 {
-        module = "python3"
-      }
-      withLabel:samtools {
-        module = "samtools"
-      }
-      withLabel:sratoolkit {
-        module = "sratoolkit"
-      }
-      withLabel:stringtie {
-        module = "stringtie"
-      }
-      withLabel:trimmomatic {
-        module = "trimmomatic"
-      }
     }
     executor {
       queueSize = "${params.execution.queue_size}"
+    }
+  }
+
+  lmod {
+    withLabel:aspera {
+      module = "aspera"
+    }
+    withLabel:fastqc {
+      module = "fastQC"
+    }
+    withLabel:hisat2 {
+      module = "hisat2"
+    }
+    withLabel:python3 {
+      module = "python3"
+    }
+    withLabel:samtools {
+      module = "samtools"
+    }
+    withLabel:sratoolkit {
+      module = "sratoolkit"
+    }
+    withLabel:stringtie {
+      module = "stringtie"
+    }
+    withLabel:trimmomatic {
+      module = "trimmomatic"
     }
   }
 }
