@@ -189,6 +189,19 @@ profiles {
     process.executor = "local"
   }
 
+  // A profile for testing on the Travis.CI testing platform.
+  travis {
+    docker.enabled = true
+    runOptions = ""
+    sudo = false
+    fixOwnership = false
+    process {
+      withLabel:retry {
+        errorStrategy = "terminate"
+      }
+    }
+  }
+
   // A profile for execution of GEMmaker on a stand-alone machine
   // using Docker.
   localDocker {

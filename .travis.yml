@@ -33,4 +33,4 @@ script:
   - docker build -t systemsgenetics/trimmomatic:0.38 Dockerfiles/trimmomatic/0.38/
 
   # Run the workflow.
-  - nextflow run main.nf -profile testing -with-docker
+  - nextflow run main.nf -profile travis
