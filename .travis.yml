@@ -1,5 +1,4 @@
 dist: xenial
-sudo: required
 
 jdk: openjdk8
 python: 3.5
