@@ -9,8 +9,7 @@ services:
 
 # Install all dependencies here.
 install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python3
+  - pip3 install -q pandas xmltodict
   - curl -fsSL get.nextflow.io | bash
   - mkdir -p ~/bin
   - cp nextflow ~/bin
