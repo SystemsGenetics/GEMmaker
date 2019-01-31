@@ -9,7 +9,7 @@ services:
 
 # Install all dependencies here.
 install:
-  - pip3 install -q pandas xmltodict
+  - pip install -q pandas xmltodict
   - curl -fsSL get.nextflow.io | bash
   - mkdir -p ~/bin
   - cp nextflow ~/bin
