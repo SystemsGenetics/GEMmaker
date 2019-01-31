@@ -101,8 +101,6 @@ trace {
 
 docker {
   fixOwnership = true
-  // runOptions = "--init"
-  // sudo = true
 }
 
 
@@ -123,7 +121,6 @@ k8s {
 
 
 process {
-  // container = "systemsgenetics/gemmaker:1.0"
 
   withLabel:rate_limit {
     maxForks = 1
@@ -192,9 +189,6 @@ profiles {
   // A profile for testing on the Travis.CI testing platform.
   travis {
     docker.enabled = true
-    // runOptions = ""
-    // sudo = false
-    // fixOwnership = false
     process {
       withLabel:retry {
         errorStrategy = "terminate"
@@ -204,19 +198,19 @@ profiles {
 
   // A profile for execution of GEMmaker on a stand-alone machine
   // using Docker.
-  localDocker {
-    docker {
-      enabled = true
-    }
-  }
+  // localDocker {
+  //   docker {
+  //     enabled = true
+  //   }
+  // }
 
   // A profile for execution of GEMmaker on a stand-alone machine
   // using singularity.
-  localSingularity {
-    singularity {
-      enabled = true
-    }
-  }
+  // localSingularity {
+  //   singularity {
+  //     enabled = true
+  //   }
+  // }
 
   //
   // The testing profile is used to override the execution params and force the
@@ -224,7 +218,6 @@ profiles {
   // debugging purposes.
   //
   testing {
-    docker.enabled = true
     process {
       withLabel:retry {
         errorStrategy = "terminate"
@@ -237,13 +230,16 @@ profiles {
   // an example for execution of this workflow on Palmetto with some
   // defaults for all steps of the workflow.
   //
-  pbs {
+  pbs_docer {
     docker {
       enabled = true
       fixOwnership = true
       runOptions = "--init"
       sudo = true
     }
+  }
+
+  pbs {
     process {
       executor = "pbs"
       time = "8h"
@@ -265,7 +261,6 @@ profiles {
   //
   slurm {
     process {
-      singularity.enabled = true
       executor = "slurm"
       queue = "ficklin"
       time = "24h"
