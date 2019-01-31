@@ -9,9 +9,7 @@ services:
 
 # Install all dependencies here.
 install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python3-pip
-  - pip3 install -q --user pandas xmltodict
+  - pip install -q pandas xmltodict
   - curl -fsSL get.nextflow.io | bash
   - mkdir -p ~/bin
   - cp nextflow ~/bin
@@ -23,7 +21,7 @@ before_script:
 # Commands here should determine whether the build fails or not.
 script:
   # Run unit tests
-  - python3 tests/retrieve_sra_metadata.py
+  - python tests/retrieve_sra_metadata.py
 
   # Build the images.
   - docker build -t systemsgenetics/gemmaker:1.0     Dockerfiles/base/1.0/
