@@ -1,6 +1,8 @@
 #!/usr/bin/env nextflow
 
 import java.nio.channels.FileLock
+import java.nio.channels.FileChannel
+import java.nio.channels.OverlappingFileLockException;
 
 /**
  * ========
@@ -395,45 +397,84 @@ process next_sample {
 
   exec:
 
-    // Use a file lock to prevent a race condition for grabbing the next
-    // sample.
-    lockfile = new RandomAccessFile(new File("${workflow.workDir}/GEMmaker/gemmaker.lock"), "rw")
-    try {
-      FileLock lock
-      while( !(lock=lockfile.getChannel().tryLock()) )  {
-          sleep 60
-      }
-      try {
-        sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
-        sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
+    // Use a file lock to prevent a race condition for grabbing the next sample.
+    File lockfile = null;
+    RandomAccessFile ralockfile = null;
+    FileLock lock = null;
+    success = false
 
-        // Move the next sample file into the processing directory
-        // which will trigger the start of the next sample.
-        staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
-        if (staged_files.size() > 0) {
-          staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
+    try {
+      // Open the lock file.
+      lockfile = new File("${workflow.workDir}/GEMmaker/gemmaker.lock")
+      ralockfile = new RandomAccessFile(lockfile, "rw")
+
+      // Loop until we get the lock or we've exhausted our attempts.
+      attempts = 1
+      try {
+        lock = ralockfile.getChannel().tryLock()
+      }
+      catch (OverlappingFileLockException e) {
+        // Do nothing, the while loop below will handle the exception.
+      }
+
+      while (!lock)  {
+        println "Waiting on lock. attempt " + attempts + "..."
+        if (attempts < 3) {
+          sleep 1000
+          try {
+            lock = ralockfile.getChannel().tryLock()
+          }
+          catch (OverlappingFileLockException e) {
+            // Do nothing, let's try a few more times....
+          }
+          attempts = attempts + 1
         }
         else {
-          processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
-          if (processing_files.size() == 0) {
-            NEXT_SAMPLE.close()
-            NEXT_SAMPLE_SIGNAL.close()
-            HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
-            KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
-            SALMON_SAMPLE_COMPLETE_SIGNAL.close()
-            SAMPLE_COMPLETE_SIGNAL.close()
-            MULTIQC_BOOTSTRAP.close()
-            CREATE_GEM_BOOTSTRAP.close()
-          }
+          throw new Exception("Cannot obtain lock to proceed to next sample after 3 attempts")
         }
       }
-      finally {
-        lock.close()
+      lockfile.deleteOnExit()
+
+      sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
+      sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
+
+      // Move the next sample file into the processing directory
+      // which will trigger the start of the next sample.
+      staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
+      if (staged_files.size() > 0) {
+        staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
       }
+      else {
+        processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
+        if (processing_files.size() == 0) {
+          NEXT_SAMPLE.close()
+          NEXT_SAMPLE_SIGNAL.close()
+          HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
+          KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
+          SALMON_SAMPLE_COMPLETE_SIGNAL.close()
+          SAMPLE_COMPLETE_SIGNAL.close()
+          MULTIQC_BOOTSTRAP.close()
+          CREATE_GEM_BOOTSTRAP.close()
+        }
+      }
+      success = true
+    }
+    catch (Exception e) {
+      println "Error: " + e.getMessage()
     }
     finally {
-      lockfile.close()
-    }
+      // Release the lock file and close the file if they were opened.
+      if (lock != null && lock.isValid()) {
+        lock.release();
+      }
+      if (lockfile != null) {
+        ralockfile.close();
+      }
+      // Re-throw exception to terminate the workflow if there was no success.
+      if (!success) {
+        throw new Exception("Could not move to the next sample.")
+      }
+   }
 }
 
 
