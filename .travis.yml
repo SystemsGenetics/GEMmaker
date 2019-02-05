@@ -1,13 +1,15 @@
-sudo: required
+dist: xenial
+language: python
+
 jdk: openjdk8
+python: 3.5
 
 services:
   - docker
 
 # Install all dependencies here.
 install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq -y graphviz realpath
+  - pip install -q pandas xmltodict
   - curl -fsSL get.nextflow.io | bash
   - mkdir -p ~/bin
   - cp nextflow ~/bin
@@ -18,6 +20,9 @@ before_script:
 
 # Commands here should determine whether the build fails or not.
 script:
+  # Run unit tests
+  - python tests/retrieve_sra_metadata.py
+
   # Build the images.
   - docker build -t systemsgenetics/gemmaker:1.0     Dockerfiles/base/1.0/
   - docker build -t systemsgenetics/aspera:3.8.1     Dockerfiles/aspera/3.8.1/

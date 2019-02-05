@@ -171,7 +171,7 @@ process retrieve_sra_metadata {
 
   script:
     """
-    retrieve-sra-metadata.py ${srr_file}
+    retrieve_sra_metadata.py ${srr_file}
     """
 }
 

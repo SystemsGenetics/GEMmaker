@@ -48,9 +48,12 @@ GEMmaker uses the following tools:
 - [python3](https://www.python.org) v3.5.1
 - [nextflow](https://www.nextflow.io/) v0.32
 - [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/) v2.9.2
+- [aspera](https://asperasoft.com/) v3.8.1
 - [fastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) v0.11.7
 - [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) v0.38
 - [hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml) v2.1.0
+- [kallisto](https://pachterlab.github.io/kallisto/) v0.45.0
+- [salmon](https://combine-lab.github.io/salmon/) v0.12.0
 - [samtools](http://www.htslib.org/) v1.3.1
 - [stringTie](http://www.ccb.jhu.edu/software/stringtie/) v1.3.4d
 - [MultiQC](http://multiqc.info/) v1.5
