@@ -1,5 +1,7 @@
 #!/usr/bin/env nextflow
 
+import java.nio.channels.FileLock
+
 /**
  * ========
  * GEMmaker
@@ -392,28 +394,45 @@ process next_sample {
     val sample_id from NEXT_SAMPLE_SIGNAL
 
   exec:
-    // Move the finished sample to the done directory.
-    sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
-    sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
 
-    // Move the next sample file into the processing directory
-    // which will trigger the start of the next sample.
-    staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
-    if (staged_files.size() > 0) {
-      staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
-    }
-    else {
-      processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
-      if (processing_files.size() == 0) {
-        NEXT_SAMPLE.close()
-        NEXT_SAMPLE_SIGNAL.close()
-        HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
-        KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
-        SALMON_SAMPLE_COMPLETE_SIGNAL.close()
-        SAMPLE_COMPLETE_SIGNAL.close()
-        MULTIQC_BOOTSTRAP.close()
-        CREATE_GEM_BOOTSTRAP.close()
+    // Use a file lock to prevent a race condition for grabbing the next
+    // sample.
+    lockfile = new RandomAccessFile(new File("${workflow.workDir}/GEMmaker/gemmaker.lock"), "rw")
+    try {
+      FileLock lock
+      while( !(lock=lockfile.getChannel().tryLock()) )  {
+          sleep 60
       }
+      try {
+        sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
+        sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
+
+        // Move the next sample file into the processing directory
+        // which will trigger the start of the next sample.
+        staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
+        if (staged_files.size() > 0) {
+          staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
+        }
+        else {
+          processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
+          if (processing_files.size() == 0) {
+            NEXT_SAMPLE.close()
+            NEXT_SAMPLE_SIGNAL.close()
+            HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
+            KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
+            SALMON_SAMPLE_COMPLETE_SIGNAL.close()
+            SAMPLE_COMPLETE_SIGNAL.close()
+            MULTIQC_BOOTSTRAP.close()
+            CREATE_GEM_BOOTSTRAP.close()
+          }
+        }
+      }
+      finally {
+        lock.close()
+      }
+    }
+    finally {
+      lockfile.close()
     }
 }
 
@@ -1052,7 +1071,7 @@ process hisat2_fpkm_tpm {
   if [[ ${params.output.publish_fpkm} == true ]]; then
     awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
   fi
-  
+
   if [[ ${params.output.publish_tpm} == true ]]; then
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
   fi
