@@ -101,6 +101,8 @@ trace {
 
 docker {
   fixOwnership = true
+  runOptions = "--init"
+  sudo = false
 }
 
 
@@ -196,22 +198,6 @@ profiles {
     }
   }
 
-  // A profile for execution of GEMmaker on a stand-alone machine
-  // using Docker.
-  // localDocker {
-  //   docker {
-  //     enabled = true
-  //   }
-  // }
-
-  // A profile for execution of GEMmaker on a stand-alone machine
-  // using singularity.
-  // localSingularity {
-  //   singularity {
-  //     enabled = true
-  //   }
-  // }
-
   //
   // The testing profile is used to override the execution params and force the
   // workflow to terminate immediately if any process fails, which is useful for
@@ -230,15 +216,6 @@ profiles {
   // an example for execution of this workflow on Palmetto with some
   // defaults for all steps of the workflow.
   //
-  pbs_docer {
-    docker {
-      enabled = true
-      fixOwnership = true
-      runOptions = "--init"
-      sudo = true
-    }
-  }
-
   pbs {
     process {
       executor = "pbspro"
@@ -277,7 +254,34 @@ profiles {
     }
   }
 
-  lmod {
+  palmetto_modules {
+    withLabel:aspera {
+      module = "aspera"
+    }
+    withLabel:fastqc {
+      module = "fastQC"
+    }
+    withLabel:hisat2 {
+      module = "hisat2"
+    }
+    withLabel:python3 {
+      module = "anaconda3"
+    }
+    withLabel:samtools {
+      module = "samtools"
+    }
+    withLabel:sratoolkit {
+      module = "sratoolkit"
+    }
+    withLabel:stringtie {
+      module = "stringtie"
+    }
+    withLabel:trimmomatic {
+      module = "trimmomatic"
+    }
+  }
+
+  kamiak_modules {
     withLabel:aspera {
       module = "aspera"
     }
