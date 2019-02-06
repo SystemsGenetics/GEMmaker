@@ -8,7 +8,7 @@
 manifest {
   mainScript = "main.nf"
   defaultBranch = "master"
-  nextflowVersion = ">=18.10"
+  nextflowVersion = ">=19.01"
 }
 
 
@@ -241,12 +241,14 @@ profiles {
 
   pbs {
     process {
-      executor = "pbs"
+      executor = "pbspro"
       time = "8h"
-      clusterOptions = "-l select=1:mem=2gb:ncpus=2"
+      cpus = 2
+      memory = 2.GB
 
       withLabel:multithreaded {
-        clusterOptions = "-l select=1:mem=8gb:ncpus=${params.execution.threads}"
+        cpus = "${params.execution.threads}"
+        memory = 8.GB
       }
     }
     executor {
