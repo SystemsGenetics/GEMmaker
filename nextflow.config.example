@@ -44,9 +44,6 @@ params {
 
   execution {
     queue_size = 100
-    threads = 1
-    max_retries = 2
-    error_strategy = "ignore"
   }
 
   software {
@@ -123,12 +120,13 @@ k8s {
 
 
 process {
+  container = "systemsgenetics/gemmaker:1.0"
 
   withLabel:rate_limit {
     maxForks = 1
   }
   withLabel:retry {
-    errorStrategy = { "${task.attempt}" == "${params.execution.max_retries}" ? "retry" : "${params.execution.error_strategy}" }
+    errorStrategy = { task.attempt == 2 ? "retry" : "ignore" }
   }
 
   withLabel:aspera {
@@ -224,7 +222,7 @@ profiles {
       memory = 2.GB
 
       withLabel:multithreaded {
-        cpus = "${params.execution.threads}"
+        cpus = 8
         memory = 8.GB
       }
     }
@@ -246,7 +244,7 @@ profiles {
       cpus = 1
 
       withLabel:multithreaded {
-        cpus = "${params.execution.threads}"
+        cpus = 1
       }
     }
     executor {
