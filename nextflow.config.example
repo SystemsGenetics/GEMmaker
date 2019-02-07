@@ -252,6 +252,14 @@ profiles {
     }
   }
 
+  //
+  // In lieu of using Docker or Singularity, software dependencies
+  // can be provided by Environment Modules (or a compatible equivalent
+  // such as Lmod). Module names may vary from system to system; the
+  // following profiles are specific to Palmetto and Kamiak respectively,
+  // but you will likely need to create your own profile that uses the
+  // correct module names for your cluster.
+  //
   palmetto_modules {
     withLabel:aspera {
       module = "aspera"
