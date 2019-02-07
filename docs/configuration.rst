@@ -8,7 +8,7 @@ Like all nextflow workflows, GEMmaker has a ``nextflow.config`` file which allow
 - ``params``: Parameters for input files, output files, and software.
 - ``profiles``: Example profiles for running on different environments such as an HPC system.
 
-The following sections give detailed information on each parameter in ``nextflow.config``. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ for more information on the language of the config file, and what HPC environments are supported.
+The following sections give detailed information on each parameter in ``nextflow.config``. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ for more information on the language of the config file.
 
 Input
 ~~~~~
@@ -215,40 +215,6 @@ Default:
 
   queue_size = 100
 
-threads
-=======
-
-Number of threads for multi-threaded processes.
-
-Default:
-
-.. code:: bash
-
-  threads = 1
-
-max_retries
-===========
-
-Number of times to resubmit a failed process before invoking the error strategy
-defined by ``error_strategy``.
-
-Default:
-
-.. code:: bash
-
-  max_retries = 2
-
-error_strategy
-==============
-
-Error strategy for when a process fails ``max_retries`` times. Can be ``"terminate"``, ``"finish"``, or ``"ignore"``.
-
-Default:
-
-.. code:: bash
-
-  error_strategy = "ignore"
-
 Software
 ~~~~~~~~
 
@@ -280,3 +246,8 @@ Default:
 .. code:: bash
 
   alignment = 0
+
+Profiles
+~~~~~~~~
+
+The config file provides several profiles for running GEMmaker in different environments. Each profile defines various config settings that override whatever defaults provided by the rest of the config file. For example, the ``testing`` profile overrides the default ``errorStrategy`` to terminate the entire workflow if any error occurs, rather than ignore failed samples. Other profiles such as ``pbs`` and ``slurm`` provide example configurations for running GEMmaker with a HPC scheduler. These profiles are intended to be modified according to your needs, as every HPC system is different. Again, please refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ for more information on how to use the config file as well as what executors are available.
