@@ -1,3 +1,6 @@
+dist: xenial	
+language: python	
+
 jdk: openjdk8
 python: 3.5
 
@@ -6,6 +9,7 @@ services:
 
 # Install all dependencies here.
 install:
+  - pip install -q pandas xmltodict
   - curl -fsSL get.nextflow.io | bash
   - mkdir -p ~/bin
   - cp nextflow ~/bin
