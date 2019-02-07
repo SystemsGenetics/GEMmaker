@@ -1,5 +1,5 @@
-dist: xenial	
-language: python	
+dist: xenial
+language: python
 
 jdk: openjdk8
 python: 3.5
