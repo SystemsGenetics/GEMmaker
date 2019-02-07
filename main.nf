@@ -22,11 +22,14 @@ println """\
  G E M M A K E R   P I P E L I N E
 ===================================
 
-General Information:
---------------------
-  Profile(s):         ${workflow.profile}
-  Container Engine:   ${workflow.containerEngine}
+Workflow Information:
+---------------------
+  Project Directory:  ${workflow.projectDir}
+  Launch Directory:   ${workflow.launchDir}
   Working Directory:  ${workflow.workDir}
+  Config Files:       ${workflow.configFiles}
+  Container Engine:   ${workflow.containerEngine}
+  Profile(s):         ${workflow.profile}
 
 
 Input Parameters:
@@ -164,7 +167,7 @@ process retrieve_sra_metadata {
 
   script:
     """
-    retrieve-sra-metadata.py ${srr_file}
+    retrieve_sra_metadata.py ${srr_file}
     """
 }
 
@@ -1049,7 +1052,7 @@ process hisat2_fpkm_tpm {
   if [[ ${params.output.publish_fpkm} == true ]]; then
     awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
   fi
-  
+
   if [[ ${params.output.publish_tpm} == true ]]; then
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
   fi
@@ -1102,7 +1105,7 @@ CREATE_GEM_RUN = CREATE_GEM_READY_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
  */
 process create_gem {
   label "python3"
-  publishDir "${params.output.dir}/GEM", mode: params.output.publish_mode
+  publishDir "${params.output.dir}/GEMs", mode: params.output.publish_mode
 
   input:
     val signal from CREATE_GEM_RUN.collect()

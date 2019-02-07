@@ -1,95 +1,172 @@
-.. _running_the_examples:
+.. _examples:
 
-Testing GEMmaker
-----------------
+Example Usage
+-------------
 
-The GEMmaker example run will with a small set of local files (contained with the GEMmaker package) and a remote file (automatically downloaded from `NCBI's SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__).  These samples are extremly small and only meant to demonstrate usage for a mixed set of local and remote files.
+The GEMmaker example consists of a small set of local files (provided in the GEMmaker repo) and a remote file (automatically downloaded from `NCBI's SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__). These samples are extremely small and are only meant to demonstrate usage for a mixed set of local and remote files.
 
-Once the :ref:`software_prerequisites` are installed, you can run
-GEMmaker with the example data. If you have not already done so, you must rename the
-**nextflow.config.example** file as **nextflow.config**:
+Once GEMmaker and its dependencies have been installed, you can run GEMmaker with the example data. First, copy the example config file to ``nextflow.config``:
 
 .. code:: bash
 
-    mv nextflow.config.example nextflow.config
+  cp nextflow.config.example nextflow.config
 
-The nextflow.config.example is already configured with the proper
-settings to run the samples described above. To execute the
-workflow run the following:
+The ``nextflow.config.example`` file is already configured to run this example. Execute the workflow using the following command:
 
 .. code:: bash
 
-    nextflow run main.nf -profile standard,localDocker
+  nextflow run main.nf -profile standard -with-docker
 
-You should see an output that looks like this: :ref:`example_output`
+You should see an output that looks like this:
+
+.. code:: bash
+
+  N E X T F L O W  ~  version 18.10.1
+  Launching `main.nf` [peaceful_gutenberg] - revision: 137bc7ccff
+
+  ===================================
+   G E M M A K E R   P I P E L I N E
+  ===================================
+
+  General Information:
+  --------------------
+    Profile(s):         standard
+    Container Engine:   docker
 
 
-Explanation of the run
-~~~~~~~~~~~~~~~~~~~~~~
+  Input Parameters:
+  -----------------
+    Remote fastq list path:     /home/{usr}/GEMmaker/examples/RemoteRunExample/SRA_IDs.txt
+    Local sample glob:          /home/{usr}/GEMmaker/examples/LocalRunExample/Sample*/\*_{1,2}.fastq
+    Reference genome path:      /home/{usr}/GEMmaker/examples/reference/
+    Reference genome prefix:    CORG
 
-This example uses the imaginary organism "Cool Organism" (CORG). For the local
-example, we use a set of 3 artificially made RNA-seq runs made for CORG. CORG has a very
-small "genome" of only 2,336 nucleotides, 3 "chromosomes" and 6 "genes".
-The 6 genes are named "gene\_Alpha", "gene\_Beta", "gene\_Zeta", "gene\_Gamma",
-"gene\_Delta", "gene\_Epsilon".
 
-For the remote example, GEMmaker automatically downloaded a very
-small RNA-seq file from NCBI. This dataset is from an uncharacterized bacteria,
-but luckly, CORG shares 3 of the genes with this bacteria so we could use CORG's
-reference file (pretend that the remote file is also for CORG, we are just using
-it becasue it is an unussually small file, which makes it ideal as an example).
+  Output Parameters:
+  ------------------
+    Output directory:           /home/{usr}/GEMmaker/output
+    Publish downloaded FASTQ:   true
+    Publish trimmed FASTQ:      true
+    Publish BAM:                true
+    Publish FPKM:               true
+    Publish TPM:                true
 
-This ran Hisat2. If you would like to run Salmon or Kallisto, please read on.
 
-Running Salmon or Kallisto on the example dataset
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Execution Parameters:
+  ---------------------
+    Queue size:                 100
+    Number of threads:          1
+    Maximum retries:            2
+    Error strategy:             ignore
 
-First, you must edit the ``nextflow.config`` file to say that you want to run the
-example using Salmon or Kallisto.
 
-In the GEMmaker directiry, edit the ``nextflow.config`` file using your favorite
-editor (here we use the `vim <https://www.vim.org/>` editor on the command line,
-but you can edit it using a gui based editor if you like. It just needs to be
-able to edit a text file)
+  Software Parameters:
+  --------------------
+    Trimmomatic clip path:      /home/{usr}/GEMmaker/files/fasta_adapter.txt
+    Trimmomatic minimum ratio:  0.7
 
-.. code::bash
+  [warm up] executor > local
+  [98/cba9bc] Submitted process > write_stage_files (1)
+  [d1/b1cbfd] Submitted process > write_stage_files (2)
+  [fb/ea14ef] Submitted process > write_stage_files (3)
+  [a1/822d07] Submitted process > retrieve_sample_metadata
+  [10/ff1219] Submitted process > write_stage_files (SRX218012)
+  [26/3da51b] Submitted process > start_first_batch
+  [6a/9ab954] Submitted process > read_sample_file (1.sample.csv)
+  [74/f3836d] Submitted process > read_sample_file (2.sample.csv)
+  [1b/d263eb] Submitted process > read_sample_file (3.sample.csv)
+  [0a/695151] Submitted process > read_sample_file (SRX218012.sample.csv)
+  [13/6fc3ea] Submitted process > fastqc_1 (1)
+  [ce/061c10] Submitted process > trimmomatic (1)
+  [2a/81acc1] Submitted process > fastqc_1 (2)
+  [82/019602] Submitted process > trimmomatic (2)
+  [f3/7a17ae] Submitted process > fastqc_1 (3)
+  [75/b755a2] Submitted process > fastq_dump (SRX218012)
+  [01/4c7c4f] Submitted process > trimmomatic (3)
+  [dc/0e3904] Submitted process > fastqc_2 (2)
+  [b7/eb221f] Submitted process > hisat2 (2)
+  [38/98d3ce] Submitted process > fastqc_2 (1)
+  [c0/52f716] Submitted process > hisat2 (1)
+  [be/1be15c] Submitted process > SRR_combine (SRX218012)
+  [9f/aa1f14] Submitted process > fastqc_2 (3)
+  [05/66f559] Submitted process > hisat2 (3)
+  [f7/8f2780] Submitted process > fastqc_1 (SRX218012)
+  [aa/0d9e57] Submitted process > trimmomatic (SRX218012)
+  [94/cedb63] Submitted process > samtools_sort (2)
+  [38/454c25] Submitted process > samtools_sort (3)
+  [36/f87963] Submitted process > samtools_sort (1)
+  [6d/458628] Submitted process > fastqc_2 (SRX218012)
+  [cd/05aa92] Submitted process > hisat2 (SRX218012)
+  [c3/298c49] Submitted process > samtools_index (2)
+  [ed/e775a0] Submitted process > samtools_index (3)
+  [7a/57bb71] Submitted process > samtools_index (1)
+  [90/62173a] Submitted process > samtools_sort (SRX218012)
+  [08/d28f6c] Submitted process > stringtie (3)
+  [cf/4e30b3] Submitted process > stringtie (1)
+  [c5/f89c37] Submitted process > samtools_index (SRX218012)
+  [d7/67724f] Submitted process > stringtie (2)
+  [ca/881318] Submitted process > stringtie (SRX218012)
+  [fc/5688e8] Submitted process > hisat2_raw (3)
+  [30/93eb53] Submitted process > fpkm_or_tpm (3)
+  [91/969c3a] Submitted process > hisat2_raw (SRX218012)
+  [9b/9c541f] Submitted process > fpkm_or_tpm (SRX218012)
+  [49/ddb561] Submitted process > fpkm_or_tpm (1)
+  [1b/3dbd3d] Submitted process > hisat2_raw (1)
+  [df/c3f00c] Submitted process > fpkm_or_tpm (2)
+  [5c/3053f4] Submitted process > hisat2_raw (2)
+  [32/df5310] Submitted process > next_sample (1)
+  [ea/812195] Submitted process > multiqc
+  [9c/d98d23] Submitted process > createGEM
+
+Additionally, you should see a directory called ``output`` with the following subdirectories:
+
+.. code:: bash
+
+  output/
+    1/
+    2/
+    3/
+    GEMs/
+    reports/
+    SRX218012/
+
+The "CORG" Example
+~~~~~~~~~~~~~~~~~~
+
+This example uses the imaginary organism "Cool Organism" (CORG). For the local example, we use a set of 3 artificially made RNA-seq runs made for CORG. CORG has a very small "genome" of only 2,336 nucleotides, 3 "chromosomes" and 6 "genes". The 6 genes are named ``gene_Alpha``, ``gene_Beta``, ``gene_Zeta``, ``gene_Gamma``, ``gene_Delta``, ``gene_Epsilon``.
+
+For the remote example, GEMmaker automatically downloads a very small RNA-seq file from NCBI. This dataset is from an uncharacterized bacteria, but luckily, CORG shares 3 of the genes with this bacteria so we can use CORG's reference file (pretend that the remote file is also for CORG, we are just using it becasue it is an unusually small file, which makes it an ideal example).
+
+Using Salmon or Kallisto
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The example uses Hisat2 by default. If you would like to use Salmon or Kallisto instead, you must edit ``nextflow.config`` and change the alignment type. In the GEMmaker directory, edit ``nextflow.config`` using your favorite text editor. Here we use `vim <https://www.vim.org/>`__ on the command line:
+
+.. code:: bash
 
   vim nextflow.config
 
-Then edit the Alignment section of the file. Change to 1 for Kallisto, and 2 for
-salmon
-
-Here is what it should look like to run the example with Kallisto
-
-.. code::bash
-
-  /**
-  * Alignment
-  *
-  * User chooses between hisat2, Kallisto or Salmon. If hisat2 is chosen,
-  * processes "samtools_sort", "samtools_index" and "stringtie" will also be
-  * done. All processes will end with a gene abundance file.
-  * Aligns reads to the reference genome.
-  */
-  alignment {
-    //
-    // hisat2 = 0
-    // Kallisto = 1
-    // Salmon = 2
-    //
-    which_alignment = 1
-  }
-
-After that, save your file and run the worklow:
+Then edit ``params.software.alignment`` in the config file. Change to ``1`` for Kallisto, and ``2`` for Salmon. For example, to use Kallisto:
 
 .. code:: bash
 
-    nextflow run main.nf -profile standard,localDocker
+  //
+  // hisat2 = 0
+  // Kallisto = 1
+  // Salmon = 2
+  //
+  alignment = 1
 
-Inputs explained
-~~~~~~~~~~~~~~~~
-The inputs for the example run are in the Reference directory and the 2 data
-directories in the examples directory.
+Then save your file and run the worklow:
+
+.. code:: bash
+
+  nextflow run main.nf -profile standard -with-docker
+
+Explanation of the Inputs
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The inputs for the example run are in the ``examples`` directory, and they consist of the reference directory and two data directories for local and remote samples.
 
 Reference directory
 ===================
@@ -98,95 +175,64 @@ The reference directory for the example is located at:
 
 .. code:: bash
 
-    GEMmaker/examples/reference
+  GEMmaker/examples/reference/
 
 This directory contains the
 
-- made up reference genome file (**CORG.fna**),
-- `GTF <https://uswest.ensembl.org/info/website/upload/gff.html>`__ file (**CORG.gtf**)
-- hisat index files (**CORG.?/ht2**).
-- kallisto index file (**CORG.transcripts.Kallisto.indexed**)
-- salmon index directory (**CORG.transcripts.Salmon.indexed/**)
-- **COMMANDS.sh** explaining how each of these were generated
+- reference genome file (``CORG.fna``),
+- `GTF <https://uswest.ensembl.org/info/website/upload/gff.html>`__ file (``CORG.gtf``)
+- hisat index files (``CORG.?/ht2``).
+- kallisto index file (``CORG.transcripts.Kallisto.indexed``)
+- salmon index directory (``CORG.transcripts.Salmon.indexed/``)
+- ``COMMANDS.sh`` explaining how each of these files were generated
 
 These are the files needed to run hisat2, kallisto, and salmon on the CORG data.
 
-Data directory
-==============
+Data directories
+================
 
-There are 2 sample data directories:
+There are two sample data directories:
 
 For local runs:
 
 .. code:: bash
 
-  /GEMmaker/examples/LocalRunExample/Data/
+  GEMmaker/examples/LocalRunExample/
 
 For remote runs:
 
 .. code:: bash
 
-  /GEMmaker/examples/RemoteRunExample/
+  GEMmaker/examples/RemoteRunExample/
 
-The Local runs directory contains 3 `FASTQ
-<https://en.wikipedia.org/wiki/FASTQ_format>`__ files for CORG containing
-RNA-seq data. These are examples of local unpaired data, and are each in a directory
-of their own. The file naming format for these reads is "?\_1.fastq" where the "?"
-is the number of the sample. GEM-maker finds these files through the glob
-pattern assigned to the "local\_samples\_path" in the **nextflow.config** file.
+The ``LocalRunExample`` directory contains three `FASTQ <https://en.wikipedia.org/wiki/FASTQ_format>`__ files for CORG containing RNA-seq data. These are examples of local unpaired data, and are each in a directory of their own. The file naming format for these reads is "?\_1.fastq" where the "?" is the number of the sample. GEMmaker finds these files through the glob pattern defined by ``local_samples_path`` in ``nextflow.config``.
 
-The Remote runs directory contains the file ``SRA_IDs.txt`` which contains the
-name of the remote file to be downloaded by GEMmaker from `NCBI's SRA repository
-<https://www.ncbi.nlm.nih.gov/sra>`__. In a real run, this would probably contain
-more than just one sra name, with each run being on a new line.
+The ``RemoteRunExample`` directory contains the file ``SRA_IDs.txt`` which contains a list of names for remote files to be downloaded by GEMmaker from `NCBI's SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__. In this case, there is only one run ID.
 
+Explanation of the Outputs
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Outputs explained
-~~~~~~~~~~~~~~~~~
-Results
-=======
+Once executed, the example should create a directory called ``output`` with several subdirectories. Four of these directories correspond to each sample (3 local, 1 remote), and each of these contains the files generated for that sample. The other directories are the ``reports`` directory and the ``GEMs`` directory.
 
-Once executed, the example should output a directory title ``output`` with 6 directories in it.
-Four of the directories correspond to each the samples run (3 local, 1 remote). Each
-of these contains the files generated for each of these samples.
+In each sample directory you will find the following files:
 
-In each output directory you will find the following files:
+- ``fastq``: The fastq reads file for the experiment.
+- ``fastqc``: 6 or 12 files (depending on paired or unpaired data) from fastqc. FastQC is configured to check files before and after trimmomatic.
+- ``bam``: Binary alignment file.
+- ``ga``: Expression level transcript abundance.
+- ``fpkm``: Two-column version of the ``ga`` file with only gene and FPKM value.
+- ``tpm``: Two-column version of the ``ga`` file with only gene and TPM value.
 
-- **fastq** The fastq reads file for the experiment.
-- **fastqc** 6 or 12 files (depending on paired or unpaired data)
-  from fastqc. Fastqc is set up tocheck files before and after trimmomatic.
-- **sam** alignment file.
-- **bam** binary alignment file.
-- **ga** expression level transcript abundance.
-- **fpkm** 2 column version of **ga** file with only gene and FPKM value.
-- **tpm** 2 column version of the **ga** file with only gene and TPM values.
-
-
-
-
-
-
-The remaining 2 directories are the ``reports`` directory and the ``GEM``
-directory. The ``reports`` directory will contain a ``multiqc_report.html`` file
-that reports on different statistics about the run.
+The ``reports`` directory will contain a ``multiqc_report.html`` file that provides several statistics about the run.
 
 .. figure:: /images/MultiQC_Report.png
   :alt: MultiQC_Report
 
 Figure 1: Image of the start of the report for the example run when run with Hisat2.
 
-The ``GEM`` directory contains the final GEM matrix, in raw, TPM and FPKM form.
-These can be used for further analysis.
-
-
-The output of GEM-maker can be used for several different analysis. The
-FPKM files can be combined into an expression matrix and then visualized
-using a heatmap. The following heatmap is the Local Example's fpkm
-values divided by 1000 in heatmap form. We can see that gene\_Zeta
-remained constant across all three samples, gene\_Beta decreased, and
-gene\_Alpha increased.
+The ``GEMs`` directory contains the final gene-expression matrices (GEMs) in raw, TPM and FPKM form. These GEMs can be used as input to other analyses such as WGCNA and KINC. They can also be visualized as heatmaps -- the heatmap below consists of the FPKM values (divided by 1000) from the local examples. We can see that ``gene_Zeta`` remained constant across all three samples, ``gene_Beta`` decreased, and ``gene_Alpha`` increased.
 
 .. figure:: /images/heatmap.png
-   :alt: heatmap
+  :alt: heatmap
 
-   heatmap
+Figure 2: Heatmap of FPKM values from local samples.

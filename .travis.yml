@@ -1,4 +1,5 @@
 jdk: openjdk8
+python: 3.5
 
 services:
   - docker
@@ -15,6 +16,9 @@ before_script:
 
 # Commands here should determine whether the build fails or not.
 script:
+  # Run unit tests
+  - python tests/retrieve_sra_metadata.py
+
   # Build the images.
   - docker build -t systemsgenetics/gemmaker:1.0        Dockerfiles/gemmaker/1.0/
   - docker build -t systemsgenetics/gemmaker:1.0-merged Dockerfiles/gemmaker/1.0-merged/

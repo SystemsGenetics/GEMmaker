@@ -17,7 +17,7 @@ params {
   project {
     name = "CORG RNA-Seq example"
     machine_name = "CORG_vs_samples"
-    description = "This is the default project settings for GEMmaker.  Change these to properly describe your project and provide a description that helps others understand the purpose of this analsis."
+    description = "This is the default project settings for GEMmaker. Use these setting to properly describe your project so that others can understand the purpose of your analysis."
   }
 
   input {
@@ -64,7 +64,7 @@ params {
     alignment = 0
 
     trimmomatic {
-      clip_path = "${PWD}/files/fasta_adapter.txt"
+      clip_path = "${baseDir}/files/fasta_adapter.txt"
       MINLEN = "0.7"
       quality = ""
       SLIDINGWINDOW = "4:15"
@@ -77,18 +77,21 @@ params {
 
 
 report {
+  enabled = true
   file = "${params.output.dir}/reports/report.html"
 }
 
 
 
 timeline {
+  enabled = true
   file = "${params.output.dir}/reports/timeline.html"
 }
 
 
 
 trace {
+  enabled = true
   fields = "task_id,hash,native_id,process,tag,name,status,exit,module,container,cpus,time,disk,memory,attempt,submit,start,complete,duration,realtime,queue,%cpu,%mem,rss,vmem,peak_rss,peak_vmem,rchar,wchar,syscr,syscw,read_bytes,write_bytes"
   file = "${params.output.dir}/reports/trace.txt"
   raw = true
@@ -107,6 +110,14 @@ docker {
 singularity {
   autoMounts = true
   cacheDir = "${PWD}/work-singularity"
+}
+
+
+
+k8s {
+	launchDir = "${PWD}"
+	storageClaimName = "deepgtex-prp"
+	storageMountPath = "${PWD}"
 }
 
 
