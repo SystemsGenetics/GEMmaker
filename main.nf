@@ -54,14 +54,13 @@ Output Parameters:
   Publish RAW:                ${params.output.publish_raw}
   Publish FPKM:               ${params.output.publish_fpkm}
   Publish TPM:                ${params.output.publish_tpm}
+  MultiQC:                    ${params.output.multiqc}
+  Create GEM:                 ${params.output.create_gem}
 
 
 Execution Parameters:
 ---------------------
   Queue size:                 ${params.execution.queue_size}
-  Number of threads:          ${params.execution.threads}
-  Maximum retries:            ${params.execution.max_retries}
-  Error strategy:             ${params.execution.error_strategy}
 
 
 Software Parameters:
@@ -740,7 +739,7 @@ process salmon {
       -l A \
       -1 ${sample_id}_1.fastq \
       -2 ${sample_id}_2.fastq \
-      -p ${params.execution.threads} \
+      -p ${task.cpus} \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   else
@@ -748,7 +747,7 @@ process salmon {
       -i . \
       -l A \
       -r ${sample_id}_1.fastq \
-      -p ${params.execution.threads} \
+      -p ${task.cpus} \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   fi
@@ -840,7 +839,7 @@ process trimmomatic {
   if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
     java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
       PE \
-      -threads ${params.execution.threads} \
+      -threads ${task.cpus} \
       ${params.software.trimmomatic.quality} \
       ${sample_id}_1.fastq \
       ${sample_id}_2.fastq \
@@ -862,7 +861,7 @@ process trimmomatic {
     # Now run trimmomatic
     java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
       SE \
-      -threads ${params.execution.threads} \
+      -threads ${task.cpus} \
       ${params.software.trimmomatic.quality} \
       ${sample_id}_1.fastq \
       ${sample_id}_1u_trim.fastq \
@@ -936,7 +935,7 @@ process hisat2 {
       -U ${sample_id}_1u_trim.fastq,${sample_id}_2u_trim.fastq \
       -S ${sample_id}_vs_${params.input.reference_prefix}.sam \
       -t \
-      -p ${params.execution.threads} \
+      -p ${task.cpus} \
       --un ${sample_id}_un.fastq \
       --dta-cufflinks \
       --new-summary \
@@ -949,7 +948,7 @@ process hisat2 {
       -U ${sample_id}_1u_trim.fastq \
       -S ${sample_id}_vs_${params.input.reference_prefix}.sam \
       -t \
-      -p ${params.execution.threads} \
+      -p ${task.cpus} \
       --un ${sample_id}_un.fastq \
       --dta-cufflinks \
       --new-summary \
@@ -1039,7 +1038,7 @@ process stringtie {
     """
     stringtie \
       -v \
-      -p ${params.execution.threads} \
+      -p ${task.cpus} \
       -e \
       -o ${sample_id}_vs_${params.input.reference_prefix}.gtf \
       -G ${gtf_file} \
