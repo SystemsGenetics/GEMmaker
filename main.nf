@@ -404,14 +404,12 @@ process next_sample {
     success = false
 
     try {
-      // Open the lock file.
-
       attempts = 0
       while (!lock)  {
         if (attempts < 3) {
           try {
             lockfile = new File("${workflow.workDir}/GEMmaker/gemmaker.lock")
-            channel = new RandomAccessFile(lockfile, "rw").getChannel() 
+            channel = new RandomAccessFile(lockfile, "rw").getChannel()
             lock = channel.lock()
           }
           catch (OverlappingFileLockException e) {
@@ -427,7 +425,6 @@ process next_sample {
           throw new Exception("Cannot obtain lock to proceed to next sample after 3 attempts")
         }
       }
-
       sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
       sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
 
