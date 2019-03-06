@@ -1,5 +1,9 @@
 #!/usr/bin/env nextflow
 
+import java.nio.channels.FileLock
+import java.nio.channels.FileChannel
+import java.nio.channels.OverlappingFileLockException;
+
 /**
  * ========
  * GEMmaker
@@ -391,27 +395,73 @@ process next_sample {
     val sample_id from NEXT_SAMPLE_SIGNAL
 
   exec:
-    // Move the finished sample to the done directory.
-    sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
-    sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
 
-    // Move the next sample file into the processing directory
-    // which will trigger the start of the next sample.
-    staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
-    if (staged_files.size() > 0) {
-      staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
+    // Use a file lock to prevent a race condition for grabbing the next sample.
+    File lockfile = null;
+    FileChannel channel = null;
+    FileLock lock = null;
+    success = false
+
+    try {
+      attempts = 0
+      while (!lock)  {
+        if (attempts < 3) {
+          try {
+            lockfile = new File("${workflow.workDir}/GEMmaker/gemmaker.lock")
+            channel = new RandomAccessFile(lockfile, "rw").getChannel()
+            lock = channel.lock()
+          }
+          catch (OverlappingFileLockException e) {
+            // Do nothing, let's try a few more times....
+          }
+          if (!lock) {
+            println "Waiting on lock. attempt " + attempts + "..."
+            sleep 1000
+            attempts = attempts + 1
+          }
+        }
+        else {
+          throw new Exception("Cannot obtain lock to proceed to next sample after 3 attempts")
+        }
+      }
+      sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
+      sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
+
+      // Move the next sample file into the processing directory
+      // which will trigger the start of the next sample.
+      staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
+      if (staged_files.size() > 0) {
+        staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
+      }
+      else {
+        processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
+        if (processing_files.size() == 0) {
+          NEXT_SAMPLE.close()
+          NEXT_SAMPLE_SIGNAL.close()
+          HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
+          KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
+          SALMON_SAMPLE_COMPLETE_SIGNAL.close()
+          SAMPLE_COMPLETE_SIGNAL.close()
+          MULTIQC_BOOTSTRAP.close()
+          CREATE_GEM_BOOTSTRAP.close()
+        }
+      }
+      success = true
     }
-    else {
-      processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
-      if (processing_files.size() == 0) {
-        NEXT_SAMPLE.close()
-        NEXT_SAMPLE_SIGNAL.close()
-        HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
-        KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
-        SALMON_SAMPLE_COMPLETE_SIGNAL.close()
-        SAMPLE_COMPLETE_SIGNAL.close()
-        MULTIQC_BOOTSTRAP.close()
-        CREATE_GEM_BOOTSTRAP.close()
+    catch (Exception e) {
+      println "Error: " + e.getMessage()
+    }
+    finally {
+      // Release the lock file and close the file if they were opened.
+      if (lock && lock.isValid()) {
+        lock.release();
+      }
+      if (channel) {
+        channel.close();
+      }
+      // Re-throw exception to terminate the workflow if there was no success.
+      if (!success) {
+        throw new Exception("Could not move to the next sample.")
       }
     }
 }
