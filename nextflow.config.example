@@ -121,12 +121,12 @@ k8s {
 
 process {
   container = "systemsgenetics/gemmaker:1.0"
+  errorStrategy = "retry"
+  maxRetries = 3
+
 
   withLabel:rate_limit {
     maxForks = 1
-  }
-  withLabel:retry {
-    errorStrategy = { task.attempt == 2 ? "retry" : "ignore" }
   }
 
   withLabel:aspera {
