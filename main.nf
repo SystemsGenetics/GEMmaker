@@ -485,7 +485,6 @@ REMOTE_SAMPLES.choice(REMOTE_SAMPLES_ASCP, REMOTE_SAMPLES_PREFETCH) { params.sof
 process ascp {
   tag { sample_id }
   label "aspera"
-  label "retry"
 
   input:
     set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_ASCP
@@ -514,7 +513,6 @@ process ascp {
 process prefetch {
   tag { sample_id }
   label "sratoolkit"
-  label "retry"
 
   input:
     set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_PREFETCH
