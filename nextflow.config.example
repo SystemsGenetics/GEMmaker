@@ -8,7 +8,7 @@
 manifest {
   mainScript = "main.nf"
   defaultBranch = "master"
-  nextflowVersion = ">=18.10"
+  nextflowVersion = ">=19.01"
 }
 
 
@@ -44,9 +44,6 @@ params {
 
   execution {
     queue_size = 100
-    threads = 1
-    max_retries = 2
-    error_strategy = "ignore"
   }
 
   software {
@@ -102,7 +99,7 @@ trace {
 docker {
   fixOwnership = true
   runOptions = "--init"
-  sudo = true
+  sudo = false
 }
 
 
@@ -124,12 +121,12 @@ k8s {
 
 process {
   container = "systemsgenetics/gemmaker:1.0"
+  errorStrategy = "retry"
+  maxRetries = 3
+
 
   withLabel:rate_limit {
     maxForks = 1
-  }
-  withLabel:retry {
-    errorStrategy = { "${task.attempt}" == "${params.execution.max_retries}" ? "retry" : "${params.execution.error_strategy}" }
   }
 
   withLabel:gemmaker {
@@ -193,19 +190,13 @@ profiles {
     process.executor = "local"
   }
 
-  // A profile for execution of GEMmaker on a stand-alone machine
-  // using Docker.
-  localDocker {
-    docker {
-      enabled = true
-    }
-  }
-
-  // A profile for execution of GEMmaker on a stand-alone machine
-  // using singularity.
-  localSingularity {
-    singularity {
-      enabled = true
+  // A profile for testing on the Travis.CI testing platform.
+  travis {
+    docker.enabled = true
+    process {
+      withLabel:retry {
+        errorStrategy = "terminate"
+      }
     }
   }
 
@@ -229,47 +220,14 @@ profiles {
   //
   pbs {
     process {
-      executor = "pbs"
+      executor = "pbspro"
       time = "8h"
-      clusterOptions = "-l select=1:mem=2gb:ncpus=2"
+      cpus = 2
+      memory = 2.GB
 
       withLabel:multithreaded {
-        clusterOptions = "-l select=1:mem=8gb:ncpus=${params.execution.threads}"
-      }
-
-      withLabel:gemmaker {
-        module = "aspera"
-        module = "fastQC"
-        module = "hisat2"
-        module = "anaconda3"
-        module = "samtools"
-        module = "sratoolkit"
-        module = "stringtie"
-        module = "trimmomatic"
-      }
-      withLabel:aspera {
-        module = "aspera"
-      }
-      withLabel:fastqc {
-        module = "fastQC"
-      }
-      withLabel:hisat2 {
-        module = "hisat2"
-      }
-      withLabel:python3 {
-        module = "anaconda3"
-      }
-      withLabel:samtools {
-        module = "samtools"
-      }
-      withLabel:sratoolkit {
-        module = "sratoolkit"
-      }
-      withLabel:stringtie {
-        module = "stringtie"
-      }
-      withLabel:trimmomatic {
-        module = "trimmomatic"
+        cpus = 8
+        memory = 8.GB
       }
     }
     executor {
@@ -290,46 +248,93 @@ profiles {
       cpus = 1
 
       withLabel:multithreaded {
-        cpus = "${params.execution.threads}"
-      }
-
-      withLabel:gemmaker {
-        module = "aspera"
-        module = "fastQC"
-        module = "hisat2"
-        module = "python3"
-        module = "samtools"
-        module = "sratoolkit"
-        module = "stringtie"
-        module = "trimmomatic"
-      }
-      withLabel:aspera {
-        module = "aspera"
-      }
-      withLabel:fastqc {
-        module = "fastQC"
-      }
-      withLabel:hisat2 {
-        module = "hisat2"
-      }
-      withLabel:python3 {
-        module = "python3"
-      }
-      withLabel:samtools {
-        module = "samtools"
-      }
-      withLabel:sratoolkit {
-        module = "sratoolkit"
-      }
-      withLabel:stringtie {
-        module = "stringtie"
-      }
-      withLabel:trimmomatic {
-        module = "trimmomatic"
+        cpus = 1
       }
     }
     executor {
       queueSize = "${params.execution.queue_size}"
+    }
+  }
+
+  //
+  // In lieu of using Docker or Singularity, software dependencies
+  // can be provided by Environment Modules (or a compatible equivalent
+  // such as Lmod). Module names may vary from system to system; the
+  // following profiles are specific to Palmetto and Kamiak respectively,
+  // but you will likely need to create your own profile that uses the
+  // correct module names for your cluster.
+  //
+  palmetto_modules {
+    withLabel:gemmaker {
+      module = "aspera"
+      module = "fastQC"
+      module = "hisat2"
+      module = "anaconda3"
+      module = "samtools"
+      module = "sratoolkit"
+      module = "stringtie"
+      module = "trimmomatic"
+    }
+    withLabel:aspera {
+      module = "aspera"
+    }
+    withLabel:fastqc {
+      module = "fastQC"
+    }
+    withLabel:hisat2 {
+      module = "hisat2"
+    }
+    withLabel:python3 {
+      module = "anaconda3"
+    }
+    withLabel:samtools {
+      module = "samtools"
+    }
+    withLabel:sratoolkit {
+      module = "sratoolkit"
+    }
+    withLabel:stringtie {
+      module = "stringtie"
+    }
+    withLabel:trimmomatic {
+      module = "trimmomatic"
+    }
+  }
+
+  kamiak_modules {
+    withLabel:gemmaker {
+      module = "aspera"
+      module = "fastQC"
+      module = "hisat2"
+      module = "python3"
+      module = "samtools"
+      module = "sratoolkit"
+      module = "stringtie"
+      module = "trimmomatic"
+    }
+    withLabel:aspera {
+      module = "aspera"
+    }
+    withLabel:fastqc {
+      module = "fastQC"
+    }
+    withLabel:hisat2 {
+      module = "hisat2"
+    }
+    withLabel:python3 {
+      module = "python3"
+    }
+    withLabel:samtools {
+      module = "samtools"
+    }
+    withLabel:sratoolkit {
+      module = "sratoolkit"
+    }
+    withLabel:stringtie {
+      module = "stringtie"
+    }
+    withLabel:trimmomatic {
+      module = "trimmomatic"
     }
   }
 }

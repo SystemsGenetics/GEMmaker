@@ -1,5 +1,9 @@
 #!/usr/bin/env nextflow
 
+import java.nio.channels.FileLock
+import java.nio.channels.FileChannel
+import java.nio.channels.OverlappingFileLockException;
+
 /**
  * ========
  * GEMmaker
@@ -50,14 +54,13 @@ Output Parameters:
   Publish RAW:                ${params.output.publish_raw}
   Publish FPKM:               ${params.output.publish_fpkm}
   Publish TPM:                ${params.output.publish_tpm}
+  MultiQC:                    ${params.output.multiqc}
+  Create GEM:                 ${params.output.create_gem}
 
 
 Execution Parameters:
 ---------------------
   Queue size:                 ${params.execution.queue_size}
-  Number of threads:          ${params.execution.threads}
-  Maximum retries:            ${params.execution.max_retries}
-  Error strategy:             ${params.execution.error_strategy}
 
 
 Software Parameters:
@@ -392,27 +395,73 @@ process next_sample {
     val sample_id from NEXT_SAMPLE_SIGNAL
 
   exec:
-    // Move the finished sample to the done directory.
-    sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
-    sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
 
-    // Move the next sample file into the processing directory
-    // which will trigger the start of the next sample.
-    staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
-    if (staged_files.size() > 0) {
-      staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
+    // Use a file lock to prevent a race condition for grabbing the next sample.
+    File lockfile = null;
+    FileChannel channel = null;
+    FileLock lock = null;
+    success = false
+
+    try {
+      attempts = 0
+      while (!lock)  {
+        if (attempts < 3) {
+          try {
+            lockfile = new File("${workflow.workDir}/GEMmaker/gemmaker.lock")
+            channel = new RandomAccessFile(lockfile, "rw").getChannel()
+            lock = channel.lock()
+          }
+          catch (OverlappingFileLockException e) {
+            // Do nothing, let's try a few more times....
+          }
+          if (!lock) {
+            println "Waiting on lock. attempt " + attempts + "..."
+            sleep 1000
+            attempts = attempts + 1
+          }
+        }
+        else {
+          throw new Exception("Cannot obtain lock to proceed to next sample after 3 attempts")
+        }
+      }
+      sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
+      sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
+
+      // Move the next sample file into the processing directory
+      // which will trigger the start of the next sample.
+      staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
+      if (staged_files.size() > 0) {
+        staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
+      }
+      else {
+        processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
+        if (processing_files.size() == 0) {
+          NEXT_SAMPLE.close()
+          NEXT_SAMPLE_SIGNAL.close()
+          HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
+          KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
+          SALMON_SAMPLE_COMPLETE_SIGNAL.close()
+          SAMPLE_COMPLETE_SIGNAL.close()
+          MULTIQC_BOOTSTRAP.close()
+          CREATE_GEM_BOOTSTRAP.close()
+        }
+      }
+      success = true
     }
-    else {
-      processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
-      if (processing_files.size() == 0) {
-        NEXT_SAMPLE.close()
-        NEXT_SAMPLE_SIGNAL.close()
-        HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
-        KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
-        SALMON_SAMPLE_COMPLETE_SIGNAL.close()
-        SAMPLE_COMPLETE_SIGNAL.close()
-        MULTIQC_BOOTSTRAP.close()
-        CREATE_GEM_BOOTSTRAP.close()
+    catch (Exception e) {
+      println "Error: " + e.getMessage()
+    }
+    finally {
+      // Release the lock file and close the file if they were opened.
+      if (lock && lock.isValid()) {
+        lock.release();
+      }
+      if (channel) {
+        channel.close();
+      }
+      // Re-throw exception to terminate the workflow if there was no success.
+      if (!success) {
+        throw new Exception("Could not move to the next sample.")
       }
     }
 }
@@ -436,7 +485,6 @@ REMOTE_SAMPLES.choice(REMOTE_SAMPLES_ASCP, REMOTE_SAMPLES_PREFETCH) { params.sof
 process ascp {
   tag { sample_id }
   label "aspera"
-  label "retry"
 
   input:
     set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_ASCP
@@ -465,7 +513,6 @@ process ascp {
 process prefetch {
   tag { sample_id }
   label "sratoolkit"
-  label "retry"
 
   input:
     set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_PREFETCH
@@ -690,7 +737,7 @@ process salmon {
       -l A \
       -1 ${sample_id}_1.fastq \
       -2 ${sample_id}_2.fastq \
-      -p ${params.execution.threads} \
+      -p ${task.cpus} \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   else
@@ -698,7 +745,7 @@ process salmon {
       -i . \
       -l A \
       -r ${sample_id}_1.fastq \
-      -p ${params.execution.threads} \
+      -p ${task.cpus} \
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   fi
@@ -790,7 +837,7 @@ process trimmomatic {
   if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
     java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
       PE \
-      -threads ${params.execution.threads} \
+      -threads ${task.cpus} \
       ${params.software.trimmomatic.quality} \
       ${sample_id}_1.fastq \
       ${sample_id}_2.fastq \
@@ -812,7 +859,7 @@ process trimmomatic {
     # Now run trimmomatic
     java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
       SE \
-      -threads ${params.execution.threads} \
+      -threads ${task.cpus} \
       ${params.software.trimmomatic.quality} \
       ${sample_id}_1.fastq \
       ${sample_id}_1u_trim.fastq \
@@ -886,7 +933,7 @@ process hisat2 {
       -U ${sample_id}_1u_trim.fastq,${sample_id}_2u_trim.fastq \
       -S ${sample_id}_vs_${params.input.reference_prefix}.sam \
       -t \
-      -p ${params.execution.threads} \
+      -p ${task.cpus} \
       --un ${sample_id}_un.fastq \
       --dta-cufflinks \
       --new-summary \
@@ -899,7 +946,7 @@ process hisat2 {
       -U ${sample_id}_1u_trim.fastq \
       -S ${sample_id}_vs_${params.input.reference_prefix}.sam \
       -t \
-      -p ${params.execution.threads} \
+      -p ${task.cpus} \
       --un ${sample_id}_un.fastq \
       --dta-cufflinks \
       --new-summary \
@@ -989,7 +1036,7 @@ process stringtie {
     """
     stringtie \
       -v \
-      -p ${params.execution.threads} \
+      -p ${task.cpus} \
       -e \
       -o ${sample_id}_vs_${params.input.reference_prefix}.gtf \
       -G ${gtf_file} \
