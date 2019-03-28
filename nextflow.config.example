@@ -128,6 +128,9 @@ process {
   withLabel:rate_limit {
     maxForks = 1
   }
+  withLabel:retry {
+    errorStrategy = { task.attempt < 3 ? "retry" : "ignore" }
+  }
 
   withLabel:gemmaker {
     container = "systemsgenetics/gemmaker:1.0-merged"
