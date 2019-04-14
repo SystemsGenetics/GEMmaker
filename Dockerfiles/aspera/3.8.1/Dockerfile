@@ -1,4 +1,4 @@
-FROM systemsgenetics/gemmaker:1.0
+FROM systemsgenetics/sratoolkit:2.9.2
 
 RUN mkdir /gemmaker && groupadd -g 61000 gemdocker \
   && useradd -g 61000 --no-log-init --create-home --shell /bin/bash -u 61000 -d /gemmaker/gemdocker gemdocker
