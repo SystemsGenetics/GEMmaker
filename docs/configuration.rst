@@ -39,13 +39,13 @@ Example of ``SRA_IDs.txt`` format:
 local_samples_path
 ==================
 
-The glob that retrieves locally stored fastq files. An example of a proper glob to retrieve files can be seen below as the default. This glob pattern will find all files that have an ending of ``_1.fastq`` or ``_2.fastq`` in the subdirectories of the folder ``Sample``. If no local files are to be used, set this parameter to ``"none"``.
+The glob that retrieves locally stored fastq files. An example of a proper glob to retrieve paired FASTQ files can be seen below and is set as the default. This glob pattern will find all files that have an ending of ``_1.fastq`` or ``_2.fastq`` in the subdirectories of the folder ``Sample`` and group those that have the same file prefix into a paired-set. If no local files are to be used, set this parameter to ``"none"``.
 
 Default:
 
 .. code:: bash
 
-  local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/\*_{1,2}.fastq"
+  local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
 
 reference_path
 ==============
