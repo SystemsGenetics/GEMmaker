@@ -128,7 +128,14 @@ process {
   withLabel:rate_limit {
     maxForks = 1
   }
+  withLabel:retry {
+    errorStrategy = { task.attempt < 3 ? "retry" : "ignore" }
+  }
 
+  withLabel:gemmaker {
+    container = "systemsgenetics/gemmaker:1.0-merged"
+    time = "72h"
+  }
   withLabel:aspera {
     container = "systemsgenetics/aspera:3.8.1"
   }
@@ -261,6 +268,16 @@ profiles {
   // correct module names for your cluster.
   //
   palmetto_modules {
+    withLabel:gemmaker {
+      module = "aspera"
+      module = "fastQC"
+      module = "hisat2"
+      module = "anaconda3"
+      module = "samtools"
+      module = "sratoolkit"
+      module = "stringtie"
+      module = "trimmomatic"
+    }
     withLabel:aspera {
       module = "aspera"
     }
@@ -288,6 +305,16 @@ profiles {
   }
 
   kamiak_modules {
+    withLabel:gemmaker {
+      module = "aspera"
+      module = "fastQC"
+      module = "hisat2"
+      module = "python3"
+      module = "samtools"
+      module = "sratoolkit"
+      module = "stringtie"
+      module = "trimmomatic"
+    }
     withLabel:aspera {
       module = "aspera"
     }
