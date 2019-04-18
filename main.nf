@@ -500,7 +500,7 @@ process ascp {
     prefix=`echo \$id | perl -p -e 's/^([SDE]RR)\\d+\$/\$1/'`
     sixchars=`echo \$id | perl -p -e 's/^([SDE]RR\\d{1,3}).*\$/\$1/'`
     url="/sra/sra-instant/reads/ByRun/sra/\$prefix/\$sixchars/\$id/\$id.sra"
-    ascp -i /home/gemdocker/.aspera/connect/etc/asperaweb_id_dsa.openssh -k 1 -T -l 1000m anonftp@ftp.ncbi.nlm.nih.gov:\$url .
+    ascp -i /gemmaker/gemdocker/.aspera/connect/etc/asperaweb_id_dsa.openssh -k 1 -T -l 1000m anonftp@ftp.ncbi.nlm.nih.gov:\$url .
   done
   """
 }
