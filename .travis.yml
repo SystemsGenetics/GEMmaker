@@ -27,5 +27,5 @@ script:
   - make -C Dockerfiles
 
   # Run the workflow.
-  - nextflow run main.nf -profile travis
-  - nextflow run main-e2e.nf -profile travis
+  - nextflow run main.nf -ansi-log false -profile travis
+  - nextflow run main-e2e.nf -ansi-log false -profile travis
