@@ -469,45 +469,6 @@ process next_sample {
 
 
 /**
- * Route the REMOTE_SAMPLES channel to the appropriate process
- * to download SRA files.
- */
-REMOTE_SAMPLES_ASCP = Channel.create()
-REMOTE_SAMPLES_PREFETCH = Channel.create()
-
-REMOTE_SAMPLES.choice(REMOTE_SAMPLES_ASCP, REMOTE_SAMPLES_PREFETCH) { params.software.sra_download }
-
-
-
-/**
- * Downloads SRA files from NCBI using Aspera.
- */
-process ascp {
-  tag { sample_id }
-  label "aspera"
-
-  input:
-    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_ASCP
-
-  output:
-    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT_ASCP
-    set val(sample_id), file("*.sra") into SRA_TO_CLEAN_ASCP
-
-  script:
-  """
-  ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
-  for id in \$ids; do
-    prefix=`echo \$id | perl -p -e 's/^([SDE]RR)\\d+\$/\$1/'`
-    sixchars=`echo \$id | perl -p -e 's/^([SDE]RR\\d{1,3}).*\$/\$1/'`
-    url="/sra/sra-instant/reads/ByRun/sra/\$prefix/\$sixchars/\$id/\$id.sra"
-    ascp -i /gemmaker/gemdocker/.aspera/connect/etc/asperaweb_id_dsa.openssh -k 1 -T -l 1000m anonftp@ftp.ncbi.nlm.nih.gov:\$url .
-  done
-  """
-}
-
-
-
-/**
  * Downloads SRA files from NCBI using the SRA Toolkit.
  */
 process prefetch {
@@ -515,28 +476,21 @@ process prefetch {
   label "sratoolkit"
 
   input:
-    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_PREFETCH
+    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES
 
   output:
-    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT_PREFETCH
-    set val(sample_id), file("*.sra") into SRA_TO_CLEAN_PREFETCH
+    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT
+    set val(sample_id), file("*.sra") into SRA_TO_CLEAN
 
   script:
   """
   ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
-  for run_id in \$ids; do
-    prefetch --output-directory . \$run_id
+  for id in \$ids; do
+    ascp_path=`which ascp`
+    prefetch -v --max-size 50G --output-directory . --ascp-path "\$ascp_path|\$ASPERA_KEY" --ascp-options "-k 1 -T -l 1000m" \$id
   done
   """
 }
-
-
-
-/**
- * Merge the output channels from each SRA downloader process.
- */
-SRA_TO_EXTRACT = SRA_TO_EXTRACT_ASCP.mix(SRA_TO_EXTRACT_PREFETCH)
-SRA_TO_CLEAN = SRA_TO_CLEAN_ASCP.mix(SRA_TO_CLEAN_PREFETCH)
 
 
 

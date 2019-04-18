@@ -210,24 +210,13 @@ process process_sample {
   """
   # for remote samples, prepare FASTQ files from NCBI
   if [[ "${type}" == "remote" ]]; then
-    # download SRA files from NCB
+    # download SRA files from NCBI
     SRR_IDS="${remote_ids.join(' ')}"
 
-    # use ascp
-    if [[ ${params.software.sra_download} == 0 ]]; then
-      for id in \$SRR_IDS; do
-        prefix=`echo \$id | perl -p -e 's/^([SDE]RR)\\d+\$/\$1/'`
-        sixchars=`echo \$id | perl -p -e 's/^([SDE]RR\\d{1,3}).*\$/\$1/'`
-        url="/sra/sra-instant/reads/ByRun/sra/\$prefix/\$sixchars/\$id/\$id.sra"
-        ascp -i /home/gemdocker/.aspera/connect/etc/asperaweb_id_dsa.openssh -k 1 -T -l 1000m anonftp@ftp.ncbi.nlm.nih.gov:\$url .
-      done
-
-    # or use the SRA toolkit
-    elif [[ ${params.software.sra_download} == 1 ]]; then
-      for id in \$SRR_IDS; do
-        prefetch --output-directory . \$id
-      done
-    fi
+    for id in \$SRR_IDS; do
+      ascp_path=`which ascp`
+      prefetch -v --max-size 50G --output-directory . --ascp-path "\$ascp_path|\$ASPERA_KEY" --ascp-options "-k 1 -T -l 1000m" \$id
+    done
 
     # extract FASTQ files from SRA files
     SRA_FILES=\$(ls *.sra)

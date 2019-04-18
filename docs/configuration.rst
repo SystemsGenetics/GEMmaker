@@ -218,20 +218,6 @@ Default:
 Software
 ~~~~~~~~
 
-sra_download
-============
-
-Which tool to use for downloading remote SRA files.
-
-- ``0``: aspera
-- ``1``: sratoolkit
-
-Default:
-
-.. code:: bash
-
-  sra_download = 0
-
 alignment
 =========
 
