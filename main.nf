@@ -497,10 +497,8 @@ process ascp {
   """
   ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
   for id in \$ids; do
-    prefix=`echo \$id | perl -p -e 's/^([SDE]RR)\\d+\$/\$1/'`
-    sixchars=`echo \$id | perl -p -e 's/^([SDE]RR\\d{1,3}).*\$/\$1/'`
-    url="/sra/sra-instant/reads/ByRun/sra/\$prefix/\$sixchars/\$id/\$id.sra"
-    ascp -i \$ASPERA_KEY -k 1 -T -l 1000m anonftp@ftp.ncbi.nlm.nih.gov:\$url .
+    ascp_path=`which ascp`
+    prefetch -v --max-size 50G --output-directory . --ascp-path "\$ascp_path|\$ASPERA_KEY" --ascp-options "-k 1 -T -l 1000m" \$id
   done
   """
 }
@@ -525,7 +523,7 @@ process prefetch {
   """
   ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
   for run_id in \$ids; do
-    prefetch --output-directory . \$run_id
+    prefetch --max-size 50G --output-directory . \$run_id
   done
   """
 }

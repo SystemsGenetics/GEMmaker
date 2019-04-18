@@ -160,7 +160,7 @@ process {
     time = "48h"
   }
   withLabel:sratoolkit {
-    container = "systemsgenetics/sratoolkit:2.9.2"
+    container = "systemsgenetics/sratoolkit:2.9.6"
     time = "48h"
   }
   withLabel:stringtie {
