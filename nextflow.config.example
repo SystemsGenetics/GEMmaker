@@ -48,12 +48,6 @@ params {
 
   software {
     //
-    // ascp = 0
-    // prefetch = 1
-    //
-    sra_download = 0
-
-    //
     // hisat2 = 0
     // Kallisto = 1
     // Salmon = 2
@@ -135,9 +129,6 @@ process {
   withLabel:gemmaker {
     container = "systemsgenetics/gemmaker:1.0-merged"
     time = "72h"
-  }
-  withLabel:aspera {
-    container = "systemsgenetics/sratoolkit:2.9.6"
   }
   withLabel:fastqc {
     container = "systemsgenetics/fastqc:0.11.7"
@@ -269,7 +260,6 @@ profiles {
   //
   palmetto_modules {
     withLabel:gemmaker {
-      module = "aspera"
       module = "fastQC"
       module = "hisat2"
       module = "anaconda3"
@@ -277,9 +267,6 @@ profiles {
       module = "sratoolkit"
       module = "stringtie"
       module = "trimmomatic"
-    }
-    withLabel:aspera {
-      module = "aspera"
     }
     withLabel:fastqc {
       module = "fastQC"
@@ -306,7 +293,6 @@ profiles {
 
   kamiak_modules {
     withLabel:gemmaker {
-      module = "aspera"
       module = "fastQC"
       module = "hisat2"
       module = "python3"
@@ -314,9 +300,6 @@ profiles {
       module = "sratoolkit"
       module = "stringtie"
       module = "trimmomatic"
-    }
-    withLabel:aspera {
-      module = "aspera"
     }
     withLabel:fastqc {
       module = "fastQC"

@@ -210,22 +210,13 @@ process process_sample {
   """
   # for remote samples, prepare FASTQ files from NCBI
   if [[ "${type}" == "remote" ]]; then
-    # download SRA files from NCB
+    # download SRA files from NCBI
     SRR_IDS="${remote_ids.join(' ')}"
 
-    # use ascp
-    if [[ ${params.software.sra_download} == 0 ]]; then
-      for id in \$SRR_IDS; do
-        ascp_path=`which ascp`
-        prefetch -v --max-size 50G --output-directory . --ascp-path "\$ascp_path|\$ASPERA_KEY" --ascp-options "-k 1 -T -l 1000m" \$id
-      done
-
-    # or use the SRA toolkit
-    elif [[ ${params.software.sra_download} == 1 ]]; then
-      for id in \$SRR_IDS; do
-        prefetch -v --max-size 50G --output-directory . \$id
-      done
-    fi
+    for id in \$SRR_IDS; do
+      ascp_path=`which ascp`
+      prefetch -v --max-size 50G --output-directory . --ascp-path "\$ascp_path|\$ASPERA_KEY" --ascp-options "-k 1 -T -l 1000m" \$id
+    done
 
     # extract FASTQ files from SRA files
     SRA_FILES=\$(ls *.sra)

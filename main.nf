@@ -469,29 +469,18 @@ process next_sample {
 
 
 /**
- * Route the REMOTE_SAMPLES channel to the appropriate process
- * to download SRA files.
+ * Downloads SRA files from NCBI using the SRA Toolkit.
  */
-REMOTE_SAMPLES_ASCP = Channel.create()
-REMOTE_SAMPLES_PREFETCH = Channel.create()
-
-REMOTE_SAMPLES.choice(REMOTE_SAMPLES_ASCP, REMOTE_SAMPLES_PREFETCH) { params.software.sra_download }
-
-
-
-/**
- * Downloads SRA files from NCBI using Aspera.
- */
-process ascp {
+process prefetch {
   tag { sample_id }
-  label "aspera"
+  label "sratoolkit"
 
   input:
-    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_ASCP
+    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES
 
   output:
-    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT_ASCP
-    set val(sample_id), file("*.sra") into SRA_TO_CLEAN_ASCP
+    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT
+    set val(sample_id), file("*.sra") into SRA_TO_CLEAN
 
   script:
   """
@@ -502,39 +491,6 @@ process ascp {
   done
   """
 }
-
-
-
-/**
- * Downloads SRA files from NCBI using the SRA Toolkit.
- */
-process prefetch {
-  tag { sample_id }
-  label "sratoolkit"
-
-  input:
-    set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES_PREFETCH
-
-  output:
-    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT_PREFETCH
-    set val(sample_id), file("*.sra") into SRA_TO_CLEAN_PREFETCH
-
-  script:
-  """
-  ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
-  for run_id in \$ids; do
-    prefetch -v --max-size 50G --output-directory . \$run_id
-  done
-  """
-}
-
-
-
-/**
- * Merge the output channels from each SRA downloader process.
- */
-SRA_TO_EXTRACT = SRA_TO_EXTRACT_ASCP.mix(SRA_TO_EXTRACT_PREFETCH)
-SRA_TO_CLEAN = SRA_TO_CLEAN_ASCP.mix(SRA_TO_CLEAN_PREFETCH)
 
 
 
