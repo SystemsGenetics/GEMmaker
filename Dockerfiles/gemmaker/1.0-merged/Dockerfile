@@ -15,10 +15,11 @@ RUN apt-get update -qq \
 
 
 # install aspera 3.8.1
-RUN groupadd -g 61000 gemdocker \
-  && useradd -g 61000 --no-log-init --create-home --shell /bin/bash -u 61000 gemdocker
-USER gemdocker
-WORKDIR /home/gemdocker
+RUN groupadd -g 61000 gemmaker \
+  && useradd -g 61000 --no-log-init --create-home --shell /bin/bash -u 61000 gemmaker
+
+USER gemmaker
+WORKDIR /home/gemmaker
 
 RUN wget -q https://download.asperasoft.com/download/sw/connect/3.8.1/ibm-aspera-connect-3.8.1.161274-linux-g2.12-64.tar.gz \
   && tar -xf ibm-aspera-connect-3.8.1.161274-linux-g2.12-64.tar.gz \
@@ -28,7 +29,10 @@ RUN wget -q https://download.asperasoft.com/download/sw/connect/3.8.1/ibm-aspera
 USER root
 WORKDIR /root
 
-ENV PATH "$PATH:/home/gemdocker/.aspera/connect/bin"
+RUN mv /home/gemmaker/.aspera /opt/aspera
+
+ENV PATH "$PATH:/opt/aspera/connect/bin"
+ENV ASPERA_KEY "/opt/aspera/connect/etc/asperaweb_id_dsa.openssh"
 
 
 
@@ -85,12 +89,12 @@ ENV PATH="$PATH:/usr/local/samtools-1.9/bin"
 
 
 
-# install SRA toolkit 2.9.2
-RUN wget -q https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.9.2/sratoolkit.2.9.2-ubuntu64.tar.gz \
-  && tar -xf sratoolkit.2.9.2-ubuntu64.tar.gz \
-  && mv sratoolkit.2.9.2-ubuntu64 /usr/local/sratoolkit.2.9.2
+# install SRA toolkit 2.9.6
+RUN wget -q https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.9.6/sratoolkit.2.9.6-ubuntu64.tar.gz \
+  && tar -xf sratoolkit.2.9.6-ubuntu64.tar.gz \
+  && mv sratoolkit.2.9.6-ubuntu64 /usr/local/sratoolkit.2.9.6
 
-ENV PATH "$PATH:/usr/local/sratoolkit.2.9.2/bin"
+ENV PATH "$PATH:/usr/local/sratoolkit.2.9.6/bin"
 
 
 

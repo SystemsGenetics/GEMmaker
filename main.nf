@@ -523,7 +523,7 @@ process prefetch {
   """
   ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
   for run_id in \$ids; do
-    prefetch --max-size 50G --output-directory . \$run_id
+    prefetch -v --max-size 50G --output-directory . \$run_id
   done
   """
 }

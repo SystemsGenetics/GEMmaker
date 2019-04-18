@@ -216,16 +216,14 @@ process process_sample {
     # use ascp
     if [[ ${params.software.sra_download} == 0 ]]; then
       for id in \$SRR_IDS; do
-        prefix=`echo \$id | perl -p -e 's/^([SDE]RR)\\d+\$/\$1/'`
-        sixchars=`echo \$id | perl -p -e 's/^([SDE]RR\\d{1,3}).*\$/\$1/'`
-        url="/sra/sra-instant/reads/ByRun/sra/\$prefix/\$sixchars/\$id/\$id.sra"
-        ascp -i /home/gemdocker/.aspera/connect/etc/asperaweb_id_dsa.openssh -k 1 -T -l 1000m anonftp@ftp.ncbi.nlm.nih.gov:\$url .
+        ascp_path=`which ascp`
+        prefetch -v --max-size 50G --output-directory . --ascp-path "\$ascp_path|\$ASPERA_KEY" --ascp-options "-k 1 -T -l 1000m" \$id
       done
 
     # or use the SRA toolkit
     elif [[ ${params.software.sra_download} == 1 ]]; then
       for id in \$SRR_IDS; do
-        prefetch --output-directory . \$id
+        prefetch -v --max-size 50G --output-directory . \$id
       done
     fi
 
