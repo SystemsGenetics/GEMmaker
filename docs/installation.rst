@@ -49,6 +49,11 @@ High-Performance Computing (HPC) cluster
 
 Most HPC clusters do not allow users to run Docker, but provide Singularity instead. You will need to make sure that nextflow and Singularity are installed on your cluster (you may need the help of your HPC administrator). If your HPC environment does not support Singularity, you will need to install the containerized dependencies as Environment Modules. Again, you may need to work with your HPC administrator to install the necessary software and make it available via the module system.
 
+Kubernetes
+==========
+
+GEMmaker can be run on a [Kubernetes](https://kubernetes.io/) cluster with minimal effort. Consult the [kube-runner](https://github.com/SystemsGenetics/kube-runner) project for instructions.
+
 Installing GEMmaker
 ~~~~~~~~~~~~~~~~~~~
 
