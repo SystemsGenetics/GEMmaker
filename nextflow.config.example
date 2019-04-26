@@ -21,14 +21,14 @@ params {
   }
 
   input {
-    remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
-    local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
-    reference_path = "${PWD}/examples/reference/"
+    remote_list_path = "${baseDir}/examples/RemoteRunExample/SRA_IDs.txt"
+    local_samples_path = "${baseDir}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
+    reference_path = "${baseDir}/examples/reference/"
     reference_prefix = "CORG"
   }
 
   output {
-    dir = "${PWD}/output"
+    dir = "output"
     sample_dir = { "${params.output.dir}/${sample_id}" }
     publish_mode = "link"
     publish_sra = true
@@ -100,15 +100,13 @@ docker {
 
 singularity {
   autoMounts = true
-  cacheDir = "${PWD}/work-singularity"
+  cacheDir = "work-singularity"
 }
 
 
 
 k8s {
-	launchDir = "${PWD}"
 	storageClaimName = "deepgtex-prp"
-	storageMountPath = "${PWD}"
 }
 
 

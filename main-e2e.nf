@@ -26,7 +26,7 @@ Workflow Information:
 ---------------------
   Project Directory:  ${workflow.projectDir}
   Launch Directory:   ${workflow.launchDir}
-  Working Directory:  ${workflow.workDir}
+  Work Directory:     ${workflow.workDir}
   Config Files:       ${workflow.configFiles}
   Container Engine:   ${workflow.containerEngine}
   Profile(s):         ${workflow.profile}
@@ -42,7 +42,7 @@ Input Parameters:
 
 Output Parameters:
 ------------------
-  Output directory:           ${params.output.dir}
+  Output directory:           ${workflow.launchDir}/${params.output.dir}
   Publish SRA:                ${params.output.publish_sra}
   Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
@@ -73,6 +73,7 @@ Software Parameters:
 HISAT2_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}*.ht2*").collect()
 KALLISTO_INDEX = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Kallisto.indexed").collect()
 SALMON_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Salmon.indexed/*").collect()
+FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
 GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf").collect()
 
 
@@ -95,7 +96,7 @@ if (params.input.remote_list_path == "none") {
   SRR_FILE = Channel.empty()
 }
 else {
-  SRR_FILE = Channel.value(params.input.remote_list_path)
+  SRR_FILE = Channel.fromPath(params.input.remote_list_path)
 }
 
 
@@ -122,7 +123,7 @@ process retrieve_sra_metadata {
   label "python3"
 
   input:
-    val srr_file from SRR_FILE
+    file srr_file from SRR_FILE
 
   output:
     stdout REMOTE_SAMPLES_LIST
@@ -188,6 +189,7 @@ process process_sample {
 
   input:
     set val(sample_id), val(type), val(remote_ids), val(local_files) from ALL_SAMPLES
+    file fasta_adapter from FASTA_ADAPTER
     file indexes from INDEXES
     file gtf_file from GTF_FILE
 
@@ -311,7 +313,7 @@ process process_sample {
         ${params.software.trimmomatic.quality} \
         ${sample_id}_1.fastq \
         ${sample_id}_1u_trim.fastq \
-        ILLUMINACLIP:${params.software.trimmomatic.clip_path}:2:40:15 \
+        ILLUMINACLIP:${fasta_adapter}:2:40:15 \
         LEADING:${params.software.trimmomatic.LEADING} \
         TRAILING:${params.software.trimmomatic.TRAILING} \
         SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
@@ -504,7 +506,10 @@ process multiqc {
 
   script:
     """
-    multiqc --ignore ${params.output.dir}/GEM --ignore ${params.output.dir}/reports ${params.output.dir}
+    multiqc \
+      --ignore ${workflow.launchDir}/${params.output.dir}/GEMs \
+      --ignore ${workflow.launchDir}/${params.output.dir}/reports \
+      ${workflow.launchDir}/${params.output.dir}
     """
 }
 
@@ -530,15 +535,24 @@ process create_gem {
   """
   # FPKM format is only generated if hisat2 is used
   if [[ ${params.output.publish_fpkm} == true && ${params.software.alignment} == 0 ]]; then
-    create-gem.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type FPKM
+    create-gem.py \
+      --sources ${workflow.launchDir}/${params.output.dir} \
+      --prefix ${params.project.machine_name} \
+      --type FPKM
   fi;
 
   if [[ ${params.output.publish_raw} == true ]]; then
-    create-gem.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type raw
+    create-gem.py \
+      --sources ${workflow.launchDir}/${params.output.dir} \
+      --prefix ${params.project.machine_name} \
+      --type raw
   fi
 
   if [[ ${params.output.publish_tpm} == true ]]; then
-    create-gem.py --sources ${params.output.dir} --prefix ${params.project.machine_name} --type TPM
+    create-gem.py \
+      --sources ${workflow.launchDir}/${params.output.dir} \
+      --prefix ${params.project.machine_name} \
+      --type TPM
   fi
   """
 }
