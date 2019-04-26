@@ -22,7 +22,7 @@ Default:
 
 .. code:: bash
 
-  remote_list_path = "${PWD}/examples/RemoteRunExample/SRA_IDs.txt"
+  remote_list_path = "${baseDir}/examples/RemoteRunExample/SRA_IDs.txt"
 
 Example of ``SRA_IDs.txt`` format:
 
@@ -45,7 +45,7 @@ Default:
 
 .. code:: bash
 
-  local_samples_path = "${PWD}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
+  local_samples_path = "${baseDir}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
 
 reference_path
 ==============
@@ -99,7 +99,7 @@ Default:
 
 .. code:: bash
 
-  reference_path = "${PWD}/examples/reference/"
+  reference_path = "${baseDir}/examples/reference/"
 
 reference_prefix
 ================
@@ -124,7 +124,7 @@ Default:
 
 .. code:: bash
 
-  dir = "${PWD}/output"
+  dir = "output"
 
 sample_dir
 ==========
