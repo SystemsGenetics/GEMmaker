@@ -14,10 +14,6 @@ install:
   - mkdir -p ~/bin
   - cp nextflow ~/bin
 
-# Commands that must run before any tests are executed.
-before_script:
-  - cp nextflow.config.example nextflow.config
-
 # Commands here should determine whether the build fails or not.
 script:
   # Run unit tests
