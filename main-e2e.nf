@@ -34,15 +34,15 @@ Workflow Information:
 
 Input Parameters:
 -----------------
-  Remote fastq list path:     ${params.input.remote_list_path}
-  Local sample glob:          ${params.input.local_samples_path}
-  Reference genome path:      ${params.input.reference_path}
+  Local sample files:         ${params.input.dir}/${params.input.local_sample_files}
+  Remote sample list:         ${params.input.dir}/${params.input.remote_sample_list}
+  Reference genome path:      ${params.input.dir}/${params.input.reference_path}
   Reference genome prefix:    ${params.input.reference_prefix}
 
 
 Output Parameters:
 ------------------
-  Output directory:           ${workflow.launchDir}/${params.output.dir}
+  Output directory:           ${params.output.dir}
   Publish SRA:                ${params.output.publish_sra}
   Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
@@ -70,11 +70,11 @@ Software Parameters:
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}*.ht2*").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Kallisto.indexed").collect()
-SALMON_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Salmon.indexed/*").collect()
+HISAT2_INDEXES = Channel.fromPath("${params.input.dir}/${params.input.reference_path}/${params.input.reference_prefix}.*.ht2*").collect()
+KALLISTO_INDEX = Channel.fromPath("${params.input.dir}/${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Kallisto.indexed").collect()
+SALMON_INDEXES = Channel.fromPath("${params.input.dir}/${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Salmon.indexed/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
-GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf").collect()
+GTF_FILE = Channel.fromPath("${params.input.dir}/${params.input.reference_path}/${params.input.reference_prefix}.gtf").collect()
 
 
 
@@ -82,21 +82,23 @@ GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.refer
  * Local Sample Input.
  * This checks the folder that the user has given
  */
-if (params.input.local_samples_path == "none") {
+if (params.input.local_sample_files == "none") {
   LOCAL_SAMPLE_FILES = Channel.empty()
 }
 else {
-  LOCAL_SAMPLE_FILES = Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
+  LOCAL_SAMPLE_FILES = Channel.fromFilePairs("${params.input.dir}/${params.input.local_sample_files}", size: -1)
 }
+
+
 
 /**
  * Remote fastq_run_id Input.
  */
-if (params.input.remote_list_path == "none") {
+if (params.input.remote_sample_list == "none") {
   SRR_FILE = Channel.empty()
 }
 else {
-  SRR_FILE = Channel.fromPath(params.input.remote_list_path)
+  SRR_FILE = Channel.fromPath("${params.input.dir}/${params.input.remote_sample_list}")
 }
 
 

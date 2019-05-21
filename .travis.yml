@@ -16,12 +16,11 @@ install:
 
 # Commands here should determine whether the build fails or not.
 script:
+  # Build the Docker images
+  - make -C Dockerfiles
+
   # Run unit tests
   - python tests/retrieve_sra_metadata.py
 
-  # Build the images.
-  - make -C Dockerfiles
-
-  # Run the workflow.
-  - nextflow run main.nf -ansi-log false -profile travis
-  - nextflow run main-e2e.nf -ansi-log false -profile travis
+  # Run the example test
+  - tests/run-example.sh

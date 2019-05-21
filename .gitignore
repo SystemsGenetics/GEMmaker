@@ -1,6 +1,7 @@
 __pycache__
 .nextflow*
+docs/_build/
+input
 output
 work
-docs/_build/
 nextflow
