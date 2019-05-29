@@ -2,8 +2,11 @@
 
 set -e
 
-# create input directory
-mkdir input
+# make sure input directory doesn't already exist
+if [[ -d input ]]; then
+	echo "error: input directory already exists"
+	exit -1
+fi
 
 # copy example data to input directory
 cp -r examples/CORG input
