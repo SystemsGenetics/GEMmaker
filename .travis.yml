@@ -17,7 +17,7 @@ install:
 # Commands here should determine whether the build fails or not.
 script:
   # Build the Docker images
-  - make -C Dockerfiles
+  - make -C docker
 
   # Run unit tests
   - python tests/retrieve_sra_metadata.py
