@@ -1,7 +1,7 @@
 .. _examples:
 
-Example Usage
--------------
+Example
+-------
 
 The GEMmaker example consists of a small set of local files (provided in the GEMmaker repo) and a remote file (automatically downloaded from `NCBI's SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__). These samples are extremely small and are only meant to demonstrate usage for a mixed set of local and remote files.
 
