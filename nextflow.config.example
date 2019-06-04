@@ -25,6 +25,7 @@ params {
     local_samples_path = "${baseDir}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
     reference_path = "${baseDir}/examples/reference/"
     reference_prefix = "CORG"
+    skip_list_path = "${baseDir}/examples/samples2skip.txt"
   }
 
   output {
@@ -113,17 +114,12 @@ k8s {
 
 process {
   container = "systemsgenetics/gemmaker:1.0"
-  errorStrategy = "retry"
-  maxRetries = 3
+  errorStrategy = { task.attempt < 3 ? "retry" : "finish" }
 
 
   withLabel:rate_limit {
     maxForks = 1
   }
-  withLabel:retry {
-    errorStrategy = { task.attempt < 3 ? "retry" : "finish" }
-  }
-
   withLabel:gemmaker {
     container = "systemsgenetics/gemmaker:1.0-merged"
     time = "72h"

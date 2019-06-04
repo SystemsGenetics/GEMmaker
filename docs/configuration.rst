@@ -112,6 +112,23 @@ Default:
 
   reference_prefix = "CORG"
 
+skip_list_path
+==============
+
+At times a sample may fail. GEMmaker is set to gracefully finish when a sample fails after all retries have been attempted.  When this occurs, Nextflow will provide some useful error messages to indicate why the sample did not complete.  This gives you the opportunity to correct any issues and resume the workflow. However, some issues cannot be corrected and the best action is to skip the sample.
+
+This argument provides the path to a file that contains any samples that should be skipped. By default this argument links to a file in the `examples` folder and is empty.  Add the names of any samples that should be skipped. 
+
+.. note::
+
+  For SRA files the sample name begins with the `SRX` prefix, not the `SRR` prefix.
+
+Default:
+
+.. code:: bash
+
+   skip_list_path = "${baseDir}/examples/samples2skip.txt"
+
 Output
 ~~~~~~
 
