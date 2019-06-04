@@ -108,7 +108,6 @@ else {
 }
 
 
-
 /**
  * Set the pattern for publishing downloaded FASTQ files
  */
@@ -196,8 +195,7 @@ LOCAL_SAMPLE_FILES_FOR_STAGING
 ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
   .mix(LOCAL_SAMPLES_FOR_STAGING)
 
-// Create the directories we'll use for running
-// batches
+// Create the directories we'll use for running batches
 file("${workflow.workDir}/GEMmaker").mkdir()
 file("${workflow.workDir}/GEMmaker/stage").mkdir()
 file("${workflow.workDir}/GEMmaker/process").mkdir()
@@ -248,6 +246,12 @@ process write_stage_files {
     val (1) into SAMPLES_READY_SIGNAL
 
   exec:
+
+    // Get any samples to skip
+    new File("${params.input.skip_samples_path}).eachLine { line ->
+      skip_samples << line
+    }
+
     // Create a file for each samples.
     sample_file = file("${workflow.workDir}/GEMmaker/stage/" + sample[0] + '.sample.csv')
     sample_file.withWriter {
@@ -468,8 +472,6 @@ process next_sample {
     }
 }
 
-
-
 /**
  * Downloads SRA files from NCBI using the SRA Toolkit.
  */
@@ -489,7 +491,7 @@ process prefetch {
   ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
   for id in \$ids; do
     ascp_path=`which ascp`
-    prefetch -v --max-size 50G --output-directory . --ascp-path "\$ascp_path|\$ASPERA_KEY" --ascp-options "-k 1 -T -l 1000m" \$id
+    prefetch -v -v --max-size 50G --output-directory . --ascp-path "\$ascp_path|\$ASPERA_KEY" --ascp-options "-k 1 -T -l 1000m" \$id
   done
   """
 }
@@ -828,8 +830,6 @@ process trimmomatic {
   fi
   """
 }
-
-
 
 /**
  * Performs fastqc on fastq files post trimmomatic

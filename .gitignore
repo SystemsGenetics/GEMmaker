@@ -5,3 +5,5 @@ output
 work
 docs/_build/
 nextflow
+*.out
+*.srun

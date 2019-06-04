@@ -121,7 +121,7 @@ process {
     maxForks = 1
   }
   withLabel:retry {
-    errorStrategy = { task.attempt < 3 ? "retry" : "ignore" }
+    errorStrategy = { task.attempt < 3 ? "retry" : "finish" }
   }
 
   withLabel:gemmaker {
@@ -158,6 +158,9 @@ process {
   withLabel:sratoolkit {
     container = "systemsgenetics/sratoolkit:2.9.6"
     time = "48h"
+    // To prevent throttling by NCBI we have to limit
+    // the number of prefetch jobs we launch at a time
+    maxForks = 100
   }
   withLabel:stringtie {
     container = "systemsgenetics/stringtie:1.3.4d"
