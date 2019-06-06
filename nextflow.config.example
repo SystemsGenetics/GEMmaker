@@ -23,8 +23,18 @@ params {
   input {
     remote_list_path = "${baseDir}/examples/RemoteRunExample/SRA_IDs.txt"
     local_samples_path = "${baseDir}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
-    reference_path = "${baseDir}/examples/reference/"
-    reference_prefix = "CORG"
+
+    // Reference paths (note, if you are only using one alignment tool, i.e. kallisto, you do not need references for the other alignment tools)
+
+    // Point to the salmon index directory
+    salmon_reference_file_fullpath = "${baseDir}/examples/reference/CORG.transcripts.Salmon.indexed"
+
+    // Point to the kallisto index file
+    kallisto_reference_file_fullpath = "${baseDir}/examples/reference/CORG.transcripts.Kallisto.indexed"
+
+    // To run Hisat2, must have the ".gtf" file and ".ht2" build files.
+    hisat_reference_path = "${baseDir}/examples/reference/"
+    hisat_reference_prefix = "CORG"
   }
 
   output {

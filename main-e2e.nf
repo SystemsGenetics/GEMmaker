@@ -19,62 +19,70 @@
 println """\
 
 ===================================
- G E M M A K E R   P I P E L I N E
+G E M M A K E R   P I P E L I N E
 ===================================
 
 Workflow Information:
 ---------------------
-  Project Directory:  ${workflow.projectDir}
-  Launch Directory:   ${workflow.launchDir}
-  Work Directory:     ${workflow.workDir}
-  Config Files:       ${workflow.configFiles}
-  Container Engine:   ${workflow.containerEngine}
-  Profile(s):         ${workflow.profile}
+ Project Directory:  ${workflow.projectDir}
+ Launch Directory:   ${workflow.launchDir}
+ Work Directory:     ${workflow.workDir}
+ Config Files:       ${workflow.configFiles}
+ Container Engine:   ${workflow.containerEngine}
+ Profile(s):         ${workflow.profile}
 
 
 Input Parameters:
 -----------------
-  Remote fastq list path:     ${params.input.remote_list_path}
-  Local sample glob:          ${params.input.local_samples_path}
-  Reference genome path:      ${params.input.reference_path}
-  Reference genome prefix:    ${params.input.reference_prefix}
+ Remote fastq list path:     ${params.input.remote_list_path}
+ Local sample glob:          ${params.input.local_samples_path}
+ Reference genome path:      ${params.input.hisat_reference_path}
+ Reference genome prefix:    ${params.input.hisat_reference_prefix}
 
 
 Output Parameters:
 ------------------
-  Output directory:           ${workflow.launchDir}/${params.output.dir}
-  Publish SRA:                ${params.output.publish_sra}
-  Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
-  Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
-  Publish BAM:                ${params.output.publish_bam}
-  Publish RAW:                ${params.output.publish_raw}
-  Publish FPKM:               ${params.output.publish_fpkm}
-  Publish TPM:                ${params.output.publish_tpm}
-  MultiQC:                    ${params.output.multiqc}
-  Create GEM:                 ${params.output.create_gem}
+ Output directory:           ${workflow.launchDir}/${params.output.dir}
+ Publish SRA:                ${params.output.publish_sra}
+ Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
+ Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
+ Publish BAM:                ${params.output.publish_bam}
+ Publish RAW:                ${params.output.publish_raw}
+ Publish FPKM:               ${params.output.publish_fpkm}
+ Publish TPM:                ${params.output.publish_tpm}
+ MultiQC:                    ${params.output.multiqc}
+ Create GEM:                 ${params.output.create_gem}
 
 
 Execution Parameters:
 ---------------------
-  Queue size:                 ${params.execution.queue_size}
+ Queue size:                 ${params.execution.queue_size}
 
 
 Software Parameters:
 --------------------
-  Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
-  Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}
-"""
+ Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
+ Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}"""
+
+   /**
+    * Determines allignment user chose, prints option. If incorrect option, throws error
+    */
+   if(params.software.alignment == 0){println " Alignment tool: hisat2\n"}
+   else if(params.software.alignment == 1){println " Alignment tool: Kallisto\n"}
+   else if(params.software.alignment == 2){println " Alignment tool: Salmon\n"}
+   else {error "Error: Must Select a Valid Alignment Tool! Please select alignment tool in the 'nextflow.config' file"}
 
 
 
-/**
- * Create value channels that can be reused
- */
-HISAT2_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}*.ht2*").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Kallisto.indexed").collect()
-SALMON_INDEXES = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.transcripts.Salmon.indexed/*").collect()
-FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
-GTF_FILE = Channel.fromPath("${params.input.reference_path}/${params.input.reference_prefix}.gtf").collect()
+
+ /**
+  * Create value channels that can be reused
+  */
+ HISAT2_INDEXES = Channel.fromPath("${params.input.hisat_reference_path}/${params.input.hisat_reference_prefix}*.ht2*").collect()
+ KALLISTO_INDEX = Channel.fromPath("${params.input.kallisto_reference_file_fullpath}").collect()
+ SALMON_INDEXES = Channel.fromPath("${params.input.salmon_reference_file_fullpath}/*").collect()
+ FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
+ GTF_FILE = Channel.fromPath("${params.input.hisat_reference_path}/${params.input.hisat_reference_prefix}.gtf").collect()
 
 
 
@@ -333,32 +341,32 @@ process process_sample {
     # perform hisat2 alignment of fastq files to a genome reference
     if [ -e ${sample_id}_2p_trim.fastq ]; then
       hisat2 \
-        -x ${params.input.reference_prefix} \
+        -x ${params.input.hisat_reference_prefix} \
         --no-spliced-alignment \
         -q \
         -1 ${sample_id}_1p_trim.fastq \
         -2 ${sample_id}_2p_trim.fastq \
         -U ${sample_id}_1u_trim.fastq,${sample_id}_2u_trim.fastq \
-        -S ${sample_id}_vs_${params.input.reference_prefix}.sam \
+        -S ${sample_id}.sam \
         -t \
         -p ${task.cpus} \
         --un ${sample_id}_un.fastq \
         --dta-cufflinks \
         --new-summary \
-        --summary-file ${sample_id}_vs_${params.input.reference_prefix}.sam.log
+        --summary-file ${sample_id}.sam.log
     else
       hisat2 \
-        -x ${params.input.reference_prefix} \
+        -x ${params.input.hisat_reference_prefix} \
         --no-spliced-alignment \
         -q \
         -U ${sample_id}_1u_trim.fastq \
-        -S ${sample_id}_vs_${params.input.reference_prefix}.sam \
+        -S ${sample_id}.sam \
         -t \
         -p ${task.cpus} \
         --un ${sample_id}_un.fastq \
         --dta-cufflinks \
         --new-summary \
-        --summary-file ${sample_id}_vs_${params.input.reference_prefix}.sam.log
+        --summary-file ${sample_id}.sam.log
     fi
 
     rm -f ${sample_id}_un.fastq
@@ -370,8 +378,8 @@ process process_sample {
 
     # sort the SAM alignment file and convert it to BAM
     samtools sort \
-      ${sample_id}_vs_${params.input.reference_prefix}.sam \
-      -o ${sample_id}_vs_${params.input.reference_prefix}.bam \
+      ${sample_id}.sam \
+      -o ${sample_id}.bam \
       -O bam \
       -T temp
 
@@ -379,18 +387,18 @@ process process_sample {
     rm -f *.sam
 
     # index BAM alignment file
-    samtools index ${sample_id}_vs_${params.input.reference_prefix}.bam
-    samtools stats ${sample_id}_vs_${params.input.reference_prefix}.bam > ${sample_id}_vs_${params.input.reference_prefix}.bam.log
+    samtools index ${sample_id}.bam
+    samtools stats ${sample_id}.bam > ${sample_id}.bam.log
 
     # generate expression-level transcript abundance
     stringtie \
       -v \
       -p ${task.cpus} \
       -e \
-      -o ${sample_id}_vs_${params.input.reference_prefix}.gtf \
+      -o ${sample_id}.gtf \
       -G ${gtf_file} \
-      -A ${sample_id}_vs_${params.input.reference_prefix}.ga \
-      -l ${sample_id} ${sample_id}_vs_${params.input.reference_prefix}.bam
+      -A ${sample_id}.ga \
+      -l ${sample_id} ${sample_id}.bam
 
     # remove BAM file if it will not be published
     if [[ ${params.output.publish_bam} == false ]]; then
@@ -399,21 +407,21 @@ process process_sample {
 
     # generate raw counts from hisat2/stringtie
     # Run the prepDE.py script provided by stringtie to get the raw counts.
-    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_prefix}.gtf" > gtf_files
-    prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_prefix}.raw.pre
+    echo "${sample_id}\t./${sample_id}.gtf" > gtf_files
+    prepDE.py -i gtf_files -g ${sample_id}.raw.pre
 
     # Reformat the raw file to be the same as the TPM/FKPM files.
-    cat ${sample_id}_vs_${params.input.reference_prefix}.raw.pre | \
+    cat ${sample_id}.raw.pre | \
       grep -v gene_id | \
-      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_prefix}.raw
+      perl -pi -e "s/,/\\t/g" > ${sample_id}.raw
 
     # generate the final FPKM and TPM files
     if [[ ${params.output.publish_fpkm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.fpkm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}.ga > ${sample_id}.fpkm
     fi
 
     if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}.ga > ${sample_id}.tpm
     fi
 
   # or use kallisto
@@ -421,8 +429,8 @@ process process_sample {
     # perform Kallisto alignment of fastq files
     if [ -e ${sample_id}_2.fastq ]; then
       kallisto quant \
-        -i  ${params.input.reference_prefix}.transcripts.Kallisto.indexed \
-        -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
+        -i  ${indexes} \
+        -o ${sample_id}.ga \
         ${sample_id}_1.fastq \
         ${sample_id}_2.fastq > ${sample_id}.kallisto.log 2>&1
     else
@@ -430,18 +438,18 @@ process process_sample {
         --single \
         -l 70 \
         -s .0000001 \
-        -i ${params.input.reference_prefix}.transcripts.Kallisto.indexed \
-        -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
+        -i ${indexes} \
+        -o ${sample_id}.ga \
         ${sample_id}_1.fastq > ${sample_id}.kallisto.log 2>&1
     fi
 
     # generate TPM and raw count files
     if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}.ga/abundance.tsv > ${sample_id}.tpm
     fi
 
     if [[ ${params.output.publish_raw} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_prefix}.raw
+      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}.ga/abundance.tsv > ${sample_id}.raw
     fi
 
   # or use salmon
@@ -454,7 +462,7 @@ process process_sample {
         -1 ${sample_id}_1.fastq \
         -2 ${sample_id}_2.fastq \
         -p ${task.cpus} \
-        -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
+        -o ${sample_id}.ga \
         --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
     else
       salmon quant \
@@ -462,17 +470,17 @@ process process_sample {
         -l A \
         -r ${sample_id}_1.fastq \
         -p ${task.cpus} \
-        -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
+        -o ${sample_id}.ga \
         --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
     fi
 
     # generate final TPM and raw count files
     if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.tpm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}.ga/quant.sf > ${sample_id}.tpm
     fi
 
     if [[ ${params.output.publish_raw} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_prefix}.raw
+      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}.ga/quant.sf > ${sample_id}.raw
     fi
   fi
   """
