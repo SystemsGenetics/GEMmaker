@@ -42,16 +42,16 @@ Input Parameters:
 
 Output Parameters:
 ------------------
- Output directory:           ${workflow.launchDir}/${params.output.dir}
- Publish SRA:                ${params.output.publish_sra}
- Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
- Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
- Publish BAM:                ${params.output.publish_bam}
- Publish RAW:                ${params.output.publish_raw}
- Publish FPKM:               ${params.output.publish_fpkm}
- Publish TPM:                ${params.output.publish_tpm}
- MultiQC:                    ${params.output.multiqc}
- Create GEM:                 ${params.output.create_gem}
+  Output directory:           ${params.output.dir}
+  Publish SRA:                ${params.output.publish_sra}
+  Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
+  Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
+  Publish BAM:                ${params.output.publish_bam}
+  Publish RAW:                ${params.output.publish_raw}
+  Publish FPKM:               ${params.output.publish_fpkm}
+  Publish TPM:                ${params.output.publish_tpm}
+  MultiQC:                    ${params.output.multiqc}
+  Create GEM:                 ${params.output.create_gem}
 
 
 Execution Parameters:
