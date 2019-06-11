@@ -19,6 +19,7 @@ fn_ignore_files:
     - 'multiqc_config.yaml'
     - 'multiqc_report.html'
     - 'nextflow.config'
+    - 'nextflow.config.example'
     - 'README.md'
     - 'trace.txt'
     - '*.html'

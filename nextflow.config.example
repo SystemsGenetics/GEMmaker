@@ -56,7 +56,7 @@ params {
     alignment = 0
 
     trimmomatic {
-      clip_path = "$baseDir/files/fasta_adapter.txt"
+      clip_path = "${baseDir}/files/fasta_adapter.txt"
       MINLEN = "0.7"
       quality = ""
       SLIDINGWINDOW = "4:15"

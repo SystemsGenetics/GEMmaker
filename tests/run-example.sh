@@ -8,6 +8,9 @@ if [[ -d input ]]; then
 	exit -1
 fi
 
+# copy example config file
+cp nextflow.config.example nextflow.config
+
 # copy example data to input directory
 cp -r examples/CORG input
 
