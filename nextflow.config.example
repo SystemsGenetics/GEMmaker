@@ -105,17 +105,10 @@ singularity {
 
 
 
-k8s {
-	storageClaimName = "deepgtex-prp"
-}
-
-
-
 process {
   container = "systemsgenetics/gemmaker:1.0"
   errorStrategy = "retry"
   maxRetries = 3
-
 
   withLabel:rate_limit {
     maxForks = 1
@@ -202,6 +195,26 @@ profiles {
       withLabel:retry {
         errorStrategy = "terminate"
       }
+    }
+  }
+
+  //
+  // The k8s profile provides basic execution settings for running the workflow
+  // on a Kubernetes cluster.
+  //
+  k8s {
+    process {
+      executor = "k8s"
+      cpus = 1
+      memory = 1.GB
+
+      withLabel:multithreaded {
+        cpus = 8
+        memory = 8.GB
+      }
+    }
+    executor {
+      queueSize = "${params.execution.queue_size}"
     }
   }
 
