@@ -8,6 +8,7 @@ The GEMmaker example consists of a small set of local files (provided in the GEM
 Once GEMmaker and its dependencies have been installed, you can run GEMmaker with the example data. First, copy the example config file to ``nextflow.config``:
 
 .. code:: bash
+
   cp nextflow.config.example nextflow.config
 
 The ``nextflow.config.example`` file is already configured to run this example. Execute the workflow using the following command:
