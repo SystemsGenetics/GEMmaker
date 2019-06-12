@@ -1,7 +1,6 @@
 __pycache__
 .nextflow*
-nextflow.config
+docs/_build/
 output
 work
-docs/_build/
 nextflow
