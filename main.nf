@@ -990,8 +990,8 @@ process stringtie {
     file gtf_file from GTF_FILE
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into STRINGTIE_GTF_FOR_FPKM
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.gtf") into STRINGTIE_GTF_FOR_RAW
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga"), file("${sample_id}_vs_${params.input.reference_prefix}.gtf") into STRINGTIE_GTF_FOR_FPKM
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.*") into STRINGTIE_GTF_FOR_CLEANING
     set val(sample_id), val(1) into CLEAN_BAM_SIGNAL
 
   script:
@@ -1008,52 +1008,23 @@ process stringtie {
 }
 
 
-
 /**
- * Generate raw counts from Hisat2/stringtie
+ * Generates the final FPKM / TPM / raw files from Hisat2
  */
-process hisat2_raw {
+process hisat2_fpkm_tpm {
   publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
   label "stringtie"
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.gtf") from STRINGTIE_GTF_FOR_RAW
+  set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga"), file("${sample_id}_vs_${params.input.reference_prefix}.gtf") from STRINGTIE_GTF_FOR_FPKM
 
-  output:
-    file "${sample_id}_vs_${params.input.reference_prefix}.raw" into RAW_COUNTS
-
-  when:
-    params.output.publish_raw == true
-
-  script:
-  """
-  # Run the prepDE.py script provided by stringtie to get the raw counts.
-  echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_prefix}.gtf" > gtf_files
-  prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_prefix}.raw.pre
-
-  # Reformat the raw file to be the same as the TPM/FKPM files.
-  cat ${sample_id}_vs_${params.input.reference_prefix}.raw.pre | \
-    grep -v gene_id | \
-    perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_prefix}.raw
-  """
-}
-
-
-
-/**
- * Generates the final FPKM / TPM files from Hisat2
- */
-process hisat2_fpkm_tpm {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
-  tag { sample_id }
-
-  input:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from STRINGTIE_GTF_FOR_FPKM
 
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.fpkm" optional true into FPKMS
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into TPM
+    file "${sample_id}_vs_${params.input.reference_prefix}.raw" optional true into RAW_COUNTS
+    set val(sample_id), val(1) into CLEAN_STRINGTIE_SIGNAL
     val sample_id into HISAT2_SAMPLE_COMPLETE_SIGNAL
 
   script:
@@ -1065,6 +1036,17 @@ process hisat2_fpkm_tpm {
   if [[ ${params.output.publish_tpm} == true ]]; then
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
   fi
+
+  if [[ ${params.output.publish_raw} == true ]]; then
+    # Run the prepDE.py script provided by stringtie to get the raw counts.
+    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_prefix}.gtf" > gtf_files
+    prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_prefix}.raw.pre
+
+    # Reformat the raw file to be the same as the TPM/FKPM files.
+    cat ${sample_id}_vs_${params.input.reference_prefix}.raw.pre | \
+      grep -v gene_id | \
+      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_prefix}.raw
+    fi
   """
 }
 
@@ -1290,6 +1272,9 @@ process clean_sam {
   input:
     set val(sample_id), val(files_list) from SAM_CLEANUP_READY
 
+  when:
+    params.output.publish_sam == false
+
   script:
     template "clean_work_files.sh"
 }
@@ -1360,6 +1345,30 @@ process clean_salmon_ga {
 
   when:
     params.output.publish_gene_abundance == false
+
+  script:
+    template "clean_work_files.sh"
+}
+
+
+/**
+ * Merge the Salmon .ga file with the clean salmon ga signal so that we can
+ * remove the .ga file after it has been used
+ */
+SMIX = STRINGTIE_GTF_FOR_CLEANING.mix(CLEAN_STRINGTIE_SIGNAL)
+SMIX.groupTuple(size: 2).set { STRINGTIE_CLEANUP_READY }
+
+/**
+ * Clean up Salmon GA files
+ */
+process clean_stringtie_ga {
+  tag { sample_id }
+
+  input:
+    set val(sample_id), val(files_list) from STRINGTIE_CLEANUP_READY
+
+  when:
+    params.output.publish_stringtie_gtf_and_ga == false
 
   script:
     template "clean_work_files.sh"
