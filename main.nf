@@ -686,8 +686,8 @@ process salmon {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into SALMON_GA
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf") into SALMON_GA_TO_CLEAN
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_SALMON_SIGNAL
-    file "*.salmon.log" into SALMON_LOG
 
   script:
   """
@@ -727,6 +727,7 @@ process salmon_tpm {
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into SALMON_TPM
     file "${sample_id}_vs_${params.input.reference_prefix}.raw" optional true into SALMON_RAW
+    set val(sample_id), val(1) into CLEAN_SALMON_GA_SIGNAL
     val sample_id  into SALMON_SAMPLE_COMPLETE_SIGNAL
 
   script:
@@ -1339,4 +1340,27 @@ process clean_kallisto_ga {
 
   script:
     template "clean_work_dirs.sh"
+}
+
+/**
+ * Merge the Salmon .ga file with the clean salmon ga signal so that we can
+ * remove the .ga file after it has been used
+ */
+SGAMIX = SALMON_GA_TO_CLEAN.mix(CLEAN_SALMON_GA_SIGNAL)
+SGAMIX.groupTuple(size: 2).set { SALMON_GA_CLEANUP_READY }
+
+/**
+ * Clean up Salmon GA files
+ */
+process clean_salmon_ga {
+  tag { sample_id }
+
+  input:
+    set val(sample_id), val(files_list) from SALMON_GA_CLEANUP_READY
+
+  when:
+    params.output.publish_gene_abundance == false
+
+  script:
+    template "clean_work_files.sh"
 }
