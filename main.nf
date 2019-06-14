@@ -46,16 +46,18 @@ Input Parameters:
 
 Output Parameters:
 ------------------
-  Output directory:           ${params.output.dir}
-  Publish SRA:                ${params.output.publish_sra}
-  Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
-  Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
-  Publish BAM:                ${params.output.publish_bam}
-  Publish RAW:                ${params.output.publish_raw}
-  Publish FPKM:               ${params.output.publish_fpkm}
-  Publish TPM:                ${params.output.publish_tpm}
-  MultiQC:                    ${params.output.multiqc}
-  Create GEM:                 ${params.output.create_gem}
+Output directory:           ${params.output.dir}
+Publish SRA:                ${params.output.publish_sra}
+Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
+Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
+Publish BAM:                ${params.output.publish_bam}
+Publish Gene Abundance:     ${params.output.publish_gene_abundance}
+Publish GTF_GA:             ${params.output.publish_stringtie_gtf_and_ga}
+Publish RAW:                ${params.output.publish_raw}
+Publish FPKM:               ${params.output.publish_fpkm}
+Publish TPM:                ${params.output.publish_tpm}
+MultiQC:                    ${params.output.multiqc}
+Create GEM:                 ${params.output.create_gem}
 
 
 Execution Parameters:
@@ -613,6 +615,7 @@ process kallisto {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA_TO_CLEAN
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL
     file "*kallisto.log" into KALLISTO_LOG
 
@@ -651,6 +654,7 @@ process kallisto_tpm {
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into KALLISTO_TPM
     file "${sample_id}_vs_${params.input.reference_prefix}.raw" optional true into KALLISTO_RAW
+    set val(sample_id), val(1) into CLEAN_KALLISTO_GA_SIGNAL
     val sample_id  into KALLISTO_SAMPLE_COMPLETE_SIGNAL
 
   script:
@@ -1312,4 +1316,27 @@ process clean_bam {
 
   script:
     template "clean_work_files.sh"
+}
+
+/**
+ * Merge the Kallisto .ga file with the clean kallisto ga signal so that we can
+ * remove the .ga file after it has been used
+ */
+KGAMIX = KALLISTO_GA_TO_CLEAN.mix(CLEAN_KALLISTO_GA_SIGNAL)
+KGAMIX.groupTuple(size: 2).set { KALLISTO_GA_CLEANUP_READY }
+
+/**
+ * Clean up Kallisto GA files
+ */
+process clean_kallisto_ga {
+  tag { sample_id }
+
+  input:
+    set val(sample_id), val(directory) from KALLISTO_GA_CLEANUP_READY
+
+  when:
+    params.output.publish_gene_abundance == false
+
+  script:
+    template "clean_work_dirs.sh"
 }
