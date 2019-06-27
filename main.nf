@@ -145,9 +145,9 @@ if (params.output.publish_bam == true) {
 /**
  * Set the pattern for publishing Kallisto GA files
  */
-publish_pattern_Kallisto_GA = "{none}";
+publish_pattern_Kallisto_GA = "{*.log}";
 if (params.output.publish_gene_abundance == true) {
-  publish_pattern_Kallisto_GA = "{*.log,*.bam}";
+  publish_pattern_Kallisto_GA = "{*.ga,*.log}";
 }
 
 /**
