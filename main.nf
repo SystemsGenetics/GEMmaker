@@ -36,13 +36,50 @@ Workflow Information:
   Profile(s):         ${workflow.profile}
 
 
-Input Parameters:
------------------
+Input Samples:
+--------------
   Remote fastq list path:     ${params.input.remote_list_path}
   Local sample glob:          ${params.input.local_samples_path}
-  Reference genome path:      ${params.input.hisat_reference_path}
-  Reference genome prefix:    ${params.input.hisat_reference_prefix}
 
+
+Quantification Tool Input:
+--------------------------
+  Use Hisat2:                 ${params.input.hisat2.enable}
+  Use Kallisto:               ${params.input.kallisto.enable}
+  Use Salmon:                 ${params.input.salmon.enable} """
+
+// Indicates if a tool was selected.
+has_tool = 0
+
+// Indicates which tool the user selected.
+selected_tool = 0
+
+// Print out details per the selected tool.
+if (params.input.hisat2.enable == true) {
+  println """
+  Hisat2 Index Directory:     ${params.input.hisat2.index_dir}
+  Hisat2 Index Prefix:        ${params.input.hisat2.index_prefix}
+  Hisat2 GTF File:            ${params.input.hisat2.gtf_file}"""
+  has_tool++
+  selected_tool = 0
+}
+if (params.input.kallisto.enable == true) {
+  println "  Kallisto Index File:        ${params.input.kallisto.index_file}"
+  has_tool++
+  selected_tool = 1
+}
+if (params.input.salmon.enable == true) {
+  println "  Salmon Index File:          ${params.input.salmon.index_dir}"
+  has_tool++
+  selected_tool = 2
+}
+if (has_tool == 0) {
+  error "Error: You must select a valid quantification tool in the 'nextflow.config' file"
+}
+if (has_tool > 1) {
+  error "Error: Please select only one quantification tool in the 'nextflow.config' file"
+}
+println """
 
 Output Parameters:
 ------------------
@@ -66,27 +103,18 @@ Execution Parameters:
 Software Parameters:
 --------------------
   Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
-  Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}"""
+  Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}
 
-  /**
-   * Determines allignment user chose, prints option. If incorrect option, throws error
-   */
-  if(params.software.alignment == 0){println "  Alignment tool: hisat2\n"}
-  else if(params.software.alignment == 1){println "  Alignment tool: Kallisto\n"}
-  else if(params.software.alignment == 2){println "  Alignment tool: Salmon\n"}
-  else {error "Error: Must Select a Valid Alignment Tool! Please select alignment tool in the 'nextflow.config' file"}
-
-
-
+"""
 
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.input.hisat_reference_path}/${params.input.hisat_reference_prefix}*.ht2*").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.input.kallisto_reference_file_fullpath}").collect()
-SALMON_INDEXES = Channel.fromPath("${params.input.salmon_reference_file_fullpath}/*").collect()
+HISAT2_INDEXES = Channel.fromPath("${params.input.hisat2.index_dir}/*.ht2*").collect()
+KALLISTO_INDEX = Channel.fromPath("${params.input.kallisto.index_file}").collect()
+SALMON_INDEXES = Channel.fromPath("${params.input.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
-GTF_FILE = Channel.fromPath("${params.input.hisat_reference_path}/${params.input.hisat_reference_prefix}.gtf").collect()
+GTF_FILE = Channel.fromPath("${params.input.hisat2.gtf_file}").collect()
 
 
 
@@ -603,9 +631,7 @@ process fastqc_1 {
 HISAT2_CHANNEL = Channel.create()
 KALLISTO_CHANNEL = Channel.create()
 SALMON_CHANNEL = Channel.create()
-COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { params.software.alignment }
-
-
+COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { selected_tool }
 
 /**
  * Performs KALLISTO alignemnt of fastq files
@@ -890,7 +916,7 @@ process hisat2 {
   """
   if [ -e ${sample_id}_2p_trim.fastq ]; then
     hisat2 \
-      -x ${params.input.hisat_reference_prefix} \
+      -x ${params.input.hisat2.index_prefix} \
       --no-spliced-alignment \
       -q \
       -1 ${sample_id}_1p_trim.fastq \
@@ -905,7 +931,7 @@ process hisat2 {
       --summary-file ${sample_id}.sam.log
   else
     hisat2 \
-      -x ${params.input.hisat_reference_prefix} \
+      -x ${params.input.hisat2.index_prefix} \
       --no-spliced-alignment \
       -q \
       -U ${sample_id}_1u_trim.fastq \
