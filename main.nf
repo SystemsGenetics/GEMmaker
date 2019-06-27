@@ -163,9 +163,9 @@ if (params.output.publish_gene_abundance == true) {
 /**
  * Set the pattern for publishing STRINGTIE GA and GTF files
  */
-publish_stringtie_gtf_and_ga = "{none}"
+publish_pattern_stringtie_gtf_and_ga = "{none}"
 if (params.output.publish_stringtie_gtf_and_ga == true) {
-  publish_stringtie_gtf_and_ga = "{*.log,*.bam}";
+  publish_pattern_stringtie_gtf_and_ga = "{*.ga, *.gtf}";
 }
 
 
@@ -1022,7 +1022,7 @@ process samtools_index {
  * depends: samtools_index
  */
 process stringtie {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode//, pattern: publish_pattern_
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_stringtie_gtf_and_ga
   tag { sample_id }
   label "multithreaded"
   label "stringtie"
