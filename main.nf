@@ -142,6 +142,31 @@ if (params.output.publish_bam == true) {
   publish_pattern_samtools_index = "{*.log,*.bam.bai}";
 }
 
+/**
+ * Set the pattern for publishing Kallisto GA files
+ */
+publish_pattern_Kallisto_GA = "{none}";
+if (params.output.publish_gene_abundance == true) {
+  publish_pattern_Kallisto_GA = "{*.log,*.bam}";
+}
+
+/**
+ * Set the pattern for publishing Salmon GA files
+ * Publishs only log file used by multiqc if false
+ */
+publish_pattern_Salmon_GA = "{*.ga/aux_info/meta_info.json,*.ga/libParams/flenDist.txt}"
+if (params.output.publish_gene_abundance == true) {
+  publish_pattern_Salmon_GA = "{*.ga}";
+}
+
+
+/**
+ * Set the pattern for publishing STRINGTIE GA and GTF files
+ */
+publish_stringtie_gtf_and_ga = "{none}"
+if (params.output.publish_stringtie_gtf_and_ga == true) {
+  publish_stringtie_gtf_and_ga = "{*.log,*.bam}";
+}
 
 
 /**
@@ -605,7 +630,7 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
  * Performs KALLISTO alignemnt of fastq files
  */
 process kallisto {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_Kallisto_GA
   tag { sample_id }
   label "kallisto"
 
@@ -640,7 +665,6 @@ process kallisto {
 }
 
 
-
 /**
  * Generates the final TPM and raw count files for Kallisto
  */
@@ -669,13 +693,28 @@ process kallisto_tpm {
   """
 }
 
-
+// /**
+//  * Set the pattern for publishing Kallisto GA files
+//  */
+//
+// if (params.output.publish_gene_abundance == true) {
+//   publish_pattern_Kallisto_GA = "{*.ga}";
+// }
+//
+//
+// /**
+//  * Set the pattern for publishing STRINGTIE GA and GTF files
+//  */
+//
+// if (params.output.publish_stringtie_gtf_and_ga == true) {
+//   publish_stringtie_gtf_and_ga = "{*.log,*.bam}";
+// }
 
 /**
  * Performs SALMON alignemnt of fastq files
  */
 process salmon {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_Salmon_GA
   tag { sample_id }
   label "multithreaded"
   label "salmon"
@@ -686,6 +725,7 @@ process salmon {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into SALMON_GA
+    set val(sample_id), file("*.ga/aux_info/meta_info.json"), file("*.ga/libParams/flenDist.txt") into SALMON_GA_LOG
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf") into SALMON_GA_TO_CLEAN
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_SALMON_SIGNAL
 
@@ -709,6 +749,10 @@ process salmon {
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   fi
+
+  # move log file out of .ga file for cleaning
+  #mv *.ga/libParams/flenDist.txt .
+  #mv *.ga/aux_info/meta_info.json .
   """
 }
 
@@ -978,6 +1022,7 @@ process samtools_index {
  * depends: samtools_index
  */
 process stringtie {
+  publishDir params.output.sample_dir, mode: params.output.publish_mode//, pattern: publish_pattern_
   tag { sample_id }
   label "multithreaded"
   label "stringtie"
