@@ -5,13 +5,7 @@ Example
 
 The GEMmaker example consists of a small set of local files (provided in the GEMmaker repo) and a remote file (automatically downloaded from `NCBI's SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__). These samples are extremely small and are only meant to demonstrate usage for a mixed set of local and remote files.
 
-Once GEMmaker and its dependencies have been installed, you can run GEMmaker with the example data. First, copy the example config file to ``nextflow.config``:
-
-.. code:: bash
-
-  cp nextflow.config.example nextflow.config
-
-The ``nextflow.config.example`` file is already configured to run this example. Execute the workflow using the following command:
+Once GEMmaker and its dependencies have been installed, you can run GEMmaker with the example data. The ``nextflow.config`` file is already configured to run this example. Execute the workflow using the following command:
 
 .. code:: bash
 
