@@ -9,95 +9,94 @@ Once GEMmaker and its dependencies have been installed, you can run GEMmaker wit
 
 .. code:: bash
 
-  nextflow run main.nf -profile standard -with-docker
+  nextflow run main.nf -profile standard -with-singularity
 
 You should see an output that looks like this:
 
 .. code:: bash
 
-  /opt/nextflow run main.nf -profile standard -with-singularity
-N E X T F L O W  ~  version 19.04.1
-Launching `main.nf` [spontaneous_aryabhata] - revision: 333c8c3e4f
+  N E X T F L O W  ~  version 19.04.1
+  Launching `main.nf` [spontaneous_aryabhata] - revision: 333c8c3e4f
 
-===================================
- G E M M A K E R   P I P E L I N E
-===================================
+  ===================================
+   G E M M A K E R   P I P E L I N E
+  ===================================
 
-Workflow Information:
----------------------
-  Project Directory:  /home/usr/Documents/GEMmaker
-  Launch Directory:   /home/usr/Documents/GEMmaker
-  Work Directory:     /home/usr/Documents/GEMmaker/work
-  Config Files:       [/home/usr/Documents/GEMmaker/nextflow.config]
-  Container Engine:   singularity
-  Profile(s):         standard
-
-
-Input Parameters:
------------------
-  Remote fastq list path:     /home/usr/Documents/GEMmaker/examples/RemoteRunExample/SRA_IDs.txt
-  Local sample glob:          /home/usr/Documents/GEMmaker/examples/LocalRunExample/Sample*/*_{1,2}.fastq
-  Reference genome path:      /home/usr/Documents/GEMmaker/examples/reference/
-  Reference genome prefix:    CORG
+  Workflow Information:
+  ---------------------
+    Project Directory:  /home/usr/Documents/GEMmaker
+    Launch Directory:   /home/usr/Documents/GEMmaker
+    Work Directory:     /home/usr/Documents/GEMmaker/work
+    Config Files:       [/home/usr/Documents/GEMmaker/nextflow.config]
+    Container Engine:   singularity
+    Profile(s):         standard
 
 
-Output Parameters:
-------------------
-Output directory:           output
-Publish SRA:                false
-Publish downloaded FASTQ:   false
-Publish trimmed FASTQ:      false
-Publish BAM:                false
-Publish Gene Abundance:     false
-Publish GTF_GA:             false
-Publish RAW:                true
-Publish FPKM:               true
-Publish TPM:                true
-MultiQC:                    true
-Create GEM:                 true
+  Input Parameters:
+  -----------------
+    Remote fastq list path:     /home/usr/Documents/GEMmaker/examples/RemoteRunExample/SRA_IDs.txt
+    Local sample glob:          /home/usr/Documents/GEMmaker/examples/LocalRunExample/Sample*/*_{1,2}.fastq
+    Reference genome path:      /home/usr/Documents/GEMmaker/examples/reference/
+    Reference genome prefix:    CORG
 
 
-Execution Parameters:
----------------------
-  Queue size:                 100
+  Output Parameters:
+  ------------------
+  Output directory:           output
+  Publish SRA:                false
+  Publish downloaded FASTQ:   false
+  Publish trimmed FASTQ:      false
+  Publish BAM:                false
+  Publish Gene Abundance:     false
+  Publish GTF_GA:             false
+  Publish RAW:                true
+  Publish FPKM:               true
+  Publish TPM:                true
+  MultiQC:                    true
+  Create GEM:                 true
 
 
-Software Parameters:
---------------------
-  Trimmomatic clip path:      /home/usr/Documents/GEMmaker/files/fasta_adapter.txt
-  Trimmomatic minimum ratio:  0.7
+  Execution Parameters:
+  ---------------------
+    Queue size:                 100
 
-[warm up] executor > local
-executor >  local (70)
-[c5/16ba32] process > write_stage_files      [100%] 4 of 4 ✔
-[b8/f56312] process > retrieve_sra_metadata  [100%] 1 of 1 ✔
-[6b/3645f9] process > start_first_batch      [100%] 1 of 1 ✔
-[b6/aca093] process > read_sample_file       [100%] 4 of 4 ✔
-[f6/cd627d] process > fastqc_1               [100%] 4 of 4 ✔
-[cd/bfe65b] process > prefetch               [100%] 1 of 1 ✔
-[0a/808a19] process > trimmomatic            [100%] 4 of 4 ✔
-[1b/e4d65d] process > fastq_dump             [100%] 1 of 1 ✔
-[a9/80eb92] process > fastqc_2               [100%] 4 of 4 ✔
-[62/45f1d2] process > hisat2                 [100%] 4 of 4 ✔
-[4e/88ae16] process > fastq_merge            [100%] 1 of 1 ✔
-[54/10abb0] process > clean_sra              [100%] 1 of 1 ✔
-[87/3ddce8] process > samtools_sort          [100%] 4 of 4 ✔
-[20/356849] process > clean_downloaded_fastq [100%] 1 of 1 ✔
-[c6/0bc5dc] process > samtools_index         [100%] 4 of 4 ✔
-[83/c51c00] process > clean_sam              [100%] 4 of 4 ✔
-[69/2f1adb] process > clean_trimmed_fastq    [100%] 4 of 4 ✔
-[0e/077fe4] process > stringtie              [100%] 4 of 4 ✔
-[3e/ed9160] process > hisat2_fpkm_tpm        [100%] 4 of 4 ✔
-[2a/5a840b] process > clean_bam              [100%] 4 of 4 ✔
-[ca/91419b] process > next_sample            [100%] 4 of 4 ✔
-[ba/db160c] process > clean_stringtie_ga     [100%] 4 of 4 ✔
-[b2/3ac691] process > multiqc                [100%] 1 of 1 ✔
-[a0/6aeb80] process > create_gem             [100%] 1 of 1 ✔
-[81/a3f835] process > clean_merged_fastq     [100%] 1 of 1 ✔
-Completed at: 02-Jul-2019 13:20:08
-Duration    : 47.9s
-CPU hours   : (a few seconds)
-Succeeded   : 70
+
+  Software Parameters:
+  --------------------
+    Trimmomatic clip path:      /home/usr/Documents/GEMmaker/files/fasta_adapter.txt
+    Trimmomatic minimum ratio:  0.7
+
+  [warm up] executor > local
+  executor >  local (70)
+  [c5/16ba32] process > write_stage_files      [100%] 4 of 4 ✔
+  [b8/f56312] process > retrieve_sra_metadata  [100%] 1 of 1 ✔
+  [6b/3645f9] process > start_first_batch      [100%] 1 of 1 ✔
+  [b6/aca093] process > read_sample_file       [100%] 4 of 4 ✔
+  [f6/cd627d] process > fastqc_1               [100%] 4 of 4 ✔
+  [cd/bfe65b] process > prefetch               [100%] 1 of 1 ✔
+  [0a/808a19] process > trimmomatic            [100%] 4 of 4 ✔
+  [1b/e4d65d] process > fastq_dump             [100%] 1 of 1 ✔
+  [a9/80eb92] process > fastqc_2               [100%] 4 of 4 ✔
+  [62/45f1d2] process > hisat2                 [100%] 4 of 4 ✔
+  [4e/88ae16] process > fastq_merge            [100%] 1 of 1 ✔
+  [54/10abb0] process > clean_sra              [100%] 1 of 1 ✔
+  [87/3ddce8] process > samtools_sort          [100%] 4 of 4 ✔
+  [20/356849] process > clean_downloaded_fastq [100%] 1 of 1 ✔
+  [c6/0bc5dc] process > samtools_index         [100%] 4 of 4 ✔
+  [83/c51c00] process > clean_sam              [100%] 4 of 4 ✔
+  [69/2f1adb] process > clean_trimmed_fastq    [100%] 4 of 4 ✔
+  [0e/077fe4] process > stringtie              [100%] 4 of 4 ✔
+  [3e/ed9160] process > hisat2_fpkm_tpm        [100%] 4 of 4 ✔
+  [2a/5a840b] process > clean_bam              [100%] 4 of 4 ✔
+  [ca/91419b] process > next_sample            [100%] 4 of 4 ✔
+  [ba/db160c] process > clean_stringtie_ga     [100%] 4 of 4 ✔
+  [b2/3ac691] process > multiqc                [100%] 1 of 1 ✔
+  [a0/6aeb80] process > create_gem             [100%] 1 of 1 ✔
+  [81/a3f835] process > clean_merged_fastq     [100%] 1 of 1 ✔
+  Completed at: 02-Jul-2019 13:20:08
+  Duration    : 47.9s
+  CPU hours   : (a few seconds)
+  Succeeded   : 70
 
 
 
