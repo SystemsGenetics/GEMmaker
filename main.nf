@@ -146,7 +146,16 @@ else {
   Channel.fromPath(params.input.remote_list_path).set { SRR_FILE }
 }
 
+/**
+ * Make sure that at least one output format is enabled.
+ */
+if ( params.input.hisat2.enabled == true && params.output.publish_raw == false && params.output.publish_fpkm == false && params.output.publish_tpm == false ) {
+  error "Error: at least one output format (raw, fpkm, tpm) must be enabled for hisat2"
+}
 
+if ( params.input.hisat2.enabled == false && params.output.publish_raw == false && params.output.publish_tpm == false ) {
+  error "Error: at least one output format (raw, tpm) must be enabled for kallisto / salmon"
+}
 
 /**
  * Set the pattern for publishing downloaded FASTQ files
@@ -999,7 +1008,11 @@ process samtools_sort {
 
   script:
     """
-    samtools sort -o ${sample_id}_vs_${params.input.reference_name}.bam -O bam ${sample_id}_vs_${params.input.reference_name}.sam -T temp
+    samtools sort \
+      -o ${sample_id}_vs_${params.input.reference_name}.bam \
+      -O bam \
+      -T temp \
+      ${sample_id}_vs_${params.input.reference_name}.sam      
     """
 }
 

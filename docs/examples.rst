@@ -15,29 +15,38 @@ You should see an output that looks like this:
 
 .. code:: bash
 
-  N E X T F L O W  ~  version 19.04.1
-  Launching `main.nf` [spontaneous_aryabhata] - revision: 333c8c3e4f
+  N E X T F L O W  ~  version 19.04.0
+  Launching `main.nf` [maniac_roentgen] - revision: db373fdbf9
 
   ===================================
-   G E M M A K E R   P I P E L I N E
+  G E M M A K E R   P I P E L I N E
   ===================================
 
   Workflow Information:
   ---------------------
-    Project Directory:  /home/usr/Documents/GEMmaker
-    Launch Directory:   /home/usr/Documents/GEMmaker
-    Work Directory:     /home/usr/Documents/GEMmaker/work
-    Config Files:       [/home/usr/Documents/GEMmaker/nextflow.config]
-    Container Engine:   singularity
-    Profile(s):         standard
+  Project Directory:  /local/Projects/GEMmaker
+  Launch Directory:   /local/Projects/GEMmaker
+  Work Directory:     /local/Projects/GEMmaker/work
+  Config Files:       [/local/Projects/GEMmaker/nextflow.config]
+  Container Engine:   singularity
+  Profile(s):         standard
 
 
   Input Parameters:
   -----------------
-    Remote fastq list path:     /home/usr/Documents/GEMmaker/examples/RemoteRunExample/SRA_IDs.txt
-    Local sample glob:          /home/usr/Documents/GEMmaker/examples/LocalRunExample/Sample*/*_{1,2}.fastq
-    Reference genome path:      /home/usr/Documents/GEMmaker/examples/reference/
-    Reference genome prefix:    CORG
+  Remote fastq list path:     /local/Projects/GEMmaker/examples/RemoteRunExample/SRA_IDs.txt
+  Local sample glob:          /local/Projects/GEMmaker/examples/LocalRunExample/Sample*/*_{1,2}.fastq
+
+
+  Quantification Tool Input:
+  --------------------------
+  Use Hisat2:                 true
+  Use Kallisto:               false
+  Use Salmon:                 false
+
+  Hisat2 Index Directory:     /local/Projects/GEMmaker/examples/reference/CORG.transcripts.Hisat2.indexed/
+  Hisat2 Index Prefix:        CORG
+  Hisat2 GTF File:            /local/Projects/GEMmaker/examples/reference/CORG.gtf
 
 
   Output Parameters:
@@ -49,54 +58,53 @@ You should see an output that looks like this:
   Publish BAM:                false
   Publish Gene Abundance:     false
   Publish GTF_GA:             false
-  Publish RAW:                true
+  Publish RAW:                false
   Publish FPKM:               true
   Publish TPM:                true
   MultiQC:                    true
-  Create GEM:                 true
+  Create GEM:                 false
 
 
   Execution Parameters:
   ---------------------
-    Queue size:                 100
+  Queue size:                 100
 
 
   Software Parameters:
   --------------------
-    Trimmomatic clip path:      /home/usr/Documents/GEMmaker/files/fasta_adapter.txt
-    Trimmomatic minimum ratio:  0.7
+  Trimmomatic clip path:      /local/Projects/GEMmaker/files/fasta_adapter.txt
+  Trimmomatic minimum ratio:  0.7
 
-  [warm up] executor > local
-  executor >  local (70)
-  [c5/16ba32] process > write_stage_files      [100%] 4 of 4 ✔
-  [b8/f56312] process > retrieve_sra_metadata  [100%] 1 of 1 ✔
-  [6b/3645f9] process > start_first_batch      [100%] 1 of 1 ✔
-  [b6/aca093] process > read_sample_file       [100%] 4 of 4 ✔
-  [f6/cd627d] process > fastqc_1               [100%] 4 of 4 ✔
-  [cd/bfe65b] process > prefetch               [100%] 1 of 1 ✔
-  [0a/808a19] process > trimmomatic            [100%] 4 of 4 ✔
-  [1b/e4d65d] process > fastq_dump             [100%] 1 of 1 ✔
-  [a9/80eb92] process > fastqc_2               [100%] 4 of 4 ✔
-  [62/45f1d2] process > hisat2                 [100%] 4 of 4 ✔
-  [4e/88ae16] process > fastq_merge            [100%] 1 of 1 ✔
-  [54/10abb0] process > clean_sra              [100%] 1 of 1 ✔
-  [87/3ddce8] process > samtools_sort          [100%] 4 of 4 ✔
-  [20/356849] process > clean_downloaded_fastq [100%] 1 of 1 ✔
-  [c6/0bc5dc] process > samtools_index         [100%] 4 of 4 ✔
-  [83/c51c00] process > clean_sam              [100%] 4 of 4 ✔
-  [69/2f1adb] process > clean_trimmed_fastq    [100%] 4 of 4 ✔
-  [0e/077fe4] process > stringtie              [100%] 4 of 4 ✔
-  [3e/ed9160] process > hisat2_fpkm_tpm        [100%] 4 of 4 ✔
-  [2a/5a840b] process > clean_bam              [100%] 4 of 4 ✔
-  [ca/91419b] process > next_sample            [100%] 4 of 4 ✔
-  [ba/db160c] process > clean_stringtie_ga     [100%] 4 of 4 ✔
-  [b2/3ac691] process > multiqc                [100%] 1 of 1 ✔
-  [a0/6aeb80] process > create_gem             [100%] 1 of 1 ✔
-  [81/a3f835] process > clean_merged_fastq     [100%] 1 of 1 ✔
-  Completed at: 02-Jul-2019 13:20:08
-  Duration    : 47.9s
+  executor >  local (69)
+  [26/838608] process > write_stage_files      [100%] 4 of 4 ✔
+  [08/05fb92] process > retrieve_sra_metadata  [100%] 1 of 1 ✔
+  [03/a3e086] process > start_first_batch      [100%] 1 of 1 ✔
+  [18/623434] process > read_sample_file       [100%] 4 of 4 ✔
+  [50/c71960] process > fastqc_1               [100%] 4 of 4 ✔
+  [c6/cba919] process > trimmomatic            [100%] 4 of 4 ✔
+  [91/ce105f] process > prefetch               [100%] 1 of 1 ✔
+  [c5/d53185] process > fastqc_2               [100%] 4 of 4 ✔
+  [e0/3e75af] process > hisat2                 [100%] 4 of 4 ✔
+  [37/1ec3af] process > samtools_sort          [100%] 4 of 4 ✔
+  [03/fd7e0d] process > samtools_index         [100%] 4 of 4 ✔
+  [6b/c29fb9] process > clean_sam              [100%] 4 of 4 ✔
+  [a3/b34d17] process > stringtie              [100%] 4 of 4 ✔
+  [9e/278762] process > fastq_dump             [100%] 1 of 1 ✔
+  [b5/ba3bfb] process > clean_bam              [100%] 4 of 4 ✔
+  [da/c708ae] process > hisat2_fpkm_tpm        [100%] 4 of 4 ✔
+  [31/803c44] process > clean_trimmed_fastq    [100%] 4 of 4 ✔
+  [6c/53f998] process > next_sample            [100%] 4 of 4 ✔
+  [87/946d31] process > clean_stringtie_ga     [100%] 4 of 4 ✔
+  [52/18bba8] process > fastq_merge            [100%] 1 of 1 ✔
+  [78/2e8d98] process > clean_sra              [100%] 1 of 1 ✔
+  [24/07979d] process > clean_downloaded_fastq [100%] 1 of 1 ✔
+  [02/2a6b86] process > multiqc                [100%] 1 of 1 ✔
+  [d8/32b555] process > clean_merged_fastq     [100%] 1 of 1 ✔
+  Completed at: 04-Jul-2019 02:29:25
+  Duration    : 15.9s
   CPU hours   : (a few seconds)
-  Succeeded   : 70
+  Succeeded   : 69
+
 
 
 
@@ -123,22 +131,30 @@ For the remote example, GEMmaker automatically downloads a very small RNA-seq fi
 Using Salmon or Kallisto
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The example uses Hisat2 by default. If you would like to use Salmon or Kallisto instead, you must edit ``nextflow.config`` and change the alignment type. In the GEMmaker directory, edit ``nextflow.config`` using your favorite text editor. Here we use `vim <https://www.vim.org/>`__ on the command line:
+The example uses Hisat2 by default. If you would like to use Salmon or Kallisto instead, you must edit ``nextflow.config`` and enable Salmon or Kallisto. In the GEMmaker directory, edit ``nextflow.config`` using your favorite text editor. Here we use `vim <https://www.vim.org/>`__ on the command line:
 
 .. code:: bash
 
   vim nextflow.config
 
-Then edit ``params.software.alignment`` in the config file. Change to ``1`` for Kallisto, and ``2`` for Salmon. For example, to use Kallisto:
+Then edit the ``params.input`` section in the config file. Set ``enable`` to ``true`` for either Salmon or Kallisto. For example, to use Kallisto:
 
 .. code:: bash
 
-  //
-  // hisat2 = 0
-  // Kallisto = 1
-  // Salmon = 2
-  //
-  alignment = 1
+  hisat2 {
+    enable = false
+    index_dir = "${baseDir}/examples/reference/CORG.transcripts.Hisat2.indexed/"
+    index_prefix = "CORG"
+    gtf_file = "${baseDir}/examples/reference/CORG.gtf"
+  }
+  salmon {
+    enable = false
+    index_dir = "${baseDir}/examples/reference/CORG.transcripts.Salmon.indexed"
+  }
+  kallisto {
+    enable = true
+    index_file = "${baseDir}/examples/reference/CORG.transcripts.Kallisto.indexed"
+  }
 
 Then save your file and run the worklow:
 
@@ -151,10 +167,10 @@ Explanation of the Inputs
 
 The inputs for the example run are in the ``examples`` directory, and they consist of the reference directory and two data directories for local and remote samples.
 
-Reference directory
-===================
+Genome Reference Assembly Files
+===============================
 
-The reference directory for the example is located at:
+Hisat2, Kallisto and Salmon use a genome sequence, or reference. Each tool uses its own set of indexes and files. You can find all necessary files for the example CORG genome here:
 
 .. code:: bash
 
@@ -164,12 +180,12 @@ This directory contains the
 
 - reference genome file (``CORG.fna``),
 - `GTF <https://uswest.ensembl.org/info/website/upload/gff.html>`__ file (``CORG.gtf``)
-- hisat index files (``CORG.?/ht2``).
-- kallisto index file (``CORG.transcripts.Kallisto.indexed``)
-- salmon index directory (``CORG.transcripts.Salmon.indexed/``)
+- Hisat2 index files (``CORG.transcripts.Hisat2.indexed/ht2``).
+- Kallisto index file (``CORG.transcripts.Kallisto.indexed``)
+- Salmon index directory (``CORG.transcripts.Salmon.indexed/``)
 - ``COMMANDS.sh`` explaining how each of these files were generated
 
-These are the files needed to run hisat2, kallisto, and salmon on the CORG data.
+These are the files needed to run Hisat2, Kallisto, and Salmon on the CORG data.
 
 Data directories
 ================
