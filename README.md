@@ -1,7 +1,9 @@
 [![DOI](https://zenodo.org/badge/114067776.svg)](https://zenodo.org/badge/latestdoi/114067776)
 [![Build Status](https://travis-ci.org/SystemsGenetics/GEMmaker.svg?branch=master)](https://travis-ci.org/SystemsGenetics/GEMmaker)
 
-![GEMmaker Logo](images/GEMmaker-logo-sm.png)
+[![GEMmaker Logo](images/GEMmaker-logo-sm.png)](https://gemmaker.readthedocs.io/en/latest/)
+
+**For Complete Instructions on useage, visit: [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/)**
 
 GEMmaker is a [Nextflow](https://www.nextflow.io/) workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression (DGE) and gene co-expression network (GCN) analyses. The GEMmaker workflow currently supports Illumina RNA-seq datasets.
 
@@ -60,7 +62,7 @@ GEMmaker uses the following tools:
 
 ## Usage
 
-See the [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/)
+For Complete Instructions on useage, visit: [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/)
 
 ## Acknowledgments
 

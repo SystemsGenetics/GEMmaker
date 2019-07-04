@@ -9,108 +9,97 @@ Once GEMmaker and its dependencies have been installed, you can run GEMmaker wit
 
 .. code:: bash
 
-  nextflow run main.nf -profile standard -with-docker
+  nextflow run main.nf -profile standard -with-singularity
 
 You should see an output that looks like this:
 
 .. code:: bash
 
-  N E X T F L O W  ~  version 18.10.1
-  Launching `main.nf` [peaceful_gutenberg] - revision: 137bc7ccff
+  N E X T F L O W  ~  version 19.04.1
+  Launching `main.nf` [spontaneous_aryabhata] - revision: 333c8c3e4f
 
   ===================================
    G E M M A K E R   P I P E L I N E
   ===================================
 
-  General Information:
-  --------------------
+  Workflow Information:
+  ---------------------
+    Project Directory:  /home/usr/Documents/GEMmaker
+    Launch Directory:   /home/usr/Documents/GEMmaker
+    Work Directory:     /home/usr/Documents/GEMmaker/work
+    Config Files:       [/home/usr/Documents/GEMmaker/nextflow.config]
+    Container Engine:   singularity
     Profile(s):         standard
-    Container Engine:   docker
 
 
   Input Parameters:
   -----------------
-    Remote fastq list path:     /home/{usr}/GEMmaker/examples/RemoteRunExample/SRA_IDs.txt
-    Local sample glob:          /home/{usr}/GEMmaker/examples/LocalRunExample/Sample*/\*_{1,2}.fastq
-    Reference genome path:      /home/{usr}/GEMmaker/examples/reference/
+    Remote fastq list path:     /home/usr/Documents/GEMmaker/examples/RemoteRunExample/SRA_IDs.txt
+    Local sample glob:          /home/usr/Documents/GEMmaker/examples/LocalRunExample/Sample*/*_{1,2}.fastq
+    Reference genome path:      /home/usr/Documents/GEMmaker/examples/reference/
     Reference genome prefix:    CORG
 
 
   Output Parameters:
   ------------------
-    Output directory:           /home/{usr}/GEMmaker/output
-    Publish downloaded FASTQ:   true
-    Publish trimmed FASTQ:      true
-    Publish BAM:                true
-    Publish FPKM:               true
-    Publish TPM:                true
+  Output directory:           output
+  Publish SRA:                false
+  Publish downloaded FASTQ:   false
+  Publish trimmed FASTQ:      false
+  Publish BAM:                false
+  Publish Gene Abundance:     false
+  Publish GTF_GA:             false
+  Publish RAW:                true
+  Publish FPKM:               true
+  Publish TPM:                true
+  MultiQC:                    true
+  Create GEM:                 true
 
 
   Execution Parameters:
   ---------------------
     Queue size:                 100
-    Number of threads:          1
-    Maximum retries:            2
-    Error strategy:             ignore
 
 
   Software Parameters:
   --------------------
-    Trimmomatic clip path:      /home/{usr}/GEMmaker/files/fasta_adapter.txt
+    Trimmomatic clip path:      /home/usr/Documents/GEMmaker/files/fasta_adapter.txt
     Trimmomatic minimum ratio:  0.7
 
   [warm up] executor > local
-  [98/cba9bc] Submitted process > write_stage_files (1)
-  [d1/b1cbfd] Submitted process > write_stage_files (2)
-  [fb/ea14ef] Submitted process > write_stage_files (3)
-  [a1/822d07] Submitted process > retrieve_sample_metadata
-  [10/ff1219] Submitted process > write_stage_files (SRX218012)
-  [26/3da51b] Submitted process > start_first_batch
-  [6a/9ab954] Submitted process > read_sample_file (1.sample.csv)
-  [74/f3836d] Submitted process > read_sample_file (2.sample.csv)
-  [1b/d263eb] Submitted process > read_sample_file (3.sample.csv)
-  [0a/695151] Submitted process > read_sample_file (SRX218012.sample.csv)
-  [13/6fc3ea] Submitted process > fastqc_1 (1)
-  [ce/061c10] Submitted process > trimmomatic (1)
-  [2a/81acc1] Submitted process > fastqc_1 (2)
-  [82/019602] Submitted process > trimmomatic (2)
-  [f3/7a17ae] Submitted process > fastqc_1 (3)
-  [75/b755a2] Submitted process > fastq_dump (SRX218012)
-  [01/4c7c4f] Submitted process > trimmomatic (3)
-  [dc/0e3904] Submitted process > fastqc_2 (2)
-  [b7/eb221f] Submitted process > hisat2 (2)
-  [38/98d3ce] Submitted process > fastqc_2 (1)
-  [c0/52f716] Submitted process > hisat2 (1)
-  [be/1be15c] Submitted process > SRR_combine (SRX218012)
-  [9f/aa1f14] Submitted process > fastqc_2 (3)
-  [05/66f559] Submitted process > hisat2 (3)
-  [f7/8f2780] Submitted process > fastqc_1 (SRX218012)
-  [aa/0d9e57] Submitted process > trimmomatic (SRX218012)
-  [94/cedb63] Submitted process > samtools_sort (2)
-  [38/454c25] Submitted process > samtools_sort (3)
-  [36/f87963] Submitted process > samtools_sort (1)
-  [6d/458628] Submitted process > fastqc_2 (SRX218012)
-  [cd/05aa92] Submitted process > hisat2 (SRX218012)
-  [c3/298c49] Submitted process > samtools_index (2)
-  [ed/e775a0] Submitted process > samtools_index (3)
-  [7a/57bb71] Submitted process > samtools_index (1)
-  [90/62173a] Submitted process > samtools_sort (SRX218012)
-  [08/d28f6c] Submitted process > stringtie (3)
-  [cf/4e30b3] Submitted process > stringtie (1)
-  [c5/f89c37] Submitted process > samtools_index (SRX218012)
-  [d7/67724f] Submitted process > stringtie (2)
-  [ca/881318] Submitted process > stringtie (SRX218012)
-  [fc/5688e8] Submitted process > hisat2_raw (3)
-  [30/93eb53] Submitted process > fpkm_or_tpm (3)
-  [91/969c3a] Submitted process > hisat2_raw (SRX218012)
-  [9b/9c541f] Submitted process > fpkm_or_tpm (SRX218012)
-  [49/ddb561] Submitted process > fpkm_or_tpm (1)
-  [1b/3dbd3d] Submitted process > hisat2_raw (1)
-  [df/c3f00c] Submitted process > fpkm_or_tpm (2)
-  [5c/3053f4] Submitted process > hisat2_raw (2)
-  [32/df5310] Submitted process > next_sample (1)
-  [ea/812195] Submitted process > multiqc
-  [9c/d98d23] Submitted process > createGEM
+  executor >  local (70)
+  [c5/16ba32] process > write_stage_files      [100%] 4 of 4 ✔
+  [b8/f56312] process > retrieve_sra_metadata  [100%] 1 of 1 ✔
+  [6b/3645f9] process > start_first_batch      [100%] 1 of 1 ✔
+  [b6/aca093] process > read_sample_file       [100%] 4 of 4 ✔
+  [f6/cd627d] process > fastqc_1               [100%] 4 of 4 ✔
+  [cd/bfe65b] process > prefetch               [100%] 1 of 1 ✔
+  [0a/808a19] process > trimmomatic            [100%] 4 of 4 ✔
+  [1b/e4d65d] process > fastq_dump             [100%] 1 of 1 ✔
+  [a9/80eb92] process > fastqc_2               [100%] 4 of 4 ✔
+  [62/45f1d2] process > hisat2                 [100%] 4 of 4 ✔
+  [4e/88ae16] process > fastq_merge            [100%] 1 of 1 ✔
+  [54/10abb0] process > clean_sra              [100%] 1 of 1 ✔
+  [87/3ddce8] process > samtools_sort          [100%] 4 of 4 ✔
+  [20/356849] process > clean_downloaded_fastq [100%] 1 of 1 ✔
+  [c6/0bc5dc] process > samtools_index         [100%] 4 of 4 ✔
+  [83/c51c00] process > clean_sam              [100%] 4 of 4 ✔
+  [69/2f1adb] process > clean_trimmed_fastq    [100%] 4 of 4 ✔
+  [0e/077fe4] process > stringtie              [100%] 4 of 4 ✔
+  [3e/ed9160] process > hisat2_fpkm_tpm        [100%] 4 of 4 ✔
+  [2a/5a840b] process > clean_bam              [100%] 4 of 4 ✔
+  [ca/91419b] process > next_sample            [100%] 4 of 4 ✔
+  [ba/db160c] process > clean_stringtie_ga     [100%] 4 of 4 ✔
+  [b2/3ac691] process > multiqc                [100%] 1 of 1 ✔
+  [a0/6aeb80] process > create_gem             [100%] 1 of 1 ✔
+  [81/a3f835] process > clean_merged_fastq     [100%] 1 of 1 ✔
+  Completed at: 02-Jul-2019 13:20:08
+  Duration    : 47.9s
+  CPU hours   : (a few seconds)
+  Succeeded   : 70
+
+
+
 
 Additionally, you should see a directory called ``output`` with the following subdirectories:
 

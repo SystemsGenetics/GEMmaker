@@ -47,6 +47,8 @@ Output Parameters:
   Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
   Publish BAM:                ${params.output.publish_bam}
+  Publish Gene Abundance:     ${params.output.publish_gene_abundance}
+  Publish GTF_GA:             ${params.output.publish_stringtie_gtf_and_ga}
   Publish RAW:                ${params.output.publish_raw}
   Publish FPKM:               ${params.output.publish_fpkm}
   Publish TPM:                ${params.output.publish_tpm}
@@ -158,8 +160,12 @@ LOCAL_SAMPLE_FILES
   .map{ [it[0], "local", [], it[1]] }
   .set{LOCAL_SAMPLES}
 
-ALL_SAMPLES = REMOTE_SAMPLES.mix(LOCAL_SAMPLES)
+//ALL_SAMPLES = REMOTE_SAMPLES.mix(LOCAL_SAMPLES)
+ALL_SAMPLES  = Channel.create()
+test =  Channel.create()
+REMOTE_SAMPLES.mix(LOCAL_SAMPLES).separate(test,ALL_SAMPLES) { a -> [a , a]}
 
+test.println()
 
 
 /**
@@ -403,6 +409,7 @@ process process_sample {
     # remove BAM file if it will not be published
     if [[ ${params.output.publish_bam} == false ]]; then
       rm -f *.bam
+      rm -f *.bam.bai
     fi
 
     # generate raw counts from hisat2/stringtie
@@ -422,6 +429,11 @@ process process_sample {
 
     if [[ ${params.output.publish_tpm} == true ]]; then
       awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}.ga > ${sample_id}.tpm
+    fi
+
+    if [[ ${params.output.publish_stringtie_gtf_and_ga} == false ]]; then
+      rm *.ga
+      rm *.gtf
     fi
 
   # or use kallisto
@@ -450,6 +462,10 @@ process process_sample {
 
     if [[ ${params.output.publish_raw} == true ]]; then
       awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}.ga/abundance.tsv > ${sample_id}.raw
+    fi
+
+    if [[ ${params.output.publish_gene_abundance} == false ]]; then
+      rm -rf *.ga
     fi
 
   # or use salmon
@@ -481,6 +497,10 @@ process process_sample {
 
     if [[ ${params.output.publish_raw} == true ]]; then
       awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}.ga/quant.sf > ${sample_id}.raw
+    fi
+
+    if [[ ${params.output.publish_gene_abundance} == false ]]; then
+      rm -rf `find ./*.ga -type f | egrep -v "aux_info/meta_info.json|/libParams/flenDist.txt"`
     fi
   fi
   """
