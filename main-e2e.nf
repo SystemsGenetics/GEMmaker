@@ -401,6 +401,7 @@ process process_sample {
     # remove BAM file if it will not be published
     if [[ ${params.output.publish_bam} == false ]]; then
       rm -f *.bam
+      rm -f *.bam.bai
     fi
 
     # generate raw counts from hisat2/stringtie
@@ -491,7 +492,7 @@ process process_sample {
     fi
 
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
-      rm -rf `find ./*.ga | egrep -v "aux_info/meta_info.json|/libParams/flenDist.txt"`
+      rm -rf `find ./*.ga -type f | egrep -v "aux_info/meta_info.json|/libParams/flenDist.txt"`
     fi
   fi
   """
