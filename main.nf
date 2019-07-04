@@ -51,6 +51,8 @@ Output Parameters:
   Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
   Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
   Publish BAM:                ${params.output.publish_bam}
+  Publish Gene Abundance:     ${params.output.publish_gene_abundance}
+  Publish GTF_GA:             ${params.output.publish_stringtie_gtf_and_ga}
   Publish RAW:                ${params.output.publish_raw}
   Publish FPKM:               ${params.output.publish_fpkm}
   Publish TPM:                ${params.output.publish_tpm}
@@ -140,6 +142,31 @@ if (params.output.publish_bam == true) {
   publish_pattern_samtools_index = "{*.log,*.bam.bai}";
 }
 
+/**
+ * Set the pattern for publishing Kallisto GA files
+ */
+publish_pattern_Kallisto_GA = "{*.log}";
+if (params.output.publish_gene_abundance == true) {
+  publish_pattern_Kallisto_GA = "{*.ga,*.log}";
+}
+
+/**
+ * Set the pattern for publishing Salmon GA files
+ * Publishs only log file used by multiqc if false
+ */
+publish_pattern_Salmon_GA = "{*.ga/aux_info/meta_info.json,*.ga/libParams/flenDist.txt}"
+if (params.output.publish_gene_abundance == true) {
+  publish_pattern_Salmon_GA = "{*.ga}";
+}
+
+
+/**
+ * Set the pattern for publishing STRINGTIE GA and GTF files
+ */
+publish_pattern_stringtie_gtf_and_ga = "{none}"
+if (params.output.publish_stringtie_gtf_and_ga == true) {
+  publish_pattern_stringtie_gtf_and_ga = "{*.ga, *.gtf}";
+}
 
 
 /**
@@ -603,7 +630,7 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
  * Performs KALLISTO alignemnt of fastq files
  */
 process kallisto {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_Kallisto_GA
   tag { sample_id }
   label "kallisto"
 
@@ -613,6 +640,7 @@ process kallisto {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into KALLISTO_GA_TO_CLEAN
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL
     file "*kallisto.log" into KALLISTO_LOG
 
@@ -637,7 +665,6 @@ process kallisto {
 }
 
 
-
 /**
  * Generates the final TPM and raw count files for Kallisto
  */
@@ -651,6 +678,7 @@ process kallisto_tpm {
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into KALLISTO_TPM
     file "${sample_id}_vs_${params.input.reference_prefix}.raw" optional true into KALLISTO_RAW
+    set val(sample_id), val(1) into CLEAN_KALLISTO_GA_SIGNAL
     val sample_id  into KALLISTO_SAMPLE_COMPLETE_SIGNAL
 
   script:
@@ -665,13 +693,28 @@ process kallisto_tpm {
   """
 }
 
-
+// /**
+//  * Set the pattern for publishing Kallisto GA files
+//  */
+//
+// if (params.output.publish_gene_abundance == true) {
+//   publish_pattern_Kallisto_GA = "{*.ga}";
+// }
+//
+//
+// /**
+//  * Set the pattern for publishing STRINGTIE GA and GTF files
+//  */
+//
+// if (params.output.publish_stringtie_gtf_and_ga == true) {
+//   publish_stringtie_gtf_and_ga = "{*.log,*.bam}";
+// }
 
 /**
  * Performs SALMON alignemnt of fastq files
  */
 process salmon {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_Salmon_GA
   tag { sample_id }
   label "multithreaded"
   label "salmon"
@@ -682,8 +725,9 @@ process salmon {
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into SALMON_GA
+    set val(sample_id), file("*.ga/aux_info/meta_info.json"), file("*.ga/libParams/flenDist.txt") into SALMON_GA_LOG
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga/quant.sf") into SALMON_GA_TO_CLEAN
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_SALMON_SIGNAL
-    file "*.salmon.log" into SALMON_LOG
 
   script:
   """
@@ -705,6 +749,10 @@ process salmon {
       -o ${sample_id}_vs_${params.input.reference_prefix}.ga \
       --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   fi
+
+  # move log file out of .ga file for cleaning
+  #mv *.ga/libParams/flenDist.txt .
+  #mv *.ga/aux_info/meta_info.json .
   """
 }
 
@@ -723,6 +771,7 @@ process salmon_tpm {
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into SALMON_TPM
     file "${sample_id}_vs_${params.input.reference_prefix}.raw" optional true into SALMON_RAW
+    set val(sample_id), val(1) into CLEAN_SALMON_GA_SIGNAL
     val sample_id  into SALMON_SAMPLE_COMPLETE_SIGNAL
 
   script:
@@ -973,6 +1022,7 @@ process samtools_index {
  * depends: samtools_index
  */
 process stringtie {
+  publishDir params.output.sample_dir, mode: params.output.publish_mode, pattern: publish_pattern_stringtie_gtf_and_ga
   tag { sample_id }
   label "multithreaded"
   label "stringtie"
@@ -985,8 +1035,8 @@ process stringtie {
     file gtf_file from GTF_FILE
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") into STRINGTIE_GTF_FOR_FPKM
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.gtf") into STRINGTIE_GTF_FOR_RAW
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga"), file("${sample_id}_vs_${params.input.reference_prefix}.gtf") into STRINGTIE_GTF_FOR_FPKM
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.*") into STRINGTIE_GTF_FOR_CLEANING
     set val(sample_id), val(1) into CLEAN_BAM_SIGNAL
 
   script:
@@ -1003,52 +1053,23 @@ process stringtie {
 }
 
 
-
 /**
- * Generate raw counts from Hisat2/stringtie
+ * Generates the final FPKM / TPM / raw files from Hisat2
  */
-process hisat2_raw {
+process hisat2_fpkm_tpm {
   publishDir params.output.sample_dir, mode: params.output.publish_mode
   tag { sample_id }
   label "stringtie"
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.gtf") from STRINGTIE_GTF_FOR_RAW
+  set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga"), file("${sample_id}_vs_${params.input.reference_prefix}.gtf") from STRINGTIE_GTF_FOR_FPKM
 
-  output:
-    file "${sample_id}_vs_${params.input.reference_prefix}.raw" into RAW_COUNTS
-
-  when:
-    params.output.publish_raw == true
-
-  script:
-  """
-  # Run the prepDE.py script provided by stringtie to get the raw counts.
-  echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_prefix}.gtf" > gtf_files
-  prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_prefix}.raw.pre
-
-  # Reformat the raw file to be the same as the TPM/FKPM files.
-  cat ${sample_id}_vs_${params.input.reference_prefix}.raw.pre | \
-    grep -v gene_id | \
-    perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_prefix}.raw
-  """
-}
-
-
-
-/**
- * Generates the final FPKM / TPM files from Hisat2
- */
-process hisat2_fpkm_tpm {
-  publishDir params.output.sample_dir, mode: params.output.publish_mode
-  tag { sample_id }
-
-  input:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_prefix}.ga") from STRINGTIE_GTF_FOR_FPKM
 
   output:
     file "${sample_id}_vs_${params.input.reference_prefix}.fpkm" optional true into FPKMS
     file "${sample_id}_vs_${params.input.reference_prefix}.tpm" optional true into TPM
+    file "${sample_id}_vs_${params.input.reference_prefix}.raw" optional true into RAW_COUNTS
+    set val(sample_id), val(1) into CLEAN_STRINGTIE_SIGNAL
     val sample_id into HISAT2_SAMPLE_COMPLETE_SIGNAL
 
   script:
@@ -1060,6 +1081,17 @@ process hisat2_fpkm_tpm {
   if [[ ${params.output.publish_tpm} == true ]]; then
     awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_prefix}.ga > ${sample_id}_vs_${params.input.reference_prefix}.tpm
   fi
+
+  if [[ ${params.output.publish_raw} == true ]]; then
+    # Run the prepDE.py script provided by stringtie to get the raw counts.
+    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_prefix}.gtf" > gtf_files
+    prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_prefix}.raw.pre
+
+    # Reformat the raw file to be the same as the TPM/FKPM files.
+    cat ${sample_id}_vs_${params.input.reference_prefix}.raw.pre | \
+      grep -v gene_id | \
+      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_prefix}.raw
+    fi
   """
 }
 
@@ -1285,6 +1317,9 @@ process clean_sam {
   input:
     set val(sample_id), val(files_list) from SAM_CLEANUP_READY
 
+  when:
+    params.output.publish_sam == false
+
   script:
     template "clean_work_files.sh"
 }
@@ -1309,6 +1344,76 @@ process clean_bam {
 
   when:
     params.output.publish_bam == false
+
+  script:
+    template "clean_work_files.sh"
+}
+
+/**
+ * Merge the Kallisto .ga file with the clean kallisto ga signal so that we can
+ * remove the .ga file after it has been used
+ */
+KGAMIX = KALLISTO_GA_TO_CLEAN.mix(CLEAN_KALLISTO_GA_SIGNAL)
+KGAMIX.groupTuple(size: 2).set { KALLISTO_GA_CLEANUP_READY }
+
+/**
+ * Clean up Kallisto GA files
+ */
+process clean_kallisto_ga {
+  tag { sample_id }
+
+  input:
+    set val(sample_id), val(directory) from KALLISTO_GA_CLEANUP_READY
+
+  when:
+    params.output.publish_gene_abundance == false
+
+  script:
+    template "clean_work_dirs.sh"
+}
+
+/**
+ * Merge the Salmon .ga file with the clean salmon ga signal so that we can
+ * remove the .ga file after it has been used
+ */
+SGAMIX = SALMON_GA_TO_CLEAN.mix(CLEAN_SALMON_GA_SIGNAL)
+SGAMIX.groupTuple(size: 2).set { SALMON_GA_CLEANUP_READY }
+
+/**
+ * Clean up Salmon GA files
+ */
+process clean_salmon_ga {
+  tag { sample_id }
+
+  input:
+    set val(sample_id), val(files_list) from SALMON_GA_CLEANUP_READY
+
+  when:
+    params.output.publish_gene_abundance == false
+
+  script:
+    template "clean_work_files.sh"
+}
+
+
+/**
+ * Merge the Salmon .ga file with the clean salmon ga signal so that we can
+ * remove the .ga file after it has been used
+ */
+SMIX = STRINGTIE_GTF_FOR_CLEANING.mix(CLEAN_STRINGTIE_SIGNAL)
+SMIX.groupTuple(size: 2).set { STRINGTIE_CLEANUP_READY }
+
+/**
+ * Clean up Salmon GA files
+ */
+process clean_stringtie_ga {
+  tag { sample_id }
+
+  input:
+    set val(sample_id), val(files_list) from STRINGTIE_CLEANUP_READY
+
+  when:
+    params.output.publish_stringtie_gtf_and_ga == false
 
   script:
     template "clean_work_files.sh"
