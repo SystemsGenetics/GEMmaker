@@ -45,41 +45,16 @@ Input Parameters:
 Quantification Tool Input:
 --------------------------
   Use Hisat2:                 ${params.input.hisat2.enable}
-  Use Kallisto:               ${params.input.kallisto.enable}
-  Use Salmon:                 ${params.input.salmon.enable} """
-
-// Indicates if a tool was selected.
-has_tool = 0
-
-// Indicates which tool the user selected.
-selected_tool = 0
-
-// Print out details per the selected tool.
-if (params.input.hisat2.enable == true) {
-  println """
   Hisat2 Index Directory:     ${params.input.hisat2.index_dir}
   Hisat2 Index Prefix:        ${params.input.hisat2.index_prefix}
-  Hisat2 GTF File:            ${params.input.hisat2.gtf_file}"""
-  has_tool++
-  selected_tool = 0
-}
-if (params.input.kallisto.enable == true) {
-  println "  Kallisto Index File:        ${params.input.kallisto.index_file}"
-  has_tool++
-  selected_tool = 1
-}
-if (params.input.salmon.enable == true) {
-  println "  Salmon Index File:          ${params.input.salmon.index_dir}"
-  has_tool++
-  selected_tool = 2
-}
-if (has_tool == 0) {
-  error "Error: You must select a valid quantification tool in the 'nextflow.config' file"
-}
-if (has_tool > 1) {
-  error "Error: Please select only one quantification tool in the 'nextflow.config' file"
-}
-println """
+  Hisat2 GTF File:            ${params.input.hisat2.gtf_file}
+
+  Use Kallisto:               ${params.input.kallisto.enable}
+  Kallisto Index File:        ${params.input.kallisto.index_file}
+
+  Use Salmon:                 ${params.input.salmon.enable}
+  Salmon Index File:          ${params.input.salmon.index_dir}
+
 
 Output Parameters:
 ------------------
@@ -107,6 +82,35 @@ Software Parameters:
   Trimmomatic clip path:      ${params.software.trimmomatic.clip_path}
   Trimmomatic minimum ratio:  ${params.software.trimmomatic.MINLEN}
 """
+
+
+
+// Indicates if a tool was selected.
+has_tool = 0
+
+// Indicates which tool the user selected.
+selected_tool = 0
+
+// Print out details per the selected tool.
+if (params.input.hisat2.enable == true) {
+  has_tool++
+  selected_tool = 0
+}
+if (params.input.kallisto.enable == true) {
+  has_tool++
+  selected_tool = 1
+}
+if (params.input.salmon.enable == true) {
+  has_tool++
+  selected_tool = 2
+}
+
+if (has_tool == 0) {
+  error "Error: You must select a valid quantification tool in the 'nextflow.config' file"
+}
+if (has_tool > 1) {
+  error "Error: Please select only one quantification tool in the 'nextflow.config' file"
+}
 
 
 
