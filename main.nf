@@ -148,17 +148,6 @@ if (selected_tool == 2)
 
 
 
-
-//file.checkIfExists()
-
-//assert file.exists() : "file not found"
-
-// if (params.input.hisat2.enable == true && !.exists()){
-//   "Error: Plese select a reference file in the `nextflow.config` file"
-// }
-
-
-
 /**
  * Create value channels that can be reused
  */
