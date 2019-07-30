@@ -106,11 +106,56 @@ if (params.input.salmon.enable == true) {
 }
 
 if (has_tool == 0) {
-  error "Error: You must select a valid quantification tool in the 'nextflow.config' file"
+  error "Error: You must select one valid quantification tool in the 'nextflow.config' file"
 }
 if (has_tool > 1) {
   error "Error: Please select only one quantification tool in the 'nextflow.config' file"
 }
+// Check to make sure that required reference files exist
+// If Hisat2 was selected:
+if (selected_tool == 0)
+{
+  gtfFile = file(params.input.hisat2.gtf_file)
+  if (gtfFile.isEmpty())
+  {
+    error "Error: GTF reference file for Hisat2 does not exist or is empty!"
+  }
+  hisat2_index_dir = file(params.input.hisat2.index_dir)
+  if(!hisat2_index_dir.isDirectory())
+  {
+    error "Error: hisat2 Index Directory does not exist or is empty!"
+  }
+
+}
+// If Kallisto was selected
+if (selected_tool == 1)
+{
+  kallisto_index_file = file(params.input.kallisto.index_file)
+  if (kallisto_index_file.isEmpty())
+  {
+    error "Error: Kallisto Index File does not exist or is empty!"
+  }
+}
+// If Salmon was selected
+if (selected_tool == 2)
+{
+  salmon_index_dir = file(params.input.salmon.index_dir)
+  if (!salmon_index_dir.isDirectory())
+  {
+    error "Error: Salmon Index Directory does not exist or is empty!"
+  }
+}
+
+
+
+
+//file.checkIfExists()
+
+//assert file.exists() : "file not found"
+
+// if (params.input.hisat2.enable == true && !.exists()){
+//   "Error: Plese select a reference file in the `nextflow.config` file"
+// }
 
 
 
@@ -1016,7 +1061,7 @@ process samtools_sort {
       -o ${sample_id}_vs_${params.input.reference_name}.bam \
       -O bam \
       -T temp \
-      ${sample_id}_vs_${params.input.reference_name}.sam      
+      ${sample_id}_vs_${params.input.reference_name}.sam
     """
 }
 
