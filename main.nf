@@ -622,13 +622,24 @@ process fastq_merge {
    */
   script:
   """
+  
     if ls *_1.fastq >/dev/null 2>&1; then
-      cat *_1.fastq >> "${sample_id}_1.fastq"
+      # If there is only 1 file, creates a hard link to it rather than copying file
+      if `ls *_1.fastq | wc -l` -eq "1" >/dev/null 2>&1; then
+         ln *_1.fastq ${sample_id}_1.fastq;
+      else
+         cat *_1.fastq >> "${sample_id}_1.fastq"
+      fi
     fi
 
     if ls *_2.fastq >/dev/null 2>&1; then
-      cat *_2.fastq >> "${sample_id}_2.fastq"
+      if `ls *_2.fastq | wc -l` -eq "1" >/dev/null 2>&1; then
+         ln *_2.fastq ${sample_id}_2.fastq;
+      else
+         cat *_2.fastq >> "${sample_id}_2.fastq"
+      fi
     fi
+
   """
 }
 
@@ -1016,7 +1027,7 @@ process samtools_sort {
       -o ${sample_id}_vs_${params.input.reference_name}.bam \
       -O bam \
       -T temp \
-      ${sample_id}_vs_${params.input.reference_name}.sam      
+      ${sample_id}_vs_${params.input.reference_name}.sam
     """
 }
 
