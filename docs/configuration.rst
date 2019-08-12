@@ -3,12 +3,29 @@
 Workflow Configuration
 ----------------------
 
-Like all nextflow workflows, GEMmaker has a ``nextflow.config`` file which allows it to be customized. The config file has two main sections:
+GEMmaker has a ``nextflow.config`` file which allows it to be customized. The config file has three main sections:
 
+- ``project``:  Parameters providing background information about the GEMmaker run to be performed.
 - ``params``: Parameters for input files, output files, and software.
 - ``profiles``: Example profiles for running on different environments such as an HPC system.
 
 The following sections give detailed information on each parameter in ``nextflow.config``. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ for more information on the language of the config file.
+
+Project
+~~~~~~~
+
+name
+====
+A human readable name for the analysis that you will perform. It is best to keep this short and brief.
+
+machine_name
+============
+A machine readable name for the analysis that you will perform. It is mean to be short. It should only have alphanumeric characters (0-9, a-z, A-Z) and underscores. This parameter will be used to name the final GEM file.
+
+description
+===========
+In order to help others understand the purpose for the GEMmaker run, you should include a brief description providing enough details to help your collegues who may look at your GEMmaker run in the future.
+
 
 Input
 ~~~~~
@@ -47,70 +64,67 @@ Default:
 
   local_samples_path = "${baseDir}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
 
-reference_path
+reference_name
 ==============
+The unique name for the genome reference assembly. It must not contain spaces or special characters, only alphanumeric characters (0-9, a-z, A-Z) and underscores. This name will be used when creating intermediate files that you may want to keep, such as BAM files.
 
-The path to the directory containing the genome reference files. The reference genome is provided to this workflow via a set of files in a single directory. The required reference files will vary based on which alignment you use (Hisat2, Salmon, and Kallisto).
 
-For Hisat2:
+hisat2
+======
 
-1. Hisat2 index files created from the reference genome with ``hisat2-build``.
-2. A GTF file containing the genes annotated from the reference genome.
+If you want to use the Hisat2 pipeline for alignment and quantification of reads, set `enable` to `true`.   If Hisat2 is enabled, the trimmomatic, samtools and stringtie processes will be enabled as well.
 
-To generate the hisat2 files, download the reference genome and run this command (this example uses the Arabidopsis genome from TAIR):
+The `index_dir` should be the full path to the directory where hisat2 indexes are located. These indexes should have been built with from the reference genome using the ``hisat2-build`` program.
 
-.. code:: bash
+The `index_prefix` parameter should be set to the prefix used when creating the hisat2 index files.
 
-  hisat2-build -f TAIR10_Araport11.fna TAIR10_Araport11 | tee > hisat2-build.log
+The `gtf_file` parameter should be teh full path to a GTF file containing the genes annotated from the reference genome.
 
-Example of Hisat2 reference directory:
-
-.. code:: bash
-
-  reference/
-    TAIR10_Araport11.1.ht2
-    TAIR10_Araport11.2.ht2
-    TAIR10_Araport11.3.ht2
-    TAIR10_Araport11.4.ht2
-    TAIR10_Araport11.5.ht2
-    TAIR10_Araport11.6.ht2
-    TAIR10_Araport11.7.ht2
-    TAIR10_Araport11.8.ht2
-    TAIR10_Araport11.gtf
-    TAIR10_Araport11.fna
-
-Example of Salmon reference directory:
 
 .. code:: bash
 
-  reference/
-    TAIR10_Araport11.transcripts.Salmon.indexed/
+  hisat2 {
+    enable = true
+    index_dir = "${baseDir}/examples/reference/CORG.transcripts.Hisat2.indexed/"
+    index_prefix = "CORG"
+    gtf_file = "${baseDir}/examples/reference/CORG.gtf"
+  }
 
-Example of Kallisto reference directory:
 
-.. code:: bash
+salmon
+======
 
-  reference/
-    TAIR10_Araport11.transcripts.Kallisto.indexed
+If you want to use Salmon for quantification of reads, set `enable` to `true`.
 
-All files for the reference genome must begin with the same file prefix. For example, if the prefix is ``TAIR10_Araport11`` then every file listed above (for hisat2) should be prefixed with ``TAIR10_Araport11``.
+The `index_dir` should be the full path to the directory where Salmon indexes are located. These indexes should have been built with from the reference genome using the ``salmon index`` program.
 
-Default:
-
-.. code:: bash
-
-  reference_path = "${baseDir}/examples/reference/"
-
-reference_prefix
-================
-
-The prefix (used by ``hisat2-build``) for the genome reference files. All files in the reference directory must have this prefix.
-
-Default:
 
 .. code:: bash
 
-  reference_prefix = "CORG"
+  salmon {
+    enable = true
+    index_dir = "${baseDir}/examples/reference/CORG.transcripts.Salmon.indexed"
+  }
+
+
+kallisto
+========
+
+If you want to use Kallisto for quantification of reads, set `enable` to `true`.
+
+The `index_file` should be the full path where the Kallisto index file is located. This index file should have been built with from the reference genome using the ``kallisto index`` program.
+
+
+.. code:: bash
+
+  kallisto {
+    enable = true
+    index_file = "${baseDir}/examples/reference/CORG.transcripts.Kallisto.indexed"
+  }
+
+.. note::
+
+  You can enable a single quantification tool. You cannot currently enable Hisat2, Salmon or Kallisto at the same time.
 
 Output
 ~~~~~~
@@ -143,6 +157,8 @@ The following sections are intended to give the user access to intermediary file
     publish_sam = false
     publish_fpkm = true
   }
+
+
 Output Parameters Descriptions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Default Parameters Typically fine, skip this section unless you need intermediary files**
@@ -219,43 +235,43 @@ The remaining options in the output parameter determine which intermediary and f
      - false
      - HSK
      - Extracted sra file in fastq format (human readable)
-   * - publish_tpm 
+   * - publish_tpm
      - true
      - HSK
      - Transcripts Per Kilobase Million, Final Output Count file option `Extended Descripion <https://www.rna-seqblog.com/rpkm-fpkm-and-tpm-clearly-explained/>`__
-   * - publish_raw 
+   * - publish_raw
      - true
      - HSK
      - Final Output Count file option, the raw count of each gene. Compare to FPKM and TPM
-   * - multiqc 
+   * - multiqc
      - true
      - HSK
      - A final report that is generated that tells you about the GEMmaker run
-   * - create_gem 
+   * - create_gem
      - true
      - HSK
      - Combines Final Count Files (FPKM, TPM, raw) into their respective GEM
-   * - publish_gene_abundance 
+   * - publish_gene_abundance
      - false
      - SK
      - File Generated by Kallisto or Salmon before it is cleaned into Final Count Files
-   * - publish_stringtie_gtf_and_ga 
+   * - publish_stringtie_gtf_and_ga
      - false
      - H
      - File Generated by Hisat2 before it is cleaned into Final Count Files
-   * - publish_trimmed_fastq 
+   * - publish_trimmed_fastq
      - false
      - H
      - Fastq files after they have been trimmed
-   * - publish_bam 
+   * - publish_bam
      - false
      - H
      - binary alignment file (not human readable) of genes aligned to reference genome
-   * - publish_sam 
+   * - publish_sam
      - false
      - H
      - alignment file (human readable) of genes aligned to reference genome
-   * - publish_fpkm 
+   * - publish_fpkm
      - true
      - H
      - Fragments Per Kilobase Million, Final Output Count file option `Extended Descripion <https://www.rna-seqblog.com/rpkm-fpkm-and-tpm-clearly-explained/>`__
