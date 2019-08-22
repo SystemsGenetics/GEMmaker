@@ -332,6 +332,11 @@ The config file provides several profiles for running GEMmaker in different envi
 
 You can modify these config files to suit your needs, or even create your own. For more information, refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ on config profiles. Here we describe each of the profiles provided by GEMmaker:
 
+docker
+======
+
+The ``docker`` profile enables GEMmaker to run processes in Docker containers. This behavior can also be enabled by specifying ``-with-docker`` on the command-line.
+
 k8s
 ===
 
@@ -352,6 +357,11 @@ pbs
 
 The ``pbs`` profile provides basic execution settings for running GEMmaker
 on an HPC system using the PBS scheduler. This profile is optimized for the Palmetto cluster at Clemson University, so it may need to be modified to suit your particular system.
+
+singularity
+===========
+
+The ``singularity`` profile enables GEMmaker to run processes in Singularity containers. This behavior can also be enabled by specifying ``-with-singularity`` on the command-line.
 
 slurm
 =====
