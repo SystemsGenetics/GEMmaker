@@ -95,34 +95,74 @@ For Kallisto:
 Executing the Workflow
 ~~~~~~~~~~~~~~~~~~~~~~
 
-To execute the workflow on a local machine:
+Specifying an Environment
+=========================
+
+GEMmaker is designed to run on a number of different environments, including:
+
+- Local machine
+- HPC cluster
+- Kubernetes cluster
+
+Additionally, each of these environments may be able to provide software dependencies through Docker, Singularity, or Environment Modules. Here we provide some example command lines for each of these scenarios.
+
+**Local Machine**
+
+To run GEMmaker on a local machine:
 
 .. code:: bash
 
+  # assume software dependencies are installed locally ...
   nextflow run main.nf -profile standard
 
-To resume a workflow in the event of a failure:
+  # ... or use docker
+  nextflow run main.nf -profile standard,docker
+
+**HPC Cluster**
+
+To execute the workflow on an HPC system you will likely need to edit ``nextflow.config`` and add an appropriate profile for your system. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/executor.html>`__ for the list of available executors. Here we provide some examples based on the existing profiles.
+
+To run GEMmaker on Kamiak:
 
 .. code:: bash
 
-  nextflow run main.nf -profile standard -resume
+  # use environment modules ...
+  nextflow run main.nf -profile slurm,modules_kamiak
 
-To execute the workflow and generate trace, timeline and execution reports:
+  # ... or singularity
+  nextflow run main.nf -profile slurm,singularity
+
+To run GEMmaker on Palmetto:
 
 .. code:: bash
 
-  nextflow run main.nf -profile standard -with-report -with-timeline -with-trace
+  # use environment modules ...
+  nextflow run main.nf -profile pbs,modules_palmetto
 
-To execute the workflow on an HPC system you must edit ``nextflow.config`` and add an appropriate profile for your system. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__. You can then use any of the above commands by changing the ``-profile`` argument to use your profile.
+  # ... or singularity
+  nextflow run main.nf -profile pbs,singularity
+
+**Kubernetes Cluster**
+
+GEMmaker can be run on a `Kubernetes <https://kubernetes.io/>`__ cluster with minimal effort, but there are additional steps required to configure the cluster and transfer input data and output data before and after execution. Consult the `kube-runner <https://github.com/SystemsGenetics/kube-runner>`__ project for instructions.
 
 Performance Considerations
 ==========================
 
-For large experiments on an HPC system, it is important to make sure that you are effectively utilizing the resources of the system. There are a number of parameters in ``nextflow.config`` which can be used to increase performance based on the capabilities of your system:
+For large experiments on an HPC system, it is important to make sure that you are effectively utilizing the resources of the system. There are a few settings in ``nextflow.config`` which can be used to maximize performance based on the capabilities of your system:
 
-- ``params.execution.threads``: All processes which support multithreading (such as trimmomatic) will use this number of threads. This setting should be determined by the number of cores per node on your system; for example, if your system has nodes with 16 cores per node then you could set the number of threads to 16 to make full use of those nodes.
+- **Multithreading**: Processes which support multithreading (such as trimmomatic) will use multiple threads according to the number of CPUs allocated to the process. Refer to the ``pbs`` and ``slurm`` profiles for examples of how to allocate more CPUs for multithreaded processes. This setting should be determined by the number of cores per node on your system; for example, if your system has nodes with 16 cores per node then you could set the number of threads to 16 to make full use of those nodes. Note, however, that you may also need to consider the memory available on each node, as well as the potentially higher queueing time for jobs that request more resources.
 
-- ``params.execution.queue_size``: Nextflow will only run up to 100 processes at a time by default, but you may be able to increase this value based on the queue limits of your system.
+- **Queue size**: Nextflow will only run up to 100 processes at a time by default (``params.execution.queue_size``), but you may be able to increase this value based on the queue limits of your system.
+
+Resuming a Previous Run
+=======================
+
+In the event of a failure you can resume a previous workflow run:
+
+.. code:: bash
+
+  nextflow run main.nf -resume
 
 Generating a Summary Report
 ===========================
