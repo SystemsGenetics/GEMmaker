@@ -558,16 +558,13 @@ process prefetch {
     set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES
 
   output:
-    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT
-    set val(sample_id), file("*.sra") into SRA_TO_CLEAN
+    set val(sample_id), file("*/*.sra") into SRA_TO_EXTRACT
+    set val(sample_id), file("*/*.sra") into SRA_TO_CLEAN
 
   script:
   """
-  ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
-  for id in \$ids; do
-    ascp_path=`which ascp`
-    prefetch -v --max-size 50G --output-directory . --ascp-path "\$ascp_path|\$ASPERA_KEY" --ascp-options "-k 1 -T -l 1000m" \$id
-  done
+    ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]/,/g'`
+    retrieve_sra.py \$ids
   """
 }
 
@@ -1016,7 +1013,7 @@ process samtools_sort {
       -o ${sample_id}_vs_${params.input.reference_name}.bam \
       -O bam \
       -T temp \
-      ${sample_id}_vs_${params.input.reference_name}.sam      
+      ${sample_id}_vs_${params.input.reference_name}.sam
     """
 }
 

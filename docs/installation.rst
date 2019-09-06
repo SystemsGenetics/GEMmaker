@@ -11,7 +11,7 @@ GEMmaker depends primarily on `Nextflow <https://www.nextflow.io/>`__ for workfl
 .. warning::
   Nextflow does not yet support Singularity 3.0 or later. You can use any version of Singularity between 2.4 and 2.6.
 
-The following sections lists the software and versions that have been tested with GEMmaker. **Required Dependencies** are the dependencies which must be installed by the user before running GEMmaker. **Containerized Dependencies** are the dependencies which are contained in Docker images, which GEMmaker will automatically download. You most likely do not need to worry about the containerized dependencies unless you would like to run GEMmaker without using Docker or Singularity.
+The following sections lists the software and versions that have been tested with GEMmaker. **Required Dependencies** are those which must be installed  before running GEMmaker. **Containerized Dependencies** are the dependencies which are contained in Docker images, which GEMmaker will automatically download. You do not need to install the containerized dependencies unless you want to run GEMmaker without Docker or Singularity.
 
 .. note::
   Other versions of these tools may work but have not been tested:
