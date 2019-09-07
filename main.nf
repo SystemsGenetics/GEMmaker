@@ -495,7 +495,7 @@ process next_sample {
           }
           if (!lock) {
             println "Waiting on lock. attempt " + attempts + "..."
-            sleep 1000
+            sleep 60000
             attempts = attempts + 1
           }
         }
@@ -558,12 +558,12 @@ process prefetch {
     set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES
 
   output:
-    set val(sample_id), file("*/*.sra") into SRA_TO_EXTRACT
-    set val(sample_id), file("*/*.sra") into SRA_TO_CLEAN
+    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT
+    set val(sample_id), file("*.sra") into SRA_TO_CLEAN
 
   script:
   """
-    ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]/,/g'`
+    ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g' | perl -p -e 's/\\s*\$//' | perl -p -e 's/\\s+/,/g'`
     retrieve_sra.py \$ids
   """
 }
