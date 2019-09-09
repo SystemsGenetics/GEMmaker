@@ -485,7 +485,10 @@ process next_sample {
     try {
       attempts = 0
       while (!lock)  {
-        if (attempts < 3) {
+        // We will try for a release lock for about 10 minutes max. The sleep
+        // time is set to 1 second.  It may take this long on a slow NFS
+        // system.
+        if (attempts < 6000) {
           try {
             lockfile = new File("${workflow.workDir}/GEMmaker/gemmaker.lock")
             channel = new RandomAccessFile(lockfile, "rw").getChannel()
@@ -496,7 +499,7 @@ process next_sample {
           }
           if (!lock) {
             println "Waiting on lock. attempt " + attempts + "..."
-            sleep 60000
+            sleep 1000
             attempts = attempts + 1
           }
         }
