@@ -70,6 +70,7 @@ def download_samples(run_ids):
                 # network system module
                 if (exit_code == 3):
                     print("Transfer incomplete.  sleeping for a bit and then trying again...", file=sys.stderr)
+                    p = subprocess.Popen(["rm", "-rf", $run_id])
                     time.sleep(300)
                 # If we've encountered an exit code that we're not familiar
                 # with then exit. We can then add new code here to address
@@ -117,7 +118,11 @@ if __name__ == "__main__":
     # failed processes
     if (ec != 0):
         print("Cleaning after failed attempt.", file=sys.stderr)
-        p = subprocess.Popen(["rm", "-rf", "./"])
-
+        p = subprocess.Popen(["rm", "-rf", "./*"])
+    # Sometimes prefetch will downlaod the SRA into a set of files and sometimes
+    # into a directory.  We don't want them in a directory
+    else:
+        p = subprocess.Popen(["mv", "*/*.sra", "."])
+        
     # Return the exit code.
     sys.exit(ec)
