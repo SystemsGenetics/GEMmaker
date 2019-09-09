@@ -38,7 +38,7 @@ def download_samples(run_ids):
         max_retries = 5;
         while retry == True:
             print("Retrieving sample: {}".format(run_id))
-            
+
             # Run Prefetch with support for Aspera. This expects that the
             # ascp program is in the PATH and that there is an Environment
             # variable naemd $ASPERA_KEY that has the path to the SSH key.
@@ -68,13 +68,22 @@ def download_samples(run_ids):
             else:
                 print("Failed. Exit code: {}".format(exit_code), file=sys.stderr)
 
-                # Exit code #3: transfer incomplete while reading file within
-                # network system module
+                # Exit code #3: "transfer incomplete while reading file within
+                # network system module"
                 if (exit_code == 3):
-                    print("Transfer incomplete.  sleeping for a bit and then trying again...", file=sys.stderr)
-                    p = subprocess.Popen(["rm", "-rf", run_id])
-                    # Sleep for 10 minutes to give things time to "cool off"
-                    time.sleep(600)
+                    # Sometimes we get this error message but the SRA file
+                    # did actually completely download.  So before we try
+                    # again let's check it.
+                    if (sample_exists(run_id)) == True):
+                        print("File downloaded fine.  No worries...")
+                        retry = False
+                    else:
+                        print("Transfer incomplete.  sleeping for a bit and then trying again...", file=sys.stderr)
+                        p = subprocess.Popen(["rm", "-rf", run_id])
+                        # Sleep for 10 minutes to give things time to "cool off"
+                        time.sleep(600)
+
+
                 # If we've encountered an exit code that we're not familiar
                 # with then exit. We can then add new code here to address
                 # other codes.
@@ -96,13 +105,29 @@ def download_samples(run_ids):
         # Sometimes prefetch will download the SRA into a set of files and
         # sometimes into a directory. It's probably a setting somewhere but we
         # need consistency. So move the .sra files into the working directory.
-        if (ec == 0 and os.path.exists("{}".format(run_id))):
-            if (os.path.exists("./{}/{}.sra".format(run_id, run_id))):
-                subprocess.Popen(["mv", "{}/{}.sra".format(run_id, run_id), "."])
-            if (os.path.exists("./{}/{}_1.sra".format(run_id, run_id))):
-                subprocess.Popen(["mv", "{}/{}_1.sra".format(run_id, run_id), "."])
-                subprocess.Popen(["mv", "{}/{}_2.sra".format(run_id, run_id), "."])
+        if (ec == 0 and sample_exists(run_id) != True):
+            print("Could not retrive sample. Unknown problem.", file=sys.stderr)
+            ec = 1
+
     return(ec)
+
+def sample_exists(run_id):
+    """
+    Checks if a sample is fully downloaded. It will also correct the path for
+    GEMmaker, as sometimes prefetch will put the sample in a directory and
+    sometimes in its own file (not sure what settings is needed to unify this).
+
+    :param run_ids: the list of run IDs.
+    """
+    if (os.path.exists("{}".format(run_id))):
+        if (os.path.exists("./{}/{}.sra".format(run_id, run_id))):
+            subprocess.Popen(["mv", "{}/{}.sra".format(run_id, run_id), "."])
+        if (os.path.exists("./{}/{}_1.sra".format(run_id, run_id))):
+            subprocess.Popen(["mv", "{}/{}_1.sra".format(run_id, run_id), "."])
+            subprocess.Popen(["mv", "{}/{}_2.sra".format(run_id, run_id), "."])
+        return True
+    return False
+
 
 if __name__ == "__main__":
 
