@@ -410,6 +410,7 @@ NEXT_SAMPLE = Channel
  */
 process read_sample_file {
   executor "local"
+  cache false
   tag { sample_file }
 
   input:

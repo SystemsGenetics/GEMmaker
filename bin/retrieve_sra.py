@@ -19,6 +19,7 @@ import sys
 import subprocess
 import re
 import time
+import os
 
 def download_samples(run_ids):
     """
@@ -70,7 +71,7 @@ def download_samples(run_ids):
                 # network system module
                 if (exit_code == 3):
                     print("Transfer incomplete.  sleeping for a bit and then trying again...", file=sys.stderr)
-                    p = subprocess.Popen(["rm", "-rf", $run_id])
+                    p = subprocess.Popen(["rm", "-rf", run_id])
                     time.sleep(300)
                 # If we've encountered an exit code that we're not familiar
                 # with then exit. We can then add new code here to address
@@ -89,6 +90,16 @@ def download_samples(run_ids):
                         ec = 1
                     else:
                         print("Retry number {}".format(num_retries), file=sys.stderr)
+
+        # Sometimes prefetch will download the SRA into a set of files and
+        # sometimes into a directory. It's probably a setting somewhere but we
+        # need consistency. So move the .sra files into the working directory.
+        if (ec == 0 and os.path.exists("{}".format(run_id))):
+            if (os.path.exists("./{}/{}.sra".format(run_id, run_id))):
+                subprocess.Popen(["mv", "{}/{}.sra".format(run_id, run_id), "."])
+            if (os.path.exists("./{}/{}_1.sra".format(run_id, run_id))):
+                subprocess.Popen(["mv", "{}/{}_1.sra".format(run_id, run_id), "."])
+                subprocess.Popen(["mv", "{}/{}_2.sra".format(run_id, run_id), "."])
     return(ec)
 
 if __name__ == "__main__":
@@ -119,10 +130,6 @@ if __name__ == "__main__":
     if (ec != 0):
         print("Cleaning after failed attempt.", file=sys.stderr)
         p = subprocess.Popen(["rm", "-rf", "./*"])
-    # Sometimes prefetch will downlaod the SRA into a set of files and sometimes
-    # into a directory.  We don't want them in a directory
-    else:
-        p = subprocess.Popen(["mv", "*/*.sra", "."])
-        
+
     # Return the exit code.
     sys.exit(ec)
