@@ -33,11 +33,12 @@ def download_samples(run_ids):
 
     # Now download each SRR.
     for run_id in run_ids:
-        print("Retrieving sample: {}".format(run_id))
         num_retries = 0;
         retry = True
         max_retries = 5;
         while retry == True:
+            print("Retrieving sample: {}".format(run_id))
+            
             # Run Prefetch with support for Aspera. This expects that the
             # ascp program is in the PATH and that there is an Environment
             # variable naemd $ASPERA_KEY that has the path to the SSH key.
@@ -72,7 +73,8 @@ def download_samples(run_ids):
                 if (exit_code == 3):
                     print("Transfer incomplete.  sleeping for a bit and then trying again...", file=sys.stderr)
                     p = subprocess.Popen(["rm", "-rf", run_id])
-                    time.sleep(300)
+                    # Sleep for 10 minutes to give things time to "cool off"
+                    time.sleep(600)
                 # If we've encountered an exit code that we're not familiar
                 # with then exit. We can then add new code here to address
                 # other codes.
