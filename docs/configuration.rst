@@ -167,8 +167,6 @@ The following sections are intended to give the user access to intermediate file
 Output Parameters Descriptions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Default Parameters Typically fine, skip this section unless you need intermediate files**
-
 dir
 ===
 
