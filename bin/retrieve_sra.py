@@ -74,9 +74,10 @@ def download_samples(run_ids):
                     # Sometimes we get this error message but the SRA file
                     # did actually completely download.  So before we try
                     # again let's check it.
-                    if (sample_exists(run_id)) == True):
+                    if (sample_exists(run_id) == True):
                         print("File downloaded fine.  No worries...")
                         retry = False
+                        ec = 0
                     else:
                         print("Transfer incomplete.  sleeping for a bit and then trying again...", file=sys.stderr)
                         p = subprocess.Popen(["rm", "-rf", run_id])
@@ -126,6 +127,10 @@ def sample_exists(run_id):
             subprocess.Popen(["mv", "{}/{}_1.sra".format(run_id, run_id), "."])
             subprocess.Popen(["mv", "{}/{}_2.sra".format(run_id, run_id), "."])
         return True
+    elif (os.path.exists("{}.sra".format(run_id))):
+      return True
+    elif (os.path.exists("{}_1.sra".format(run_id))):
+      return True
     return False
 
 
@@ -156,7 +161,7 @@ if __name__ == "__main__":
     # failed processes
     if (ec != 0):
         print("Cleaning after failed attempt.", file=sys.stderr)
-        p = subprocess.Popen(["rm", "-rf", "./*"])
+        #p = subprocess.Popen(["rm", "-rf", "./*"])
 
     # Return the exit code.
     sys.exit(ec)
