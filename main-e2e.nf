@@ -428,9 +428,9 @@ process process_sample {
       -v \
       -p ${task.cpus} \
       -e \
-      -o ${sample_id}_vs_${params.input.reference_name}.gtf \
+      -o ${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf \
       -G ${gtf_file} \
-      -A ${sample_id}_vs_${params.input.reference_name}.ga \
+      -A ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga \
       -l ${sample_id} ${sample_id}_vs_${params.input.reference_name}.bam
 
     # remove BAM file if it will not be published
@@ -441,21 +441,21 @@ process process_sample {
 
     # generate raw counts from hisat2/stringtie
     # Run the prepDE.py script provided by stringtie to get the raw counts.
-    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_name}.gtf" > gtf_files
+    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf" > gtf_files
     prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_name}.raw.pre
 
     # Reformat the raw file to be the same as the TPM/FKPM files.
     cat ${sample_id}_vs_${params.input.reference_name}.raw.pre | \
       grep -v gene_id | \
-      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_name}.raw
+      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_name}.Hisat2.raw
 
     # generate the final FPKM and TPM files
     if [[ ${params.output.publish_fpkm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga > ${sample_id}_vs_${params.input.reference_name}.fpkm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.fpkm
     fi
 
     if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga > ${sample_id}_vs_${params.input.reference_name}.tpm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.tpm
     fi
 
     if [[ ${params.output.publish_stringtie_gtf_and_ga} == false ]]; then
@@ -469,7 +469,7 @@ process process_sample {
     if [ -e ${sample_id}_2.fastq ]; then
       kallisto quant \
         -i  ${indexes} \
-        -o ${sample_id}_vs_${params.input.reference_name}.ga \
+        -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
         ${sample_id}_1.fastq \
         ${sample_id}_2.fastq > ${sample_id}.kallisto.log 2>&1
     else
@@ -478,17 +478,17 @@ process process_sample {
         -l 70 \
         -s .0000001 \
         -i ${indexes} \
-        -o ${sample_id}_vs_${params.input.reference_name}.ga \
+        -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
         ${sample_id}_1.fastq > ${sample_id}.kallisto.log 2>&1
     fi
 
     # generate TPM and raw count files
     if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.tpm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.tpm
     fi
 
     if [[ ${params.output.publish_raw} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.raw
+      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.raw
     fi
 
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
@@ -505,7 +505,7 @@ process process_sample {
         -1 ${sample_id}_1.fastq \
         -2 ${sample_id}_2.fastq \
         -p ${task.cpus} \
-        -o ${sample_id}_vs_${params.input.reference_name}.ga \
+        -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
         --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
     else
       salmon quant \
@@ -513,17 +513,17 @@ process process_sample {
         -l A \
         -r ${sample_id}_1.fastq \
         -p ${task.cpus} \
-        -o ${sample_id}_vs_${params.input.reference_name}.ga \
+        -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
         --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
     fi
 
     # generate final TPM and raw count files
     if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.tpm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.tpm
     fi
 
     if [[ ${params.output.publish_raw} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.raw
+      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.raw
     fi
 
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
