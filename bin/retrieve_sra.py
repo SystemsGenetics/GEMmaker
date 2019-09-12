@@ -20,6 +20,7 @@ import subprocess
 import re
 import time
 import os
+import random
 
 def download_samples(run_ids):
     """
@@ -92,6 +93,13 @@ def download_samples(run_ids):
                     retry = False;
                     ec = 1
 
+                # If we're on our last retry let's give it some extra time.
+                # We'll add a random wait time so that if we have more 
+                # than one proces on a cluster all sleeping they can
+                # wake at different times.
+                if (num_retries == max_retries - 1):
+                    time.sleep(1800 + randint(300, 600))
+
                 # If retry is set to true then only allow it for up to
                 # max_retries
                 if (retry == True):
@@ -161,7 +169,7 @@ if __name__ == "__main__":
     # failed processes
     if (ec != 0):
         print("Cleaning after failed attempt.", file=sys.stderr)
-        #p = subprocess.Popen(["rm", "-rf", "./*"])
+        p = subprocess.Popen(["rm", "-rf", "./*"])
 
     # Return the exit code.
     sys.exit(ec)
