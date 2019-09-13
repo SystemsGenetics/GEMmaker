@@ -45,7 +45,6 @@ Input Parameters:
 Quantification Tool Input:
 --------------------------
   Use Hisat2:                 ${params.input.hisat2.enable}
-  Hisat2 Index Directory:     ${params.input.hisat2.index_dir}
   Hisat2 Index Prefix:        ${params.input.reference_name}
   Hisat2 GTF File:            ${params.input.hisat2.gtf_file}
 
