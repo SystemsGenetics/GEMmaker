@@ -81,9 +81,16 @@ def download_samples(run_ids):
                         ec = 0
                     else:
                         print("Transfer incomplete.  sleeping for a bit and then trying again...", file=sys.stderr)
-                        p = subprocess.Popen(["rm", "-rf", run_id])
-                        # Sleep for 10 minutes to give things time to "cool off"
-                        time.sleep(600)
+                        # If we're on our last retry let's give it some extra time.
+                        # We'll add a random wait time so that if we have more 
+                        # than one proces on a cluster all sleeping they can
+                        # wake at different times.
+                        if (num_retries == max_retries - 1):
+                            time.sleep(1800 + random.randint(300, 600))
+                        else:
+                            # Sleep for 10 minutes to give things time to "cool off"
+                            time.sleep(600)
+                        #p = subprocess.Popen(["rm", "-rf", run_id])
 
 
                 # If we've encountered an exit code that we're not familiar
@@ -92,13 +99,6 @@ def download_samples(run_ids):
                 else:
                     retry = False;
                     ec = 1
-
-                # If we're on our last retry let's give it some extra time.
-                # We'll add a random wait time so that if we have more 
-                # than one proces on a cluster all sleeping they can
-                # wake at different times.
-                if (num_retries == max_retries - 1):
-                    time.sleep(1800 + randint(300, 600))
 
                 # If retry is set to true then only allow it for up to
                 # max_retries
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     # failed processes
     if (ec != 0):
         print("Cleaning after failed attempt.", file=sys.stderr)
-        p = subprocess.Popen(["rm", "-rf", "./*"])
+        #p = subprocess.Popen(["rm", "-rf", "./*"])
 
     # Return the exit code.
     sys.exit(ec)
