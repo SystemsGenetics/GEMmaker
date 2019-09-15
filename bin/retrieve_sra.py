@@ -20,6 +20,7 @@ import os
 import random
 import requests
 import shutil
+import json
 
 def process_wait(p):
     """
@@ -60,9 +61,11 @@ def get_sample_url(run_id):
     print("Getting download paths for sample: {}".format(run_id))
 
     # First try if there is an aspera path.
-    p = subprocess.Popen(["srapath", "--protocol", "fasp", "-P", run_id], stdout=subprocess.PIPE)
+    p = subprocess.Popen(["srapath", "--protocol", "fasp", "--json", run_id], stdout=subprocess.PIPE)
     res = process_wait(p)
-    fasp_path = res['stdout'].rstrip()
+    res = json.loads(res['stdout'])
+    fasp_path = res['responses'][0]['remote'][0]['path']
+    sra_size = res['responses'][0]['size']
  
     # If an https path was returned for Aspera then use that. 
     https_path = ""
@@ -73,9 +76,11 @@ def get_sample_url(run_id):
     elif (not fasp_path): 
        p = subprocess.Popen(["srapath", "--protocol", "https", "-P", run_id], stdout=subprocess.PIPE)
        res = process_wait(p)
-       https_path = res['stdout'].rstrip()
+       res = json.loads(res['stdout'])
+       https_path = res['response'][0]['remote'][0]['path']
+       sra_size = res['responses'][0]['size']
 
-    urls = { 'https' : https_path, 'fasp' : fasp_path }
+    urls = { 'https' : https_path, 'fasp' : fasp_path, 'size' : sra_size }
     return urls
 
 def download_aspera(run_id, urls):
@@ -113,7 +118,7 @@ def download_https(run_id, urls):
         with open("{}.sra".format(run_id), 'wb') as sra_file:
             shutil.copyfileobj(r.raw, sra_file) 
     except Exception as e: 
-        print(e)
+        print(e, file=sys.stderr)
         ec = 1
     return ec 
 
@@ -140,21 +145,27 @@ def download_samples(run_ids):
             print("Download failed.", file=sys.stderr)
             break
         
-        if (sample_exists(run_id) == False):
-            print("Download failed sample missing.", file=sys.stderr)
+        if (sample_is_good(run_id, urls['size']) == False):
+            print("Downloaded sample is missing or corrupted.", file=sys.stderr)
             ec = 1
             break
 
     return(ec)
 
-def sample_exists(run_id):
+def sample_is_good(run_id, size):
     """
     Checks if a sample is fully downloaded. 
 
     :param run_ids: the list of run IDs.
     """
-    if (os.path.exists("{}.sra".format(run_id))):
-      return True
+    sra_file = "{}.sra".format(run_id)
+    if (os.path.exists(sra_file)):
+      statinfo = os.stat(sra_file)
+      if (statinfo.st_size == size):
+        print("Size {} == {}".format(statinfo.st_size, size), file=sys.stdout)
+        return True
+      else: 
+        print("Size {} != {}".format(statinfo.st_size, size), file=sys.stdout)
     return False
 
 
