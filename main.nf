@@ -325,10 +325,6 @@ process write_stage_files {
     val (1) into SAMPLES_READY_SIGNAL
 
   exec:
-    // Create a file for each samples.
-    sample_file = file("${workflow.workDir}/GEMmaker/stage/" + sample[0] + '.sample.csv')
-    sample_file.withWriter {
-
     // Get any samples to skip
     skip_samples = []
     skip_file = file("${params.input.skip_list_path}")
@@ -338,12 +334,12 @@ process write_stage_files {
       }
     }
 
-    // Only stage files that should not be skipped.
-    if (skip_samples.intersect([sample[0]]) == [])  {
+    // Create a file for each samples.
+    sample_file = file("${workflow.workDir}/GEMmaker/stage/" + sample[0] + '.sample.csv')
+    sample_file.withWriter {
 
-      // Create a file for each samples.
-      sample_file = file("${workflow.workDir}/GEMmaker/stage/" + sample[0] + '.sample.csv')
-      sample_file.withWriter {
+      // Only stage files that should not be skipped.
+      if (skip_samples.intersect([sample[0]]) == [])  {
 
         // Get the sample type: local or remote.
         type = sample[2]
@@ -361,12 +357,8 @@ process write_stage_files {
         }
         // If this is a remote file.
         else {
-          it.writeLine '"' + sample[0] + '","' + sample[1].first().toString() + '","' + type + '"'
+          it.writeLine '"' + sample[0] + '","' + sample[1] + '","' + type + '"'
         }
-      }
-      // If this is a remote file.
-      else {
-        it.writeLine '"' + sample[0] + '","' + sample[1] + '","' + type + '"'
       }
     }
 }
