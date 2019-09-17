@@ -3,12 +3,9 @@
 """
 A Python script for retrieving a set of NCBI SRA run.
 
-This script is meant to gracefully handle transfer errors that can occur
-when downloading SRR files (e.g. timeouts, incomplete downloads, etc.).  If an
-error does occur then depending on the prefetch exit code, the fetch is retried.
-The script will always return 0 if the SRRs are all downloaded successfully or
-1 if not. If any of the SRRs fail, the directory is emptied so as not to overrun
-storage on successive runs.
+This script is meant as a replacement for the SRAToolkit
+prefetch program, as it would sometimes fail without providing
+proper errors. It requires Aspera and the SRAToolkit.
 
 .. module:: GEMmaker
     :platform: UNIX, Linux
@@ -20,6 +17,110 @@ import subprocess
 import re
 import time
 import os
+import random
+import requests
+import shutil
+import json
+
+def process_wait(p):
+    """
+    A helper function for running a system command.
+
+    :param p: A process that has already been opened.
+    """
+
+    print("{}".format(p.args), file=sys.stdout)
+
+    # Wait for the process to finish to get the exit code,
+    # STDOUT, and STDERR.  The STDOUT and STDERR need to be convereted
+    # to a string.
+    exit_code = p.wait()
+    (stdout, stderr) = p.communicate()
+    if (stdout):
+        stdout = stdout.decode('utf-8')
+    else:
+        stdout = ''
+    if (stderr):
+        stderr = stderr.decode('utf-8')
+    else:
+        stderr = ''
+    
+    # Send stdout and stderr out to proper streams
+    print(stdout, file=sys.stdout)
+    print(stderr, file=sys.stderr)
+   
+    return { 'exit' : exit_code, 'stdout' : stdout, 'stderr' : stderr }
+
+def get_sample_url(run_id):
+    """
+    Uses the srapath tool to get the URL of an SRA ID.
+
+    :param run_id: the run ID.
+    """
+
+    print("Getting download paths for sample: {}".format(run_id))
+
+    # First try if there is an aspera path.
+    p = subprocess.Popen(["srapath", "--protocol", "fasp", "--json", run_id], stdout=subprocess.PIPE)
+    res = process_wait(p)
+    res = json.loads(res['stdout'])
+    fasp_path = res['responses'][0]['remote'][0]['path']
+    sra_size = res['responses'][0]['size']
+ 
+    # If an https path was returned for Aspera then use that. 
+    https_path = ""
+    if (re.match('https://', fasp_path)): 
+       https_path = fasp_path
+       fasp_path = ""
+    # If there is no aspera path then try HTTPs 
+    elif (not fasp_path): 
+       p = subprocess.Popen(["srapath", "--protocol", "https", "-P", run_id], stdout=subprocess.PIPE)
+       res = process_wait(p)
+       res = json.loads(res['stdout'])
+       https_path = res['response'][0]['remote'][0]['path']
+       sra_size = res['responses'][0]['size']
+
+    urls = { 'https' : https_path, 'fasp' : fasp_path, 'size' : sra_size }
+    return urls
+
+def download_aspera(run_id, urls):
+    """
+    Downloads a SRA Run using Aspera.
+
+    :param run_id:  the run ID.
+    :param urls: a dictionary of urls for the run.
+    """
+
+    ec = 0
+    print("Retrieving sample via aspera: {}".format(run_id))
+    p = subprocess.Popen(["ascp", "-i", "$ASPERA_KEY","-k", "1", "-T", "-l", "1000m", urls['fasp'].replace('fasp://',''), "{}.sra".format(run_id)], stdout=subprocess.PIPE)
+    res = process_wait(p)
+    if (res['exit'] != 0):
+        retry = False
+    else:
+        print("Aspera Failed. Exit code: {}. Trying https".format(exit_code), file=sys.stderr)
+        ec = download_https(urls)
+    return ec
+
+def download_https(run_id, urls):
+    """
+    Downloads a SRA Run using HTTPS.
+
+    :param run_id:  the run ID.
+    :param urls: a dictionary of urls for the run.
+    """
+
+    ec = 0
+    print("Retrieving sample via https: {}".format(run_id))
+    try: 
+        r = requests.get(urls['https'], verify=True, stream=True)
+        r.raw.decode_content = True
+        with open("{}.sra".format(run_id), 'wb') as sra_file:
+            shutil.copyfileobj(r.raw, sra_file) 
+    except Exception as e: 
+        print(e, file=sys.stderr)
+        ec = 1
+    return ec 
 
 def download_samples(run_ids):
     """
@@ -33,104 +134,38 @@ def download_samples(run_ids):
 
     # Now download each SRR.
     for run_id in run_ids:
-        num_retries = 0;
-        retry = True
-        max_retries = 5;
-        while retry == True:
-            print("Retrieving sample: {}".format(run_id))
-
-            # Run Prefetch with support for Aspera. This expects that the
-            # ascp program is in the PATH and that there is an Environment
-            # variable naemd $ASPERA_KEY that has the path to the SSH key.
-            p = subprocess.Popen(["prefetch", "-v", "--max-size", "50G", "--output-directory", ".", "--ascp-path", "`which ascp`\"|$ASPERA_KEY\"", "--ascp-options", "-k 1 -T -l 1000m", run_id], stdout=subprocess.PIPE)
-
-            # Wait for the process to finish to get the exit code,
-            # STDOUT, and STDERR.  The STDOUT and STDERR need to be convereted
-            # to a string.
-            exit_code = p.wait()
-            (stdout, stderr) = p.communicate()
-            if (stdout):
-                stdout = stdout.decode('utf-8')
-            else:
-                stdout = ''
-            if (stderr):
-                stderr = stderr.decode('utf-8')
-            else:
-                stderr = ''
-
-            # Send stdout and stderr out to calling program
-            print(stdout, file=sys.stdout)
-            print(stderr, file=sys.stderr)
-
-            # Check to see if there were any common problems.
-            if (exit_code == 0):
-                retry = False
-            else:
-                print("Failed. Exit code: {}".format(exit_code), file=sys.stderr)
-
-                # Exit code #3: "transfer incomplete while reading file within
-                # network system module"
-                if (exit_code == 3):
-                    # Sometimes we get this error message but the SRA file
-                    # did actually completely download.  So before we try
-                    # again let's check it.
-                    if (sample_exists(run_id) == True):
-                        print("File downloaded fine.  No worries...")
-                        retry = False
-                        ec = 0
-                    else:
-                        print("Transfer incomplete.  sleeping for a bit and then trying again...", file=sys.stderr)
-                        p = subprocess.Popen(["rm", "-rf", run_id])
-                        # Sleep for 10 minutes to give things time to "cool off"
-                        time.sleep(600)
-
-
-                # If we've encountered an exit code that we're not familiar
-                # with then exit. We can then add new code here to address
-                # other codes.
-                else:
-                    retry = False;
-                    ec = 1
-
-                # If retry is set to true then only allow it for up to
-                # max_retries
-                if (retry == True):
-                    num_retries = num_retries + 1
-                    if num_retries >= max_retries:
-                        print("Exceeded max retries.", file=sys.stderr)
-                        retry = False
-                        ec = 1
-                    else:
-                        print("Retry number {}".format(num_retries), file=sys.stderr)
-
-        # Sometimes prefetch will download the SRA into a set of files and
-        # sometimes into a directory. It's probably a setting somewhere but we
-        # need consistency. So move the .sra files into the working directory.
-        if (ec == 0 and sample_exists(run_id) != True):
-            print("Could not retrive sample. Unknown problem.", file=sys.stderr)
+        # Get the Aspera (fasp)and https URLs.
+        # We will try Aspera first if we have a URL.
+        urls = get_sample_url(run_id)
+        if (urls['fasp']):
+            ec = download_aspera(run_id, urls)
+        else:
+            ec = download_https(run_id, urls)
+        if (ec != 0):
+            print("Download failed.", file=sys.stderr)
+            break
+        
+        if (sample_is_good(run_id, urls['size']) == False):
+            print("Downloaded sample is missing or corrupted.", file=sys.stderr)
             ec = 1
+            break
 
     return(ec)
 
-def sample_exists(run_id):
+def sample_is_good(run_id, size):
     """
-    Checks if a sample is fully downloaded. It will also correct the path for
-    GEMmaker, as sometimes prefetch will put the sample in a directory and
-    sometimes in its own file (not sure what settings is needed to unify this).
+    Checks if a sample is fully downloaded. 
 
     :param run_ids: the list of run IDs.
     """
-    if (os.path.exists("{}".format(run_id))):
-        if (os.path.exists("./{}/{}.sra".format(run_id, run_id))):
-            subprocess.Popen(["mv", "{}/{}.sra".format(run_id, run_id), "."])
-        if (os.path.exists("./{}/{}_1.sra".format(run_id, run_id))):
-            subprocess.Popen(["mv", "{}/{}_1.sra".format(run_id, run_id), "."])
-            subprocess.Popen(["mv", "{}/{}_2.sra".format(run_id, run_id), "."])
+    sra_file = "{}.sra".format(run_id)
+    if (os.path.exists(sra_file)):
+      statinfo = os.stat(sra_file)
+      if (statinfo.st_size == size):
+        print("Size {} == {}".format(statinfo.st_size, size), file=sys.stdout)
         return True
-    elif (os.path.exists("{}.sra".format(run_id))):
-      return True
-    elif (os.path.exists("{}_1.sra".format(run_id))):
-      return True
+      else: 
+        print("Size {} != {}".format(statinfo.st_size, size), file=sys.stdout)
     return False
 
 
@@ -161,7 +196,7 @@ if __name__ == "__main__":
     # failed processes
     if (ec != 0):
         print("Cleaning after failed attempt.", file=sys.stderr)
-        #p = subprocess.Popen(["rm", "-rf", "./*"])
+        p = subprocess.Popen(["rm", "-rf", "./*"])
 
     # Return the exit code.
     sys.exit(ec)

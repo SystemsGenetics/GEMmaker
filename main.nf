@@ -592,10 +592,8 @@ process fastq_dump {
 
   script:
   """
-  files=`echo $sra_files | perl -p -e 's/[\\[,\\]]//g'`
-  for sra_file in \$files; do
-    fastq-dump --split-files \$sra_file
-  done
+  files=`echo $sra_files | perl -p -e 's/[\\[,\\]]//g' | perl -p -e 's/\\s*\$//' | perl -p -e 's/\\s+/,/g'`
+  sra2fastq.py \$files
   """
 }
 
