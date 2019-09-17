@@ -54,7 +54,7 @@ for result in result_files:
 
   # Get the sample name from the file name.
   file_basename = os.path.basename(result)
-  sample_name = file_basename.split('_vs_')[0]
+  sample_name = file_basename.split('.')[0]
 
   # Read in the counts.
   print ("Adding results for sample: "  + sample_name)

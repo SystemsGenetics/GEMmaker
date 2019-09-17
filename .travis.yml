@@ -14,18 +14,14 @@ install:
   - mkdir -p ~/bin
   - cp nextflow ~/bin
 
-# Commands that must run before any tests are executed.
-before_script:
-  - cp nextflow.config.example nextflow.config
-
 # Commands here should determine whether the build fails or not.
 script:
+  # Build the Docker images
+  - make -C docker pull
+  - make -C docker
+
   # Run unit tests
   - python tests/retrieve_sra_metadata.py
 
-  # Build the images.
-  - make -C Dockerfiles
-
-  # Run the workflow.
-  - nextflow run main.nf -ansi-log false -profile travis
-  - nextflow run main-e2e.nf -ansi-log false -profile travis
+  # Run the example test
+  - tests/run-example.sh

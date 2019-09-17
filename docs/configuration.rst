@@ -3,12 +3,35 @@
 Workflow Configuration
 ----------------------
 
-Like all nextflow workflows, GEMmaker has a ``nextflow.config`` file which allows it to be customized. The config file has two main sections:
+GEMmaker has a ``nextflow.config`` file which allows it to be customized. The config file has three main sections:
 
+- ``project``:  Parameters providing background information about the GEMmaker run to be performed.
 - ``params``: Parameters for input files, output files, and software.
 - ``profiles``: Example profiles for running on different environments such as an HPC system.
 
-The following sections give detailed information on each parameter in ``nextflow.config``. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ for more information on the language of the config file.
+The following sections give detailed information on each parameter in ``nextflow.config``. Refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html>`__ for more information on the language of the config file.
+
+
+
+Project
+~~~~~~~
+
+name
+====
+
+A human readable name for the analysis that you will perform. It is best to keep this short and brief.
+
+machine_name
+============
+
+A machine readable name for the analysis that you will perform. It is mean to be short. It should only have alphanumeric characters (0-9, a-z, A-Z) and underscores. This parameter will be used to name the final GEM file.
+
+description
+===========
+
+In order to help others understand the purpose for the GEMmaker run, you should include a brief description providing enough details to help your collegues who may look at your GEMmaker run in the future.
+
+
 
 Input
 ~~~~~
@@ -47,90 +70,102 @@ Default:
 
   local_samples_path = "${baseDir}/examples/LocalRunExample/Sample*/*_{1,2}.fastq"
 
-reference_path
+reference_name
 ==============
 
-The path to the directory containing the genome reference files. The reference genome is provided to this workflow via a set of files in a single directory. The required reference files will vary based on which alignment you use (Hisat2, Salmon, and Kallisto).
+The unique name for the genome reference assembly. It must not contain spaces or special characters, only alphanumeric characters (0-9, a-z, A-Z) and underscores. This name will be used when creating intermediate files that you may want to keep, such as BAM files.
 
-For Hisat2:
+hisat2
+======
 
-1. Hisat2 index files created from the reference genome with ``hisat2-build``.
-2. A GTF file containing the genes annotated from the reference genome.
+If you want to use the Hisat2 pipeline for alignment and quantification of reads, set `enable` to `true`.   If Hisat2 is enabled, the trimmomatic, samtools and stringtie processes will be enabled as well.
 
-To generate the hisat2 files, download the reference genome and run this command (this example uses the Arabidopsis genome from TAIR):
+The `index_dir` should be the full path to the directory where hisat2 indexes are located. These indexes should have been built with from the reference genome using the ``hisat2-build`` program.
 
-.. code:: bash
+The `index_prefix` parameter should be set to the prefix used when creating the hisat2 index files.
 
-  hisat2-build -f TAIR10_Araport11.fna TAIR10_Araport11 | tee > hisat2-build.log
-
-Example of Hisat2 reference directory:
+The `gtf_file` parameter should be teh full path to a GTF file containing the genes annotated from the reference genome.
 
 .. code:: bash
 
-  reference/
-    TAIR10_Araport11.1.ht2
-    TAIR10_Araport11.2.ht2
-    TAIR10_Araport11.3.ht2
-    TAIR10_Araport11.4.ht2
-    TAIR10_Araport11.5.ht2
-    TAIR10_Araport11.6.ht2
-    TAIR10_Araport11.7.ht2
-    TAIR10_Araport11.8.ht2
-    TAIR10_Araport11.gtf
-    TAIR10_Araport11.fna
+  hisat2 {
+    enable = true
+    index_dir = "${baseDir}/examples/reference/CORG.transcripts.Hisat2.indexed/"
+    index_prefix = "CORG"
+    gtf_file = "${baseDir}/examples/reference/CORG.gtf"
+  }
 
-Example of Salmon reference directory:
+salmon
+======
 
-.. code:: bash
+If you want to use Salmon for quantification of reads, set `enable` to `true`.
 
-  reference/
-    TAIR10_Araport11.transcripts.Salmon.indexed/
-
-Example of Kallisto reference directory:
+The `index_dir` should be the full path to the directory where Salmon indexes are located. These indexes should have been built with from the reference genome using the ``salmon index`` program.
 
 .. code:: bash
 
-  reference/
-    TAIR10_Araport11.transcripts.Kallisto.indexed
+  salmon {
+    enable = true
+    index_dir = "${baseDir}/examples/reference/CORG.transcripts.Salmon.indexed"
+  }
 
-All files for the reference genome must begin with the same file prefix. For example, if the prefix is ``TAIR10_Araport11`` then every file listed above (for hisat2) should be prefixed with ``TAIR10_Araport11``.
+kallisto
+========
 
-Default:
+If you want to use Kallisto for quantification of reads, set `enable` to `true`.
 
-.. code:: bash
-
-  reference_path = "${baseDir}/examples/reference/"
-
-reference_prefix
-================
-
-The prefix (used by ``hisat2-build``) for the genome reference files. All files in the reference directory must have this prefix.
-
-Default:
+The `index_file` should be the full path where the Kallisto index file is located. This index file should have been built with from the reference genome using the ``kallisto index`` program.
 
 .. code:: bash
 
-  reference_prefix = "CORG"
-
-skip_list_path
-==============
-
-At times a sample may fail. GEMmaker is set to gracefully finish when a sample fails after all retries have been attempted.  When this occurs, Nextflow will provide some useful error messages to indicate why the sample did not complete.  This gives you the opportunity to correct any issues and resume the workflow. However, some issues cannot be corrected and the best action is to skip the sample.
-
-This argument provides the path to a file that contains any samples that should be skipped. By default this argument links to a file in the `examples` folder and is empty.  Add the names of any samples that should be skipped. 
+  kallisto {
+    enable = true
+    index_file = "${baseDir}/examples/reference/CORG.transcripts.Kallisto.indexed"
+  }
 
 .. note::
 
-  For SRA files the sample name begins with the `SRX` prefix, not the `SRR` prefix.
+  You can enable a single quantification tool. You cannot currently enable Hisat2, Salmon or Kallisto at the same time.
 
-Default:
 
-.. code:: bash
-
-   skip_list_path = "${baseDir}/examples/samples2skip.txt"
 
 Output
 ~~~~~~
+
+GEMmaker is intended to be a program that is customizeable to the users needs. **This being said, the average user will NOT need to change any of the default output parameters**. We have set the default parameters for output to automatically cleanup unused files generated by the workflow, and output the final files to a directory titled "output"
+
+The following sections are intended to give the user access to intermediate files that they may need for other programs.
+
+.. code:: bash
+
+  output {
+
+    // Universal output parameters
+    dir = "output"
+    sample_dir = { "${params.output.dir}/${sample_id}" }
+    publish_mode = "link"
+    publish_sra = false
+    publish_downloaded_fastq = false
+    publish_tpm = true
+    publish_raw = true
+    multiqc = true
+    create_gem = true
+
+    // Salmon and Kallisto specific parameters
+    publish_gene_abundance = false
+
+    // Hisat2 specific parameters
+    publish_stringtie_gtf_and_ga = false
+    publish_trimmed_fastq = false
+    publish_bam = false
+    publish_sam = false
+    publish_fpkm = true
+  }
+
+
+
+Output Parameters Descriptions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 dir
 ===
@@ -163,6 +198,7 @@ Default:
   sample_dir = { "${params.output.dir}/${sample_id}" }
 
 .. note::
+
   The brackets in this example denote a `closure`, a language construct in nextflow which allows you to create more dynamic expressions using variables and even other config params. In this case, ``sample_id`` is a variable that will be defined for each process that uses this parameter, so that you can organize the sample directories by sample ID.
 
 publish_mode
@@ -183,40 +219,69 @@ Default:
 
   publish_mode = "link"
 
-publish_sra
-===========
+Intermediate Files
+==================
 
-Parameter that determines whether to save the downloaded SRA files from NCBI. Default is ``true``. Set to ``false`` if space is going to be an issue.
+The remaining options in the output parameter determine which intermediate and final output files should be published. By default, all intermediate files are set to false, while final output files are set to true. The following table is a summary of each file:
 
-publish_downloaded_fastq
-========================
+.. list-table:: Title
+   :widths: 25 25 25 50
+   :header-rows: 1
 
-Parameter that determines whether to save the downloaded fastq files from NCBI. Default is ``true``. Set to ``false`` if space is going to be an issue.
+   * - parameter
+     - default publish setting
+     - Alignment Software Used In Hisat2 = H Salmon = S Kallisto = K
+     - Brief Description
+   * - publish_sra
+     - false
+     - HSK
+     - Downloaded Sequence Read Archive (sra) file from NCBI (not human readable)
+   * - publish_downloaded_fastq
+     - false
+     - HSK
+     - Extracted sra file in fastq format (human readable)
+   * - publish_tpm
+     - true
+     - HSK
+     - Transcripts Per Kilobase Million, Final Output Count file option `Extended Descripion <https://www.rna-seqblog.com/rpkm-fpkm-and-tpm-clearly-explained/>`__
+   * - publish_raw
+     - true
+     - HSK
+     - Final Output Count file option, the raw count of each gene. Compare to FPKM and TPM
+   * - multiqc
+     - true
+     - HSK
+     - A final report that is generated that tells you about the GEMmaker run
+   * - create_gem
+     - true
+     - HSK
+     - Combines Final Count Files (FPKM, TPM, raw) into their respective GEM
+   * - publish_gene_abundance
+     - false
+     - SK
+     - File Generated by Kallisto or Salmon before it is cleaned into Final Count Files
+   * - publish_stringtie_gtf_and_ga
+     - false
+     - H
+     - File Generated by Hisat2 before it is cleaned into Final Count Files
+   * - publish_trimmed_fastq
+     - false
+     - H
+     - Fastq files after they have been trimmed
+   * - publish_bam
+     - false
+     - H
+     - binary alignment file (not human readable) of genes aligned to reference genome
+   * - publish_sam
+     - false
+     - H
+     - alignment file (human readable) of genes aligned to reference genome
+   * - publish_fpkm
+     - true
+     - H
+     - Fragments Per Kilobase Million, Final Output Count file option `Extended Descripion <https://www.rna-seqblog.com/rpkm-fpkm-and-tpm-clearly-explained/>`__
 
-publish_trimmed_fastq
-=====================
 
-Parameter that determines whether to save the trimmed fastq files. Default is ``true``. Set to ``false`` if space is going to be an issue.
-
-publish_bam
-===========
-
-Parameter that determines whether to save the BAM files. Default is ``true``. Set to ``false`` if space is going to be an issue.
-
-publish_raw
-===========
-
-Parameter that determines whether to create raw files at the end. Default is ``true``.
-
-publish_fpkm
-============
-
-Parameter that determines whether to create FPKM files at the end. Default is ``true``.
-
-publish_tpm
-===========
-
-Parameter that determines whether to create TPM files at the end. Default is ``true``.
 
 Execution
 ~~~~~~~~~
@@ -231,6 +296,8 @@ Default:
 .. code:: bash
 
   queue_size = 100
+
+
 
 Software
 ~~~~~~~~
@@ -250,7 +317,70 @@ Default:
 
   alignment = 0
 
+
+
 Profiles
 ~~~~~~~~
 
-The config file provides several profiles for running GEMmaker in different environments. Each profile defines various config settings that override whatever defaults provided by the rest of the config file. For example, the ``testing`` profile overrides the default ``errorStrategy`` to terminate the entire workflow if any error occurs, rather than ignore failed samples. Other profiles such as ``pbs`` and ``slurm`` provide example configurations for running GEMmaker with a HPC scheduler. These profiles are intended to be modified according to your needs, as every HPC system is different. The ``profiles`` section of the config file contains detailed descriptions of each example profile. Again, please refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ for more information on how to use the config file as well as what executors are available.
+The config file provides several profiles for running GEMmaker in different environments. Each profile defines various config settings that override the defaults provided by the rest of the config file. Profiles are specified on the command-line, and they can be combined with each other. For example, to run GEMmaker with the ``pbs`` and ``testing`` profiles enabled:
+
+.. code:: bash
+
+  nextflow run main.nf -profile pbs,testing
+
+You can modify these config files to suit your needs, or even create your own. For more information, refer to the `Nextflow documentation <https://www.nextflow.io/docs/latest/config.html#config-profiles>`__ on config profiles. Here we describe each of the profiles provided by GEMmaker:
+
+docker
+======
+
+The ``docker`` profile enables GEMmaker to run processes in Docker containers. This behavior can also be enabled by specifying ``-with-docker`` on the command-line.
+
+k8s
+===
+
+The ``k8s`` profile provides basic execution settings for running GEMmaker on a Kubernetes cluster.
+
+modules_kamiak
+==============
+
+In lieu of using Docker or Singularity, software dependencies can be provided by Environment Modules (or a compatible equivalent such as Lmod). Module names tend to vary from system to system. The ``modules_kamiak`` profile is specific to the Kamiak cluster, but you will likely need to create your own profile that uses the correct module names for your cluster.
+
+modules_palmetto
+================
+
+In lieu of using Docker or Singularity, software dependencies can be provided by Environment Modules (or a compatible equivalent such as Lmod). Module names tend to vary from system to system. The ``modules_kamiak`` profile is specific to the Palmetto cluster, but you will likely need to create your own profile that uses the correct module names for your cluster.
+
+pbs
+===
+
+The ``pbs`` profile provides basic execution settings for running GEMmaker
+on an HPC system using the PBS scheduler. This profile is optimized for the Palmetto cluster at Clemson University, so it may need to be modified to suit your particular system.
+
+singularity
+===========
+
+The ``singularity`` profile enables GEMmaker to run processes in Singularity containers. This behavior can also be enabled by specifying ``-with-singularity`` on the command-line.
+
+slurm
+=====
+
+The ``slurm`` profile provides basic execution settings for running GEMmaker
+on an HPC system using the SLURM scheduler. This profile is optimized for the Kamiak cluster at Washington State University, so it may need to be modified to suit your particular system.
+
+standard
+========
+
+The ``standard`` profile uses the local executor, in which processes are simply
+launched as normal processes on the local machine. By default the local
+executor uses the number of CPU cores to limit how many processes are run
+in parallel.
+
+testing
+=======
+
+The ``testing`` profile overrides the default ``errorStrategy`` to terminate the entire workflow if any error occurs, rather than ignore failed samples. This profile is useful for debugging issues with the workflow, so that the workflow terminates immediately if any process fails.
+
+travis
+======
+
+The ``travis`` profile is used by Travis CI for testing new builds.

@@ -1,122 +1,113 @@
 .. _examples:
 
-Example Usage
--------------
+Example
+-------
 
 The GEMmaker example consists of a small set of local files (provided in the GEMmaker repo) and a remote file (automatically downloaded from `NCBI's SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__). These samples are extremely small and are only meant to demonstrate usage for a mixed set of local and remote files.
 
-Once GEMmaker and its dependencies have been installed, you can run GEMmaker with the example data. First, copy the example config file to ``nextflow.config``:
+Once GEMmaker and its dependencies have been installed, you can run GEMmaker with the example data. The ``nextflow.config`` file is already configured to run this example. Execute the workflow using the following command:
 
 .. code:: bash
 
-  cp nextflow.config.example nextflow.config
-
-The ``nextflow.config.example`` file is already configured to run this example. Execute the workflow using the following command:
-
-.. code:: bash
-
-  nextflow run main.nf -profile standard -with-docker
+  nextflow run main.nf -profile standard -with-singularity
 
 You should see an output that looks like this:
 
 .. code:: bash
 
-  N E X T F L O W  ~  version 18.10.1
-  Launching `main.nf` [peaceful_gutenberg] - revision: 137bc7ccff
+  N E X T F L O W  ~  version 19.04.0
+  Launching `main.nf` [maniac_roentgen] - revision: db373fdbf9
 
   ===================================
-   G E M M A K E R   P I P E L I N E
+  G E M M A K E R   P I P E L I N E
   ===================================
 
-  General Information:
-  --------------------
-    Profile(s):         standard
-    Container Engine:   docker
+  Workflow Information:
+  ---------------------
+  Project Directory:  /local/Projects/GEMmaker
+  Launch Directory:   /local/Projects/GEMmaker
+  Work Directory:     /local/Projects/GEMmaker/work
+  Config Files:       [/local/Projects/GEMmaker/nextflow.config]
+  Container Engine:   singularity
+  Profile(s):         standard
 
 
   Input Parameters:
   -----------------
-    Remote fastq list path:     /home/{usr}/GEMmaker/examples/RemoteRunExample/SRA_IDs.txt
-    Local sample glob:          /home/{usr}/GEMmaker/examples/LocalRunExample/Sample*/\*_{1,2}.fastq
-    Reference genome path:      /home/{usr}/GEMmaker/examples/reference/
-    Reference genome prefix:    CORG
+  Remote fastq list path:     /local/Projects/GEMmaker/examples/RemoteRunExample/SRA_IDs.txt
+  Local sample glob:          /local/Projects/GEMmaker/examples/LocalRunExample/Sample*/*_{1,2}.fastq
+
+
+  Quantification Tool Input:
+  --------------------------
+  Use Hisat2:                 true
+  Use Kallisto:               false
+  Use Salmon:                 false
+
+  Hisat2 Index Directory:     /local/Projects/GEMmaker/examples/reference/CORG.transcripts.Hisat2.indexed/
+  Hisat2 Index Prefix:        CORG
+  Hisat2 GTF File:            /local/Projects/GEMmaker/examples/reference/CORG.gtf
 
 
   Output Parameters:
   ------------------
-    Output directory:           /home/{usr}/GEMmaker/output
-    Publish downloaded FASTQ:   true
-    Publish trimmed FASTQ:      true
-    Publish BAM:                true
-    Publish FPKM:               true
-    Publish TPM:                true
+  Output directory:           output
+  Publish SRA:                false
+  Publish downloaded FASTQ:   false
+  Publish trimmed FASTQ:      false
+  Publish BAM:                false
+  Publish Gene Abundance:     false
+  Publish GTF_GA:             false
+  Publish RAW:                false
+  Publish FPKM:               true
+  Publish TPM:                true
+  MultiQC:                    true
+  Create GEM:                 false
 
 
   Execution Parameters:
   ---------------------
-    Queue size:                 100
-    Number of threads:          1
-    Maximum retries:            2
-    Error strategy:             ignore
+  Queue size:                 100
 
 
   Software Parameters:
   --------------------
-    Trimmomatic clip path:      /home/{usr}/GEMmaker/files/fasta_adapter.txt
-    Trimmomatic minimum ratio:  0.7
+  Trimmomatic clip path:      /local/Projects/GEMmaker/files/fasta_adapter.txt
+  Trimmomatic minimum ratio:  0.7
 
-  [warm up] executor > local
-  [98/cba9bc] Submitted process > write_stage_files (1)
-  [d1/b1cbfd] Submitted process > write_stage_files (2)
-  [fb/ea14ef] Submitted process > write_stage_files (3)
-  [a1/822d07] Submitted process > retrieve_sample_metadata
-  [10/ff1219] Submitted process > write_stage_files (SRX218012)
-  [26/3da51b] Submitted process > start_first_batch
-  [6a/9ab954] Submitted process > read_sample_file (1.sample.csv)
-  [74/f3836d] Submitted process > read_sample_file (2.sample.csv)
-  [1b/d263eb] Submitted process > read_sample_file (3.sample.csv)
-  [0a/695151] Submitted process > read_sample_file (SRX218012.sample.csv)
-  [13/6fc3ea] Submitted process > fastqc_1 (1)
-  [ce/061c10] Submitted process > trimmomatic (1)
-  [2a/81acc1] Submitted process > fastqc_1 (2)
-  [82/019602] Submitted process > trimmomatic (2)
-  [f3/7a17ae] Submitted process > fastqc_1 (3)
-  [75/b755a2] Submitted process > fastq_dump (SRX218012)
-  [01/4c7c4f] Submitted process > trimmomatic (3)
-  [dc/0e3904] Submitted process > fastqc_2 (2)
-  [b7/eb221f] Submitted process > hisat2 (2)
-  [38/98d3ce] Submitted process > fastqc_2 (1)
-  [c0/52f716] Submitted process > hisat2 (1)
-  [be/1be15c] Submitted process > SRR_combine (SRX218012)
-  [9f/aa1f14] Submitted process > fastqc_2 (3)
-  [05/66f559] Submitted process > hisat2 (3)
-  [f7/8f2780] Submitted process > fastqc_1 (SRX218012)
-  [aa/0d9e57] Submitted process > trimmomatic (SRX218012)
-  [94/cedb63] Submitted process > samtools_sort (2)
-  [38/454c25] Submitted process > samtools_sort (3)
-  [36/f87963] Submitted process > samtools_sort (1)
-  [6d/458628] Submitted process > fastqc_2 (SRX218012)
-  [cd/05aa92] Submitted process > hisat2 (SRX218012)
-  [c3/298c49] Submitted process > samtools_index (2)
-  [ed/e775a0] Submitted process > samtools_index (3)
-  [7a/57bb71] Submitted process > samtools_index (1)
-  [90/62173a] Submitted process > samtools_sort (SRX218012)
-  [08/d28f6c] Submitted process > stringtie (3)
-  [cf/4e30b3] Submitted process > stringtie (1)
-  [c5/f89c37] Submitted process > samtools_index (SRX218012)
-  [d7/67724f] Submitted process > stringtie (2)
-  [ca/881318] Submitted process > stringtie (SRX218012)
-  [fc/5688e8] Submitted process > hisat2_raw (3)
-  [30/93eb53] Submitted process > fpkm_or_tpm (3)
-  [91/969c3a] Submitted process > hisat2_raw (SRX218012)
-  [9b/9c541f] Submitted process > fpkm_or_tpm (SRX218012)
-  [49/ddb561] Submitted process > fpkm_or_tpm (1)
-  [1b/3dbd3d] Submitted process > hisat2_raw (1)
-  [df/c3f00c] Submitted process > fpkm_or_tpm (2)
-  [5c/3053f4] Submitted process > hisat2_raw (2)
-  [32/df5310] Submitted process > next_sample (1)
-  [ea/812195] Submitted process > multiqc
-  [9c/d98d23] Submitted process > createGEM
+  executor >  local (69)
+  [26/838608] process > write_stage_files      [100%] 4 of 4 ✔
+  [08/05fb92] process > retrieve_sra_metadata  [100%] 1 of 1 ✔
+  [03/a3e086] process > start_first_batch      [100%] 1 of 1 ✔
+  [18/623434] process > read_sample_file       [100%] 4 of 4 ✔
+  [50/c71960] process > fastqc_1               [100%] 4 of 4 ✔
+  [c6/cba919] process > trimmomatic            [100%] 4 of 4 ✔
+  [91/ce105f] process > prefetch               [100%] 1 of 1 ✔
+  [c5/d53185] process > fastqc_2               [100%] 4 of 4 ✔
+  [e0/3e75af] process > hisat2                 [100%] 4 of 4 ✔
+  [37/1ec3af] process > samtools_sort          [100%] 4 of 4 ✔
+  [03/fd7e0d] process > samtools_index         [100%] 4 of 4 ✔
+  [6b/c29fb9] process > clean_sam              [100%] 4 of 4 ✔
+  [a3/b34d17] process > stringtie              [100%] 4 of 4 ✔
+  [9e/278762] process > fastq_dump             [100%] 1 of 1 ✔
+  [b5/ba3bfb] process > clean_bam              [100%] 4 of 4 ✔
+  [da/c708ae] process > hisat2_fpkm_tpm        [100%] 4 of 4 ✔
+  [31/803c44] process > clean_trimmed_fastq    [100%] 4 of 4 ✔
+  [6c/53f998] process > next_sample            [100%] 4 of 4 ✔
+  [87/946d31] process > clean_stringtie_ga     [100%] 4 of 4 ✔
+  [52/18bba8] process > fastq_merge            [100%] 1 of 1 ✔
+  [78/2e8d98] process > clean_sra              [100%] 1 of 1 ✔
+  [24/07979d] process > clean_downloaded_fastq [100%] 1 of 1 ✔
+  [02/2a6b86] process > multiqc                [100%] 1 of 1 ✔
+  [d8/32b555] process > clean_merged_fastq     [100%] 1 of 1 ✔
+  Completed at: 04-Jul-2019 02:29:25
+  Duration    : 15.9s
+  CPU hours   : (a few seconds)
+  Succeeded   : 69
+
+
+
+
 
 Additionally, you should see a directory called ``output`` with the following subdirectories:
 
@@ -140,22 +131,30 @@ For the remote example, GEMmaker automatically downloads a very small RNA-seq fi
 Using Salmon or Kallisto
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The example uses Hisat2 by default. If you would like to use Salmon or Kallisto instead, you must edit ``nextflow.config`` and change the alignment type. In the GEMmaker directory, edit ``nextflow.config`` using your favorite text editor. Here we use `vim <https://www.vim.org/>`__ on the command line:
+The example uses Hisat2 by default. If you would like to use Salmon or Kallisto instead, you must edit ``nextflow.config`` and enable Salmon or Kallisto. In the GEMmaker directory, edit ``nextflow.config`` using your favorite text editor. Here we use `vim <https://www.vim.org/>`__ on the command line:
 
 .. code:: bash
 
   vim nextflow.config
 
-Then edit ``params.software.alignment`` in the config file. Change to ``1`` for Kallisto, and ``2`` for Salmon. For example, to use Kallisto:
+Then edit the ``params.input`` section in the config file. Set ``enable`` to ``true`` for either Salmon or Kallisto. For example, to use Kallisto:
 
 .. code:: bash
 
-  //
-  // hisat2 = 0
-  // Kallisto = 1
-  // Salmon = 2
-  //
-  alignment = 1
+  hisat2 {
+    enable = false
+    index_dir = "${baseDir}/examples/reference/CORG.transcripts.Hisat2.indexed/"
+    index_prefix = "CORG"
+    gtf_file = "${baseDir}/examples/reference/CORG.gtf"
+  }
+  salmon {
+    enable = false
+    index_dir = "${baseDir}/examples/reference/CORG.transcripts.Salmon.indexed"
+  }
+  kallisto {
+    enable = true
+    index_file = "${baseDir}/examples/reference/CORG.transcripts.Kallisto.indexed"
+  }
 
 Then save your file and run the worklow:
 
@@ -168,10 +167,10 @@ Explanation of the Inputs
 
 The inputs for the example run are in the ``examples`` directory, and they consist of the reference directory and two data directories for local and remote samples.
 
-Reference directory
-===================
+Genome Reference Assembly Files
+===============================
 
-The reference directory for the example is located at:
+Hisat2, Kallisto and Salmon use a genome sequence, or reference. Each tool uses its own set of indexes and files. You can find all necessary files for the example CORG genome here:
 
 .. code:: bash
 
@@ -181,12 +180,12 @@ This directory contains the
 
 - reference genome file (``CORG.fna``),
 - `GTF <https://uswest.ensembl.org/info/website/upload/gff.html>`__ file (``CORG.gtf``)
-- hisat index files (``CORG.?/ht2``).
-- kallisto index file (``CORG.transcripts.Kallisto.indexed``)
-- salmon index directory (``CORG.transcripts.Salmon.indexed/``)
+- Hisat2 index files (``CORG.transcripts.Hisat2.indexed/ht2``).
+- Kallisto index file (``CORG.transcripts.Kallisto.indexed``)
+- Salmon index directory (``CORG.transcripts.Salmon.indexed/``)
 - ``COMMANDS.sh`` explaining how each of these files were generated
 
-These are the files needed to run hisat2, kallisto, and salmon on the CORG data.
+These are the files needed to run Hisat2, Kallisto, and Salmon on the CORG data.
 
 Data directories
 ================

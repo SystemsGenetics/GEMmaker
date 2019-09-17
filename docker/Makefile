@@ -29,3 +29,35 @@ push:
 	docker push systemsgenetics/sratoolkit:2.9.6
 	docker push systemsgenetics/stringtie:1.3.4d
 	docker push systemsgenetics/trimmomatic:0.38
+
+pull:
+	docker pull systemsgenetics/gemmaker:1.0
+	docker pull systemsgenetics/gemmaker:1.0-merged
+	docker pull systemsgenetics/aspera:3.8.1
+	docker pull systemsgenetics/fastqc:0.11.7
+	docker pull systemsgenetics/hisat2:2.1.0
+	docker pull systemsgenetics/kallisto:0.45.0
+	docker pull systemsgenetics/python:3.5.1
+	docker pull systemsgenetics/multiqc:1.7
+	docker pull systemsgenetics/salmon:0.12.0
+	docker pull systemsgenetics/samtools:1.9
+	docker pull systemsgenetics/sratoolkit:2.9.2
+	docker pull systemsgenetics/sratoolkit:2.9.6
+	docker pull systemsgenetics/stringtie:1.3.4d
+	docker pull systemsgenetics/trimmomatic:0.38
+
+clean:
+	docker image rm -f systemsgenetics/gemmaker:1.0
+	docker image rm -f systemsgenetics/gemmaker:1.0-merged
+	docker image rm -f systemsgenetics/aspera:3.8.1
+	docker image rm -f systemsgenetics/fastqc:0.11.7
+	docker image rm -f systemsgenetics/hisat2:2.1.0
+	docker image rm -f systemsgenetics/kallisto:0.45.0
+	docker image rm -f systemsgenetics/python:3.5.1
+	docker image rm -f systemsgenetics/multiqc:1.7
+	docker image rm -f systemsgenetics/salmon:0.12.0
+	docker image rm -f systemsgenetics/samtools:1.9
+	docker image rm -f systemsgenetics/sratoolkit:2.9.2
+	docker image rm -f systemsgenetics/sratoolkit:2.9.6
+	docker image rm -f systemsgenetics/stringtie:1.3.4d
+	docker image rm -f systemsgenetics/trimmomatic:0.38
