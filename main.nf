@@ -687,8 +687,8 @@ process kallisto {
     file kallisto_index from KALLISTO_INDEX
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.ga") into KALLISTO_GA
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.ga") into KALLISTO_GA_TO_CLEAN
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Kallisto.ga") into KALLISTO_GA
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Kallisto.ga") into KALLISTO_GA_TO_CLEAN
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL
     file "*kallisto.log" into KALLISTO_LOG
 
@@ -697,7 +697,7 @@ process kallisto {
   if [ -e ${sample_id}_2.fastq ]; then
     kallisto quant \
       -i ${kallisto_index} \
-      -o ${sample_id}_vs_${params.input.reference_name}.ga \
+      -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
       ${sample_id}_1.fastq \
       ${sample_id}_2.fastq > ${sample_id}.kallisto.log 2>&1
   else
@@ -706,7 +706,7 @@ process kallisto {
       -l 70 \
       -s .0000001 \
       -i ${kallisto_index} \
-      -o ${sample_id}_vs_${params.input.reference_name}.ga \
+      -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
       ${sample_id}_1.fastq > ${sample_id}.kallisto.log 2>&1
   fi
   """
@@ -721,22 +721,22 @@ process kallisto_tpm {
   tag { sample_id }
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.ga") from KALLISTO_GA
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Kallisto.ga") from KALLISTO_GA
 
   output:
-    file "${sample_id}_vs_${params.input.reference_name}.tpm" optional true into KALLISTO_TPM
-    file "${sample_id}_vs_${params.input.reference_name}.raw" optional true into KALLISTO_RAW
+    file "${sample_id}_vs_${params.input.reference_name}.Kallisto.tpm" optional true into KALLISTO_TPM
+    file "${sample_id}_vs_${params.input.reference_name}.Kallisto.raw" optional true into KALLISTO_RAW
     set val(sample_id), val(1) into CLEAN_KALLISTO_GA_SIGNAL
     val sample_id  into KALLISTO_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
   if [[ ${params.output.publish_tpm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.tpm
+    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.tpm
   fi
 
   if [[ ${params.output.publish_raw} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.raw
+    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.raw
   fi
   """
 }
@@ -757,9 +757,9 @@ process salmon {
     file salmon_index from SALMON_INDEXES
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.ga") into SALMON_GA
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Salmon.ga") into SALMON_GA
     set val(sample_id), file("*.ga/aux_info/meta_info.json"), file("*.ga/libParams/flenDist.txt") into SALMON_GA_LOG
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.ga/quant.sf") into SALMON_GA_TO_CLEAN
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf") into SALMON_GA_TO_CLEAN
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_SALMON_SIGNAL
 
   script:
@@ -771,7 +771,7 @@ process salmon {
       -1 ${sample_id}_1.fastq \
       -2 ${sample_id}_2.fastq \
       -p ${task.cpus} \
-      -o ${sample_id}_vs_${params.input.reference_name}.ga \
+      -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
       --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   else
     salmon quant \
@@ -779,7 +779,7 @@ process salmon {
       -l A \
       -r ${sample_id}_1.fastq \
       -p ${task.cpus} \
-      -o ${sample_id}_vs_${params.input.reference_name}.ga \
+      -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
       --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
   fi
   """
@@ -795,22 +795,22 @@ process salmon_tpm {
   tag { sample_id }
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.ga") from SALMON_GA
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Salmon.ga") from SALMON_GA
 
   output:
-    file "${sample_id}_vs_${params.input.reference_name}.tpm" optional true into SALMON_TPM
-    file "${sample_id}_vs_${params.input.reference_name}.raw" optional true into SALMON_RAW
+    file "${sample_id}_vs_${params.input.reference_name}.Salmon.tpm" optional true into SALMON_TPM
+    file "${sample_id}_vs_${params.input.reference_name}.Salmon.raw" optional true into SALMON_RAW
     set val(sample_id), val(1) into CLEAN_SALMON_GA_SIGNAL
     val sample_id  into SALMON_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
   if [[ ${params.output.publish_tpm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.tpm
+    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.tpm
   fi
 
   if [[ ${params.output.publish_raw} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.raw
+    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.raw
   fi
   """
 }
@@ -1016,7 +1016,7 @@ process samtools_sort {
       -o ${sample_id}_vs_${params.input.reference_name}.bam \
       -O bam \
       -T temp \
-      ${sample_id}_vs_${params.input.reference_name}.sam      
+      ${sample_id}_vs_${params.input.reference_name}.sam
     """
 }
 
@@ -1068,8 +1068,8 @@ process stringtie {
     file gtf_file from GTF_FILE
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.ga"), file("${sample_id}_vs_${params.input.reference_name}.gtf") into STRINGTIE_GTF_FOR_FPKM
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.*") into STRINGTIE_GTF_FOR_CLEANING
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Hisat2.ga"), file("${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf") into STRINGTIE_GTF_FOR_FPKM
+    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Hisat2.*") into STRINGTIE_GTF_FOR_CLEANING
     set val(sample_id), val(1) into CLEAN_BAM_SIGNAL
 
   script:
@@ -1078,9 +1078,9 @@ process stringtie {
       -v \
       -p ${task.cpus} \
       -e \
-      -o ${sample_id}_vs_${params.input.reference_name}.gtf \
+      -o ${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf \
       -G ${gtf_file} \
-      -A ${sample_id}_vs_${params.input.reference_name}.ga \
+      -A ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga \
       -l ${sample_id} ${sample_id}_vs_${params.input.reference_name}.bam
     """
 }
@@ -1095,35 +1095,35 @@ process hisat2_fpkm_tpm {
   label "stringtie"
 
   input:
-  set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.ga"), file("${sample_id}_vs_${params.input.reference_name}.gtf") from STRINGTIE_GTF_FOR_FPKM
+  set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Hisat2.ga"), file("${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf") from STRINGTIE_GTF_FOR_FPKM
 
 
   output:
-    file "${sample_id}_vs_${params.input.reference_name}.fpkm" optional true into FPKMS
-    file "${sample_id}_vs_${params.input.reference_name}.tpm" optional true into TPM
-    file "${sample_id}_vs_${params.input.reference_name}.raw" optional true into RAW_COUNTS
+    file "${sample_id}_vs_${params.input.reference_name}.Hisat2.fpkm" optional true into FPKMS
+    file "${sample_id}_vs_${params.input.reference_name}.Hisat2.tpm" optional true into TPM
+    file "${sample_id}_vs_${params.input.reference_name}.Hisat2.raw" optional true into RAW_COUNTS
     set val(sample_id), val(1) into CLEAN_STRINGTIE_SIGNAL
     val sample_id into HISAT2_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
   if [[ ${params.output.publish_fpkm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga > ${sample_id}_vs_${params.input.reference_name}.fpkm
+    awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.fpkm
   fi
 
   if [[ ${params.output.publish_tpm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga > ${sample_id}_vs_${params.input.reference_name}.tpm
+    awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.tpm
   fi
 
   if [[ ${params.output.publish_raw} == true ]]; then
     # Run the prepDE.py script provided by stringtie to get the raw counts.
-    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_name}.gtf" > gtf_files
+    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf" > gtf_files
     prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_name}.raw.pre
 
     # Reformat the raw file to be the same as the TPM/FKPM files.
     cat ${sample_id}_vs_${params.input.reference_name}.raw.pre | \
       grep -v gene_id | \
-      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_name}.raw
+      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_name}.Hisat2.raw
     fi
   """
 }
