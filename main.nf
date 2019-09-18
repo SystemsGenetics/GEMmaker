@@ -1097,27 +1097,7 @@ process create_gem {
 
   script:
   """
-  # FPKM format is only generated if hisat2 is used
-  if [[ ${params.output.publish_fpkm} == true && ${params.software.alignment} == 0 ]]; then
-    create-gem.py \
-      --sources ${workflow.launchDir}/${params.output.dir} \
-      --prefix ${params.project.machine_name} \
-      --type FPKM
-  fi;
-
-  if [[ ${params.output.publish_raw} == true ]]; then
-    create-gem.py \
-      --sources ${workflow.launchDir}/${params.output.dir} \
-      --prefix ${params.project.machine_name} \
-      --type raw
-  fi
-
-  if [[ ${params.output.publish_tpm} == true ]]; then
-    create-gem.py \
-      --sources ${workflow.launchDir}/${params.output.dir} \
-      --prefix ${params.project.machine_name} \
-      --type TPM
-  fi
+  create_gem.sh ${params.output.publish_fpkm} ${params.software.alignment} ${workflow.launchDir} ${params.output.dir} ${params.project.machine_name} ${params.output.publish_raw} ${params.output.publish_tpm}
   """
 }
 

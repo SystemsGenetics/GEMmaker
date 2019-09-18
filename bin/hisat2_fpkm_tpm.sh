@@ -1,3 +1,5 @@
+#!/bin/bash
+
 params_output_publish_fpkm="$1"
 sample_id="$2"
 params_input_reference_name="$3"
