@@ -126,7 +126,7 @@ GTF_FILE = Channel.fromPath("${params.input.hisat2.gtf_file}").collect()
 
 
 /**
- * Local Sample Input.
+ * Local Sample Input.FASTA_ADAPTER
  * This checks the folder that the user has given
  */
 if (params.input.local_samples_path == "none") {
@@ -667,6 +667,8 @@ KALLISTO_CHANNEL = Channel.create()
 SALMON_CHANNEL = Channel.create()
 COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { selected_tool }
 
+
+
 /**
  * Performs KALLISTO alignemnt of fastq files
  */
@@ -690,6 +692,7 @@ process kallisto {
   kallisto.sh ${sample_id} ${kallisto_index} ${params.input.reference_name}
   """
 }
+
 
 
 /**
@@ -761,13 +764,8 @@ process salmon_tpm {
 
   script:
   """
-  if [[ ${params.output.publish_tpm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.tpm
-  fi
-
-  if [[ ${params.output.publish_raw} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.raw
-  fi
+  salmon_tpm.sh ${params.output.publish_tpm} ${sample_id} \
+  ${params.input.reference_name} ${params.output.publish_raw}
   """
 }
 
@@ -802,9 +800,10 @@ process trimmomatic {
 
   script:
   """
-  # This script calculates average length of fastq files.
-  total=0
+  #trimmomatic.sh ${sample_id} ${params.software.trimmomatic.MINLEN} ${task.cpus} ${fasta_adapter} ${params.software.trimmomatic.LEADING} ${params.software.trimmomatic.TRAILING} ${params.software.trimmomatic.SLIDINGWINDOW} ${params.software.trimmomatic.quality}
 
+# This script calculates average length of fastq files.
+  total=0
   # This if statement checks if the data is single or paired data, and checks length accordingly
   # This script returns 1 number, which can be used for the minlen in trimmomatic
   if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
@@ -817,14 +816,12 @@ process trimmomatic {
     done
     total=( \$total / 2 )
     minlen=\$total
-
   elif [ -e ${sample_id}_1.fastq ]; then
     minlen=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' ${sample_id}_1.fastq \
       | sort \
       | awk '{ print \$0, \$1*\$2}' \
       | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
   fi
-
   if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
     java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
       PE \
@@ -860,10 +857,9 @@ process trimmomatic {
       SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
       MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
   fi
+
   """
 }
-
-
 
 /**
  * Performs fastqc on fastq files post trimmomatic
@@ -914,35 +910,7 @@ process hisat2 {
 
   script:
   """
-  if [ -e ${sample_id}_2p_trim.fastq ]; then
-    hisat2 \
-      -x ${params.input.hisat2.index_prefix} \
-      --no-spliced-alignment \
-      -q \
-      -1 ${sample_id}_1p_trim.fastq \
-      -2 ${sample_id}_2p_trim.fastq \
-      -U ${sample_id}_1u_trim.fastq,${sample_id}_2u_trim.fastq \
-      -S ${sample_id}_vs_${params.input.reference_name}.sam \
-      -t \
-      -p ${task.cpus} \
-      --un ${sample_id}_un.fastq \
-      --dta-cufflinks \
-      --new-summary \
-      --summary-file ${sample_id}_vs_${params.input.reference_name}.sam.log
-  else
-    hisat2 \
-      -x ${params.input.hisat2.index_prefix} \
-      --no-spliced-alignment \
-      -q \
-      -U ${sample_id}_1u_trim.fastq \
-      -S ${sample_id}_vs_${params.input.reference_name}.sam \
-      -t \
-      -p ${task.cpus} \
-      --un ${sample_id}_un.fastq \
-      --dta-cufflinks \
-      --new-summary \
-      --summary-file ${sample_id}_vs_${params.input.reference_name}.sam.log
-  fi
+  hisat2.sh ${sample_id} ${params.input.hisat2.index_prefix} ${params.input.reference_name} ${task.cpus}
   """
 }
 
@@ -1151,7 +1119,8 @@ process create_gem {
     create-gem.py \
       --sources ${workflow.launchDir}/${params.output.dir} \
       --prefix ${params.project.machine_name} \
-      --type FPKM
+      --type FPKMCould have been a cheat day.
+Rosa: Oh, it was de
   fi;
 
   if [[ ${params.output.publish_raw} == true ]]; then
