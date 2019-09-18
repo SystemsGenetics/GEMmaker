@@ -1,4 +1,4 @@
-FROM gemmaker/base:1.0
+FROM gemmaker/base:1.1
 
 # Install the SRA toolkit.
 RUN wget -q https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.9.6/sratoolkit.2.9.6-ubuntu64.tar.gz \

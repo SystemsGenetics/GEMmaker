@@ -1,4 +1,4 @@
-FROM gemmaker/base:1.0
+FROM gemmaker/base:1.1
 
 # Install stringtie.
 RUN wget -q http://ccb.jhu.edu/software/stringtie/dl/stringtie-1.3.4d.Linux_x86_64.tar.gz \

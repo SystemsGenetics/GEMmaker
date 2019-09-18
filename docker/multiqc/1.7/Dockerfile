@@ -1,4 +1,4 @@
-FROM gemmaker/python:3.5.1
+FROM gemmaker/python:3.7-1.1
 
 # Install MultiQC
 RUN pip3 install https://github.com/ewels/MultiQC/archive/v1.7.zip \

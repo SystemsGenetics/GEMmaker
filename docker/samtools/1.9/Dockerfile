@@ -1,4 +1,4 @@
-FROM gemmaker/base:1.0
+FROM gemmaker/base:1.1
 
 RUN apt-get install -qq -y autoconf automake make gcc perl zlib1g-dev libbz2-dev liblzma-dev libcurl4-gnutls-dev libssl-dev libncurses5-dev bzip2
 

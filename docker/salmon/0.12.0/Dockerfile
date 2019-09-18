@@ -1,4 +1,4 @@
-FROM gemmaker/base:1.0
+FROM gemmaker/base:1.1
 
 # Install salmon verison 0.12.0
 RUN wget -q https://github.com/COMBINE-lab/salmon/releases/download/v0.12.0/salmon-0.12.0_linux_x86_64.tar.gz \
