@@ -1031,24 +1031,7 @@ process hisat2_fpkm_tpm {
 
   script:
   """
-  if [[ ${params.output.publish_fpkm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.fpkm
-  fi
-
-  if [[ ${params.output.publish_tpm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.tpm
-  fi
-
-  if [[ ${params.output.publish_raw} == true ]]; then
-    # Run the prepDE.py script provided by stringtie to get the raw counts.
-    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf" > gtf_files
-    prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_name}.raw.pre
-
-    # Reformat the raw file to be the same as the TPM/FKPM files.
-    cat ${sample_id}_vs_${params.input.reference_name}.raw.pre | \
-      grep -v gene_id | \
-      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_name}.Hisat2.raw
-    fi
+  hisat2_fpkm_tpm.sh ${params.output.publish_fpkm} ${sample_id} ${params.input.reference_name} ${params.output.publish_tpm} ${params.output.publish_raw}
   """
 }
 
@@ -1119,8 +1102,7 @@ process create_gem {
     create-gem.py \
       --sources ${workflow.launchDir}/${params.output.dir} \
       --prefix ${params.project.machine_name} \
-      --type FPKMCould have been a cheat day.
-Rosa: Oh, it was de
+      --type FPKM
   fi;
 
   if [[ ${params.output.publish_raw} == true ]]; then
