@@ -621,13 +621,7 @@ process fastq_merge {
    */
   script:
   """
-    if ls *_1.fastq >/dev/null 2>&1; then
-      cat *_1.fastq >> "${sample_id}_1.fastq"
-    fi
-
-    if ls *_2.fastq >/dev/null 2>&1; then
-      cat *_2.fastq >> "${sample_id}_2.fastq"
-    fi
+  fastq_merge.sh ${sample_id}
   """
 }
 
@@ -693,21 +687,7 @@ process kallisto {
 
   script:
   """
-  if [ -e ${sample_id}_2.fastq ]; then
-    kallisto quant \
-      -i ${kallisto_index} \
-      -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
-      ${sample_id}_1.fastq \
-      ${sample_id}_2.fastq > ${sample_id}.kallisto.log 2>&1
-  else
-    kallisto quant \
-      --single \
-      -l 70 \
-      -s .0000001 \
-      -i ${kallisto_index} \
-      -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
-      ${sample_id}_1.fastq > ${sample_id}.kallisto.log 2>&1
-  fi
+  kallisto.sh ${sample_id} ${kallisto_index} ${params.input.reference_name}
   """
 }
 
@@ -730,13 +710,7 @@ process kallisto_tpm {
 
   script:
   """
-  if [[ ${params.output.publish_tpm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.tpm
-  fi
-
-  if [[ ${params.output.publish_raw} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.raw
-  fi
+  kallisto_tpm.sh ${sample_id} ${params.output.publish_tpm} ${params.output.publish_raw} ${params.input.reference_name}
   """
 }
 
@@ -763,24 +737,7 @@ process salmon {
 
   script:
   """
-  if [ -e ${sample_id}_2.fastq ]; then
-    salmon quant \
-      -i . \
-      -l A \
-      -1 ${sample_id}_1.fastq \
-      -2 ${sample_id}_2.fastq \
-      -p ${task.cpus} \
-      -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
-      --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
-  else
-    salmon quant \
-      -i . \
-      -l A \
-      -r ${sample_id}_1.fastq \
-      -p ${task.cpus} \
-      -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
-      --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
-  fi
+  salmon.sh ${sample_id} ${task.cpus} ${params.input.reference_name}
   """
 }
 
