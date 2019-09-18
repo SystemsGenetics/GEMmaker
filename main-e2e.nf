@@ -492,7 +492,7 @@ process process_sample {
     fi
 
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
-      rm -f *.ga
+      rm -rf *.ga
     fi
 
   # or use salmon
