@@ -1,4 +1,4 @@
-FROM systemsgenetics/gemmaker:1.0
+FROM gemmaker/base:1.1
 
 # Install kallisto verison 0.45.0
 RUN wget -q https://github.com/pachterlab/kallisto/releases/download/v0.45.0/kallisto_linux-v0.45.0.tar.gz \
