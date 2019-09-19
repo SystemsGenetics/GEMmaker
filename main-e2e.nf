@@ -225,7 +225,7 @@ process process_sample {
   tag { sample_id }
   label "gemmaker"
   label "multithreaded"
-  label "retry"
+  errorStrategy { task.attempt < 3 ? "retry" : "ignore" }
   publishDir params.output.sample_dir, mode: params.output.publish_mode
 
   input:
