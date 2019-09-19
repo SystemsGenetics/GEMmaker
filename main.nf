@@ -326,7 +326,7 @@ process write_stage_files {
   exec:
     // Get any samples to skip
     skip_samples = []
-    skip_file = file("${params.input.skip_list_path}")
+    skip_file = file("${params.input.input_data_dir}/${params.input.skip_list_path}")
     if (skip_file.exists()) {
       skip_file.eachLine { line ->
         skip_samples << line.trim()
