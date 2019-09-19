@@ -116,7 +116,7 @@ if (has_tool > 1) {
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}${params.input.hisat2.ht2_files}").collect()
+HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}${params.input.hisat2.index_files}").collect()
 KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}${params.input.kallisto.index_file}").collect()
 SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}${params.input.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
@@ -133,9 +133,9 @@ if (params.input.local_sample_files == "none") {
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 else {
-  Channel.fromFilePairs( "${params.input.input_data_dir}${params.input.local_sample_files}", size: -1 )
+  Channel.fromFilePairs( "${params.input.input_data_dir}/${params.input.local_sample_files}", size: -1 )
     .set { LOCAL_SAMPLE_FILES_FOR_STAGING }
-  Channel.fromFilePairs( "${params.input.input_data_dir}${params.input.local_sample_files}", size: -1 )
+  Channel.fromFilePairs( "${params.input.input_data_dir}/${params.input.local_sample_files}", size: -1 )
     .set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 

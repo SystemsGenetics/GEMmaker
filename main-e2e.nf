@@ -40,9 +40,9 @@ Input Parameters:
 
 Quantification Tool Input:
 --------------------------
+
   Use Hisat2:                 ${params.input.hisat2.enable}
-  Hisat2 Index Directory:     ${params.input.hisat2.index_dir}
-  Hisat2 Index Prefix:        ${params.input.hisat2.index_prefix}
+  Hisat2 Index Prefix:        ${params.input.reference_name}
   Hisat2 GTF File:            ${params.input.hisat2.gtf_file}
 
   Use Kallisto:               ${params.input.kallisto.enable}
@@ -113,11 +113,12 @@ if (has_tool > 1) {
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.input.hisat2.index_dir}*.ht2*").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.input.kallisto.index_file}").collect()
-SALMON_INDEXES = Channel.fromPath("${params.input.salmon.index_dir}/*").collect()
+HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}${params.input.hisat2.index_files}").collect()
+KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}${params.input.kallisto.index_file}").collect()
+SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}${params.input.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
-GTF_FILE = Channel.fromPath("${params.input.hisat2.gtf_file}").collect()
+GTF_FILE = Channel.fromPath("${params.input.reference_dir}${params.input.hisat2.gtf_file}").collect()
+
 
 
 
@@ -129,7 +130,7 @@ if (params.input.local_samples_path == "none") {
   LOCAL_SAMPLE_FILES = Channel.empty()
 }
 else {
-  LOCAL_SAMPLE_FILES = Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
+  LOCAL_SAMPLE_FILES = Channel.fromFilePairs( "${params.input.input_data_dir}/${params.input.local_sample_files}", size: -1 )
 }
 
 /**
@@ -139,7 +140,7 @@ if (params.input.remote_list_path == "none") {
   SRR_FILE = Channel.empty()
 }
 else {
-  SRR_FILE = Channel.fromPath(params.input.remote_list_path)
+  SRR_FILE = Channel.fromPath("${params.input.input_data_dir}/${params.input.remote_sample_list}")
 }
 
 
@@ -374,7 +375,7 @@ process process_sample {
     # perform hisat2 alignment of fastq files to a genome reference
     if [ -e ${sample_id}_2p_trim.fastq ]; then
       hisat2 \
-        -x ${params.input.hisat2.index_prefix} \
+        -x ${params.input.reference_name} \
         --no-spliced-alignment \
         -q \
         -1 ${sample_id}_1p_trim.fastq \
@@ -389,7 +390,7 @@ process process_sample {
         --summary-file ${sample_id}_vs_${params.input.reference_name}.sam.log
     else
       hisat2 \
-        -x ${params.input.hisat2.index_prefix} \
+        -x ${params.input.reference_name} \
         --no-spliced-alignment \
         -q \
         -U ${sample_id}_1u_trim.fastq \
@@ -428,9 +429,9 @@ process process_sample {
       -v \
       -p ${task.cpus} \
       -e \
-      -o ${sample_id}_vs_${params.input.reference_name}.gtf \
+      -o ${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf \
       -G ${gtf_file} \
-      -A ${sample_id}_vs_${params.input.reference_name}.ga \
+      -A ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga \
       -l ${sample_id} ${sample_id}_vs_${params.input.reference_name}.bam
 
     # remove BAM file if it will not be published
@@ -441,26 +442,26 @@ process process_sample {
 
     # generate raw counts from hisat2/stringtie
     # Run the prepDE.py script provided by stringtie to get the raw counts.
-    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_name}.gtf" > gtf_files
+    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf" > gtf_files
     prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_name}.raw.pre
 
     # Reformat the raw file to be the same as the TPM/FKPM files.
     cat ${sample_id}_vs_${params.input.reference_name}.raw.pre | \
       grep -v gene_id | \
-      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_name}.raw
+      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_name}.Hisat2.raw
 
     # generate the final FPKM and TPM files
     if [[ ${params.output.publish_fpkm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga > ${sample_id}_vs_${params.input.reference_name}.fpkm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.fpkm
     fi
 
     if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga > ${sample_id}_vs_${params.input.reference_name}.tpm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.tpm
     fi
 
     if [[ ${params.output.publish_stringtie_gtf_and_ga} == false ]]; then
-      rm -f *.ga
-      rm -f *.gtf
+      rm -f -r *.ga
+      rm -f -r *.gtf
     fi
 
   # or use kallisto
@@ -469,7 +470,7 @@ process process_sample {
     if [ -e ${sample_id}_2.fastq ]; then
       kallisto quant \
         -i  ${indexes} \
-        -o ${sample_id}_vs_${params.input.reference_name}.ga \
+        -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
         ${sample_id}_1.fastq \
         ${sample_id}_2.fastq > ${sample_id}.kallisto.log 2>&1
     else
@@ -478,21 +479,21 @@ process process_sample {
         -l 70 \
         -s .0000001 \
         -i ${indexes} \
-        -o ${sample_id}_vs_${params.input.reference_name}.ga \
+        -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
         ${sample_id}_1.fastq > ${sample_id}.kallisto.log 2>&1
     fi
 
     # generate TPM and raw count files
     if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.tpm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.tpm
     fi
 
     if [[ ${params.output.publish_raw} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.raw
+      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.raw
     fi
 
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
-      rm -f *.ga
+      rm -r -f *.ga
     fi
 
   # or use salmon
@@ -505,7 +506,7 @@ process process_sample {
         -1 ${sample_id}_1.fastq \
         -2 ${sample_id}_2.fastq \
         -p ${task.cpus} \
-        -o ${sample_id}_vs_${params.input.reference_name}.ga \
+        -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
         --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
     else
       salmon quant \
@@ -513,21 +514,21 @@ process process_sample {
         -l A \
         -r ${sample_id}_1.fastq \
         -p ${task.cpus} \
-        -o ${sample_id}_vs_${params.input.reference_name}.ga \
+        -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
         --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
     fi
 
     # generate final TPM and raw count files
     if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.tpm
+      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.tpm
     fi
 
     if [[ ${params.output.publish_raw} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.raw
+      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.raw
     fi
 
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
-      rm -f `find *.ga -type f | egrep -v "aux_info/meta_info.json|/libParams/flenDist.txt"`
+      rm -r -f `find *.ga -type f | egrep -v "aux_info/meta_info.json|/libParams/flenDist.txt"`
     fi
   fi
   """
