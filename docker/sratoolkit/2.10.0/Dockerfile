@@ -1,4 +1,4 @@
-FROM systemsgenetics/aspera:3.8.1
+FROM gemmaker/aspera:3.8.1-1.1
 
 # Install the SRA toolkit.
 RUN wget -q https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.10.0/sratoolkit.2.10.0-ubuntu64.tar.gz \

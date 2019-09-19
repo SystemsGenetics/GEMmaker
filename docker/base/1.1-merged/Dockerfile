@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 
 
@@ -63,7 +63,7 @@ RUN wget -q https://github.com/pachterlab/kallisto/releases/download/v0.45.0/kal
 
 
 
-# install python 3.5.1
+# install python 3.7 modules
 RUN pip3 install -q numpy pandas xmltodict
 
 
@@ -108,7 +108,7 @@ RUN wget -q http://ccb.jhu.edu/software/stringtie/dl/stringtie-1.3.4d.Linux_x86_
 # install the prepDE.py script used for creating raw counts
 RUN wget -q https://ccb.jhu.edu/software/stringtie/dl/prepDE.py \
   && chmod 755 prepDE.py \
-  && mv prepDE.py /usr/local/stringtie-1.3.4d 
+  && mv prepDE.py /usr/local/stringtie-1.3.4d
 
 ENV PATH "$PATH:/usr/local/stringtie-1.3.4d"
 

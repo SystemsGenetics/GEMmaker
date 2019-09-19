@@ -1,12 +1,12 @@
 # Base image.
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 
 ################## METADATA ######################
-LABEL base_image="ubuntu:16.04"
+LABEL base_image="ubuntu:18.04"
 LABEL software="GEM Maker Base Image"
 LABEL software.version="1.0.0"
-LABEL about.summary="Base image for GEM Maker"
+LABEL about.summary="Base Docker image for GEMMaker"
 LABEL about.home=""
 LABEL about.documentation=""
 LABEL about.license_file=""
@@ -22,7 +22,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 # Update and install basic packages.
 RUN apt-get update -qq \
-  && apt-get install -qq -y curl git unzip wget 
+  && apt-get install -qq -y curl git unzip wget
 
 
 # Tini for signal processing and zombie killing.
