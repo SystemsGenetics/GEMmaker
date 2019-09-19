@@ -1,4 +1,4 @@
-FROM systemsgenetics/gemmaker:1.0
+FROM gemmaker/base:1.1
 
 RUN apt-get update -qq \
   && apt-get -qq -y install default-jre procps

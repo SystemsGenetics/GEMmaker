@@ -226,7 +226,7 @@ process process_sample {
   tag { sample_id }
   label "gemmaker"
   label "multithreaded"
-  label "retry"
+  errorStrategy { task.attempt < 3 ? "retry" : "ignore" }
   publishDir params.output.sample_dir, mode: params.output.publish_mode
 
   input:
@@ -476,7 +476,7 @@ process process_sample {
     else
       kallisto quant \
         --single \
-        -l 70 \
+        -l 70 \handleing
         -s .0000001 \
         -i ${indexes} \
         -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
@@ -493,7 +493,7 @@ process process_sample {
     fi
 
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
-      rm -r -f *.ga
+      rm -rf *.ga
     fi
 
   # or use salmon
