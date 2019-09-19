@@ -19,6 +19,7 @@ import re
 import sys
 import urllib
 import xmltodict
+import pprint
 
 
 
@@ -31,6 +32,7 @@ def download_runs_meta(run_ids, page_size=100):
     experiments = []
 
     # query the run IDs in "pages" because the NCBI endpoint is fragile
+    page = 0
     for idx in range(0, len(run_ids), page_size):
         sys.stderr.write("Retrieving metadata for run IDs %6d - %6d of %6d...\n" % (idx, idx + page_size - 1, len(run_ids)))
 
@@ -48,8 +50,14 @@ def download_runs_meta(run_ids, page_size=100):
 
         # parse the XML response
         response_obj = urllib.request.urlopen(request)
-        response_xml = response_obj.read()
+        response_xml = response_obj.read().decode(response_obj.headers.get_content_charset())
         response = xmltodict.parse(response_xml)
+
+        # Write out the XML for debugging purposes should something fail
+        outxml = "ncbi-sra-meta-%d.xml" % (page)
+        xmlfile = open(outxml, "w", encoding='utf-8')
+        xmlfile.write(response_xml)
+        xmlfile.close()
 
         # make sure the XML is formatted correctly.
         if (not response["EXPERIMENT_PACKAGE_SET"]):
@@ -66,6 +74,8 @@ def download_runs_meta(run_ids, page_size=100):
             page_experiments = [page_experiments]
 
         experiments += page_experiments
+
+        page = page + 1
 
     # remove duplicate experiments
     experiments = {exp["EXPERIMENT"]["IDENTIFIERS"]["PRIMARY_ID"]: exp for exp in experiments}.values()
@@ -103,7 +113,8 @@ def download_runs_meta(run_ids, page_size=100):
                 sys.stderr.write('Notice: the run, %s, is part of the experiment %s but not included in the input file of runs' % (run_id, exp_id))
 
     if (num_runs_found != len(run_ids)):
-        raise Exception ('There was an unknown problem retrieving metadata for all of the runs provided.')
+        expstr = pprint.pformat(experiment, indent=2)
+        raise Exception ('There was an unknown problem retrieving metadata for all of the runs provided: %d != %d. Response: %s' % (num_runs_found, len(run_ids), expstr))
 
     sys.stderr.write("Metadata for %d runs retrieved\n" % (num_runs_found))
 
