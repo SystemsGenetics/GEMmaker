@@ -32,7 +32,7 @@ def download_runs_meta(run_ids, page_size=100):
 
     # query the run IDs in "pages" because the NCBI endpoint is fragile
     for idx in range(0, len(run_ids), page_size):
-        sys.stderr.write("Downloading run IDs %6d - %6d of %6d...\n" % (idx, idx + page_size - 1, len(run_ids)))
+        sys.stderr.write("Retrieving metadata for run IDs %6d - %6d of %6d...\n" % (idx, idx + page_size - 1, len(run_ids)))
 
         # get the next page of IDs
         ids = run_ids[idx : (idx + page_size)]
@@ -51,6 +51,12 @@ def download_runs_meta(run_ids, page_size=100):
         response_xml = response_obj.read()
         response = xmltodict.parse(response_xml)
 
+        # make sure the XML is formatted correctly.
+        if (not response["EXPERIMENT_PACKAGE_SET"]):
+            raise Exception('XML returned from NCBI is missing EXPERIMENT_PACKAGE_SET.')
+        if (not response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]):
+            raise Exception('XML returned from NCBI is missing EXPERIMENT_PACKAGE.')
+
         # get the list of experiments from the query
         page_experiments = response["EXPERIMENT_PACKAGE_SET"]["EXPERIMENT_PACKAGE"]
 
@@ -65,7 +71,9 @@ def download_runs_meta(run_ids, page_size=100):
     experiments = {exp["EXPERIMENT"]["IDENTIFIERS"]["PRIMARY_ID"]: exp for exp in experiments}.values()
 
     # process the metadata from each experiment
+    num_runs_found = 0
     for experiment in experiments:
+
         # Get the experiment ID
         exp_id = experiment["EXPERIMENT"]["IDENTIFIERS"]["PRIMARY_ID"]
 
@@ -82,6 +90,7 @@ def download_runs_meta(run_ids, page_size=100):
         for run in runs:
             run_id = run["@accession"]
             if run_id in run_ids:
+                num_runs_found = num_runs_found + 1
                 # Write out the experiment details in JSON metadata files
                 save_ncbi_meta(experiment, sample, run)
 
@@ -90,7 +99,13 @@ def download_runs_meta(run_ids, page_size=100):
 
                 # Write in CSV format to stdout
                 sys.stdout.write("%s,%s\n" % (run_id, exp_id))
+            else:
+                sys.stderr.write('Notice: the run, %s, is part of the experiment %s but not included in the input file of runs' % (run_id, exp_id))
 
+    if (num_runs_found != len(run_ids)):
+        raise Exception ('There was an unknown problem retrieving metadata for all of the runs provided.')
+
+    sys.stderr.write("Metadata for %d runs retrieved\n" % (num_runs_found))
 
 def save_ncbi_meta(experiment, sample, run):
     """
