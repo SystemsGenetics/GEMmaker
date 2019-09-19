@@ -476,7 +476,7 @@ process process_sample {
     else
       kallisto quant \
         --single \
-        -l 70 \handleing
+        -l 70 handleing \
         -s .0000001 \
         -i ${indexes} \
         -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
