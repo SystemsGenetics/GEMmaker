@@ -1,4 +1,4 @@
-FROM systemsgenetics/gemmaker:1.0
+FROM gemmaker/base:1.1
 
 RUN groupadd -g 61000 gemmaker \
   && useradd -g 61000 --no-log-init --create-home --shell /bin/bash -u 61000 gemmaker
