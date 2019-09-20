@@ -567,7 +567,7 @@ process next_sample {
 /**
  * Downloads SRA files from NCBI using the SRA Toolkit.
  */
-process prefetch {
+process download_runs {
   tag { sample_id }
   label "sratoolkit"
 
