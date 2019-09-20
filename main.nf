@@ -38,15 +38,14 @@ Workflow Information:
 
 Input Parameters:
 -----------------
-  Remote fastq list path:     ${params.input.remote_list_path}
-  Local sample glob:          ${params.input.local_samples_path}
+  Remote fastq list path:     ${params.input.input_data_dir}/${params.input.remote_sample_list}
+  Local sample glob:          ${params.input.input_data_dir}/${params.input.local_sample_files}
 
 
 Quantification Tool Input:
 --------------------------
   Use Hisat2:                 ${params.input.hisat2.enable}
-  Hisat2 Index Directory:     ${params.input.hisat2.index_dir}
-  Hisat2 Index Prefix:        ${params.input.hisat2.index_prefix}
+  Hisat2 Index Prefix:        ${params.input.reference_name}
   Hisat2 GTF File:            ${params.input.hisat2.gtf_file}
 
   Use Kallisto:               ${params.input.kallisto.enable}
@@ -117,11 +116,11 @@ if (has_tool > 1) {
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.input.hisat2.index_dir}*.ht2*").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.input.kallisto.index_file}").collect()
-SALMON_INDEXES = Channel.fromPath("${params.input.salmon.index_dir}/*").collect()
+HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.index_files}").collect()
+KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}/${params.input.kallisto.index_file}").collect()
+SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
-GTF_FILE = Channel.fromPath("${params.input.hisat2.gtf_file}").collect()
+GTF_FILE = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.gtf_file}").collect()
 
 
 
@@ -129,25 +128,25 @@ GTF_FILE = Channel.fromPath("${params.input.hisat2.gtf_file}").collect()
  * Local Sample Input.FASTA_ADAPTER
  * This checks the folder that the user has given
  */
-if (params.input.local_samples_path == "none") {
+if (params.input.local_sample_files == "none") {
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_STAGING }
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 else {
-  Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
+  Channel.fromFilePairs( "${params.input.input_data_dir}/${params.input.local_sample_files}", size: -1 )
     .set { LOCAL_SAMPLE_FILES_FOR_STAGING }
-  Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
+  Channel.fromFilePairs( "${params.input.input_data_dir}/${params.input.local_sample_files}", size: -1 )
     .set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 
 /**
  * Remote fastq_run_id Input.
  */
-if (params.input.remote_list_path == "none") {
+if (params.input.remote_sample_list == "none") {
   Channel.empty().set { SRR_FILE }
 }
 else {
-  Channel.fromPath(params.input.remote_list_path).set { SRR_FILE }
+  Channel.fromPath("${params.input.input_data_dir}/${params.input.remote_sample_list}").set { SRR_FILE }
 }
 
 /**
@@ -327,7 +326,7 @@ process write_stage_files {
   exec:
     // Get any samples to skip
     skip_samples = []
-    skip_file = file("${params.input.skip_list_path}")
+    skip_file = file("${params.input.input_data_dir}/${params.input.skip_list_path}")
     if (skip_file.exists()) {
       skip_file.eachLine { line ->
         skip_samples << line.trim()
