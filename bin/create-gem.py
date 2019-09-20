@@ -56,6 +56,9 @@ for result in result_files:
   file_basename = os.path.basename(result)
   sample_name = file_basename.split('.')[0]
 
+  # Remove the _vs_[assembly] from the sample name
+  sample_name = re.sub(r'_vs_.*$', '', sample_name)
+
   # Read in the counts.
   print ("Adding results for sample: "  + sample_name)
   df = pd.read_csv(result, header = None, sep = '\t', names = ["gene", sample_name])
