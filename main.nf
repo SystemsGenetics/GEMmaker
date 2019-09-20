@@ -865,7 +865,7 @@ process hisat2 {
 
   script:
   """
-  hisat2.sh ${sample_id} ${params.input.hisat2.index_prefix} ${params.input.reference_name} ${task.cpus}
+  hisat2.sh ${sample_id} ${params.input.reference_name} ${task.cpus}
   """
 }
 

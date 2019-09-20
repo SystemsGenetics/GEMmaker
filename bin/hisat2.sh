@@ -1,14 +1,13 @@
 #!/bin/bash
 
 sample_id="$1"
-params_input_hisat2_index_prefix="$2"
-params_input_reference_name="$3"
-task_cpus="$4"
+params_input_reference_name="$2"
+task_cpus="$3"
 
 
 if [ -e ${sample_id}_2p_trim.fastq ]; then
   hisat2 \
-    -x ${params_input_hisat2_index_prefix} \
+    -x ${params_input_reference_name} \
     --no-spliced-alignment \
     -q \
     -1 ${sample_id}_1p_trim.fastq \
@@ -23,7 +22,7 @@ if [ -e ${sample_id}_2p_trim.fastq ]; then
     --summary-file ${sample_id}_vs_${params_input_reference_name}.sam.log
 else
   hisat2 \
-    -x ${params_input_hisat2_index_prefix} \
+    -x ${params_input_reference_name} \
     --no-spliced-alignment \
     -q \
     -U ${sample_id}_1u_trim.fastq \
