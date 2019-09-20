@@ -38,8 +38,8 @@ Workflow Information:
 
 Input Parameters:
 -----------------
-  Remote fastq list path:     ${params.input.input_data_dir}${params.input.remote_sample_list}
-  Local sample glob:          ${params.input.input_data_dir}${params.input.local_sample_files}
+  Remote fastq list path:     ${params.input.input_data_dir}/${params.input.remote_sample_list}
+  Local sample glob:          ${params.input.input_data_dir}/${params.input.local_sample_files}
 
 
 Quantification Tool Input:
@@ -116,11 +116,11 @@ if (has_tool > 1) {
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}${params.input.hisat2.index_files}").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}${params.input.kallisto.index_file}").collect()
-SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}${params.input.salmon.index_dir}/*").collect()
+HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.index_files}").collect()
+KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}/${params.input.kallisto.index_file}").collect()
+SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
-GTF_FILE = Channel.fromPath("${params.input.reference_dir}${params.input.hisat2.gtf_file}").collect()
+GTF_FILE = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.gtf_file}").collect()
 
 
 
