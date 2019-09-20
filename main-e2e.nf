@@ -113,11 +113,11 @@ if (has_tool > 1) {
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}${params.input.hisat2.index_files}").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}${params.input.kallisto.index_file}").collect()
-SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}${params.input.salmon.index_dir}/*").collect()
+HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.index_files}").collect()
+KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}/${params.input.kallisto.index_file}").collect()
+SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
-GTF_FILE = Channel.fromPath("${params.input.reference_dir}${params.input.hisat2.gtf_file}").collect()
+GTF_FILE = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.gtf_file}").collect()
 
 
 
@@ -460,8 +460,8 @@ process process_sample {
     fi
 
     if [[ ${params.output.publish_stringtie_gtf_and_ga} == false ]]; then
-      rm -f -r *.ga
-      rm -f -r *.gtf
+      rm -rf *.ga
+      rm -rf *.gtf
     fi
 
   # or use kallisto
@@ -528,7 +528,7 @@ process process_sample {
     fi
 
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
-      rm -r -f `find *.ga -type f | egrep -v "aux_info/meta_info.json|/libParams/flenDist.txt"`
+      rm -rf `find *.ga -type f | egrep -v "aux_info/meta_info.json|/libParams/flenDist.txt"`
     fi
   fi
   """
