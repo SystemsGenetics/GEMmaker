@@ -2,7 +2,7 @@
 
 Troubleshooting
 ---------------
-When running GEMmaker you may encounter the following issues.  
+When running GEMmaker you may encounter the following issues.
 
 Cannot get property 'remote_list_path' on null object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -18,22 +18,6 @@ Cannot get property 'remote_list_path' on null object
 
   cp nextflow.config.example nextflow.config
 
-prefetch issues
-~~~~~~~~~~~~~~~
-**Problem**: I received one of the following errors:
-
-.. code:: bash
-
-   transfer incomplete while reading file within network system module - Cannot KStreamRead:
-   
-or
-
-.. code:: bash
-  
-   timeout exhausted while reading file within network system module - Cannot KStreamRead:
-
-**Solution**
-Check with your network engineers to explore potential points of slowness in your network infrastructure.  These errors probably occur when the network is too busy to pull files from NCBI SRA in a reasonable time.   Alternatively, edit the `nextflow.config` file and change the `maxRetries` setting to a higher level. If the problem is due to network slowness, attempting to retry may provide enough opportunities for a transfer to complete.
 
 Get Help or Suggest Improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
