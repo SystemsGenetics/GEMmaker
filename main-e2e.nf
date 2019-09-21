@@ -40,9 +40,9 @@ Input Parameters:
 
 Quantification Tool Input:
 --------------------------
+
   Use Hisat2:                 ${params.input.hisat2.enable}
-  Hisat2 Index Directory:     ${params.input.hisat2.index_dir}
-  Hisat2 Index Prefix:        ${params.input.hisat2.index_prefix}
+  Hisat2 Index Prefix:        ${params.input.reference_name}
   Hisat2 GTF File:            ${params.input.hisat2.gtf_file}
 
   Use Kallisto:               ${params.input.kallisto.enable}
@@ -108,16 +108,54 @@ if (has_tool > 1) {
   error "Error: Please select only one quantification tool in the 'nextflow.config' file"
 }
 
+// Check to make sure that required reference files exist
+// If Hisat2 was selected:
+if (selected_tool == 0)
+{
+  gtfFile = file("${params.input.reference_dir}/${params.input.hisat2.gtf_file}")
+  if (gtfFile.isEmpty())
+  {
+    error "Error: GTF reference file for Hisat2 does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.hisat2.gtf_file}' (where '*' is the name of your organism)"
+  }
+  hisat2_index_dir = file("${params.input.reference_dir}/${params.input.hisat2.index_dir}")
+  if(!hisat2_index_dir.isDirectory())
+  {
+    error "Error: hisat2 Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.hisat2.index_dir}' (where '*' is the name of your organism)"
+  }
 
+}
+// If Kallisto was selected
+if (selected_tool == 1)
+{
+  kallisto_index_file = file("${params.input.reference_dir}/${params.input.kallisto.index_file}")
+  if (kallisto_index_file.isEmpty())
+  {
+    error "Error: Kallisto Index File does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.kallisto.index_file}' (where '*' is the name of your organism)"
+  }
+}
+// If Salmon was selected
+if (selected_tool == 2)
+{
+  salmon_index_dir = file("${params.input.reference_dir}/${params.input.salmon.index_dir}")
+  if (!salmon_index_dir.isDirectory())
+  {
+    error "Error: Salmon Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.salmon.index_dir}' (where '*' is the name of your organism)"
+  }
+}
 
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.input.hisat2.index_dir}*.ht2*").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.input.kallisto.index_file}").collect()
-SALMON_INDEXES = Channel.fromPath("${params.input.salmon.index_dir}/*").collect()
+HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.index_files}").collect()
+KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}/${params.input.kallisto.index_file}").collect()
+SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
-GTF_FILE = Channel.fromPath("${params.input.hisat2.gtf_file}").collect()
+GTF_FILE = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.gtf_file}").collect()
+
 
 
 
@@ -129,7 +167,7 @@ if (params.input.local_samples_path == "none") {
   LOCAL_SAMPLE_FILES = Channel.empty()
 }
 else {
-  LOCAL_SAMPLE_FILES = Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
+  LOCAL_SAMPLE_FILES = Channel.fromFilePairs( "${params.input.input_data_dir}/${params.input.local_sample_files}", size: -1 )
 }
 
 /**
@@ -139,7 +177,7 @@ if (params.input.remote_list_path == "none") {
   SRR_FILE = Channel.empty()
 }
 else {
-  SRR_FILE = Channel.fromPath(params.input.remote_list_path)
+  SRR_FILE = Channel.fromPath("${params.input.input_data_dir}/${params.input.remote_sample_list}")
 }
 
 
@@ -225,7 +263,7 @@ process process_sample {
   tag { sample_id }
   label "gemmaker"
   label "multithreaded"
-  errorStrategy { task.attempt < 3 ? "retry" : "ignore" }
+  label "retry_ignore"
   publishDir params.output.sample_dir, mode: params.output.publish_mode
 
   input:
@@ -374,7 +412,7 @@ process process_sample {
     # perform hisat2 alignment of fastq files to a genome reference
     if [ -e ${sample_id}_2p_trim.fastq ]; then
       hisat2 \
-        -x ${params.input.hisat2.index_prefix} \
+        -x ${params.input.reference_name} \
         --no-spliced-alignment \
         -q \
         -1 ${sample_id}_1p_trim.fastq \
@@ -389,7 +427,7 @@ process process_sample {
         --summary-file ${sample_id}_vs_${params.input.reference_name}.sam.log
     else
       hisat2 \
-        -x ${params.input.hisat2.index_prefix} \
+        -x ${params.input.reference_name} \
         --no-spliced-alignment \
         -q \
         -U ${sample_id}_1u_trim.fastq \
@@ -459,8 +497,8 @@ process process_sample {
     fi
 
     if [[ ${params.output.publish_stringtie_gtf_and_ga} == false ]]; then
-      rm -f *.ga
-      rm -f *.gtf
+      rm -rf *.ga
+      rm -rf *.gtf
     fi
 
   # or use kallisto
@@ -527,7 +565,7 @@ process process_sample {
     fi
 
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
-      rm -f `find *.ga -type f | egrep -v "aux_info/meta_info.json|/libParams/flenDist.txt"`
+      rm -rf `find *.ga -type f | egrep -v "aux_info/meta_info.json|/libParams/flenDist.txt"`
     fi
   fi
   """

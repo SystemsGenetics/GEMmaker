@@ -38,22 +38,22 @@ Workflow Information:
 
 Input Parameters:
 -----------------
-  Remote fastq list path:     ${params.input.remote_list_path}
-  Local sample glob:          ${params.input.local_samples_path}
+  Remote fastq list path:     ${params.input.input_data_dir}/${params.input.remote_sample_list}
+  Local sample glob:          ${params.input.input_data_dir}/${params.input.local_sample_files}
 
 
 Quantification Tool Input:
 --------------------------
   Use Hisat2:                 ${params.input.hisat2.enable}
-  Hisat2 Index Directory:     ${params.input.hisat2.index_dir}
-  Hisat2 Index Prefix:        ${params.input.hisat2.index_prefix}
+  Hisat2 Index Prefix:        ${params.input.reference_name}
   Hisat2 GTF File:            ${params.input.hisat2.gtf_file}
+  Hisat2 Index Directory:     ${params.input.hisat2.index_dir}
 
   Use Kallisto:               ${params.input.kallisto.enable}
   Kallisto Index File:        ${params.input.kallisto.index_file}
 
   Use Salmon:                 ${params.input.salmon.enable}
-  Salmon Index File:          ${params.input.salmon.index_dir}
+  Salmon Index Directory:     ${params.input.salmon.index_dir}
 
 
 Output Parameters:
@@ -112,42 +112,79 @@ if (has_tool > 1) {
   error "Error: Please select only one quantification tool in the 'nextflow.config' file"
 }
 
+// Check to make sure that required reference files exist
+// If Hisat2 was selected:
+if (selected_tool == 0)
+{
+  gtfFile = file("${params.input.reference_dir}/${params.input.hisat2.gtf_file}")
+  if (gtfFile.isEmpty())
+  {
+    error "Error: GTF reference file for Hisat2 does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.hisat2.gtf_file}' (where '*' is the name of your organism)"
+  }
+  hisat2_index_dir = file("${params.input.reference_dir}/${params.input.hisat2.index_dir}")
+  if(!hisat2_index_dir.isDirectory())
+  {
+    error "Error: hisat2 Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.hisat2.index_dir}' (where '*' is the name of your organism)"
+  }
 
+}
+// If Kallisto was selected
+if (selected_tool == 1)
+{
+  kallisto_index_file = file("${params.input.reference_dir}/${params.input.kallisto.index_file}")
+  if (kallisto_index_file.isEmpty())
+  {
+    error "Error: Kallisto Index File does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.kallisto.index_file}' (where '*' is the name of your organism)"
+  }
+}
+// If Salmon was selected
+if (selected_tool == 2)
+{
+  salmon_index_dir = file("${params.input.reference_dir}/${params.input.salmon.index_dir}")
+  if (!salmon_index_dir.isDirectory())
+  {
+    error "Error: Salmon Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.salmon.index_dir}' (where '*' is the name of your organism)"
+  }
+}
 
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.input.hisat2.index_dir}*.ht2*").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.input.kallisto.index_file}").collect()
-SALMON_INDEXES = Channel.fromPath("${params.input.salmon.index_dir}/*").collect()
+HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.index_dir}/*").collect()
+KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}/${params.input.kallisto.index_file}").collect()
+SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
-GTF_FILE = Channel.fromPath("${params.input.hisat2.gtf_file}").collect()
+GTF_FILE = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.gtf_file}").collect()
 
 
 
 /**
- * Local Sample Input.
+ * Local Sample Input.FASTA_ADAPTER
  * This checks the folder that the user has given
  */
-if (params.input.local_samples_path == "none") {
+if (params.input.local_sample_files == "none") {
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_STAGING }
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 else {
-  Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
+  Channel.fromFilePairs( "${params.input.input_data_dir}/${params.input.local_sample_files}", size: -1 )
     .set { LOCAL_SAMPLE_FILES_FOR_STAGING }
-  Channel.fromFilePairs( params.input.local_samples_path, size: -1 )
+  Channel.fromFilePairs( "${params.input.input_data_dir}/${params.input.local_sample_files}", size: -1 )
     .set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 
 /**
  * Remote fastq_run_id Input.
  */
-if (params.input.remote_list_path == "none") {
+if (params.input.remote_sample_list == "none") {
   Channel.empty().set { SRR_FILE }
 }
 else {
-  Channel.fromPath(params.input.remote_list_path).set { SRR_FILE }
+  Channel.fromPath("${params.input.input_data_dir}/${params.input.remote_sample_list}").set { SRR_FILE }
 }
 
 /**
@@ -327,7 +364,7 @@ process write_stage_files {
   exec:
     // Get any samples to skip
     skip_samples = []
-    skip_file = file("${params.input.skip_list_path}")
+    skip_file = file("${params.input.input_data_dir}/${params.input.skip_list_path}")
     if (skip_file.exists()) {
       skip_file.eachLine { line ->
         skip_samples << line.trim()
@@ -423,6 +460,7 @@ NEXT_SAMPLE = Channel
  */
 process read_sample_file {
   executor "local"
+  cache false
   tag { sample_file }
 
   input:
@@ -497,7 +535,10 @@ process next_sample {
     try {
       attempts = 0
       while (!lock)  {
-        if (attempts < 3) {
+        // We will try for a release lock for about 10 minutes max. The sleep
+        // time is set to 1 second.  It may take this long on a slow NFS
+        // system.
+        if (attempts < 6000) {
           try {
             lockfile = new File("${workflow.workDir}/GEMmaker/gemmaker.lock")
             channel = new RandomAccessFile(lockfile, "rw").getChannel()
@@ -563,7 +604,7 @@ process next_sample {
 /**
  * Downloads SRA files from NCBI using the SRA Toolkit.
  */
-process prefetch {
+process download_runs {
   tag { sample_id }
   label "sratoolkit"
 
@@ -576,11 +617,8 @@ process prefetch {
 
   script:
   """
-  ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g'`
-  for id in \$ids; do
-    ascp_path=`which ascp`
-    prefetch -v --max-size 50G --output-directory . --ascp-path "\$ascp_path|\$ASPERA_KEY" --ascp-options "-k 1 -T -l 1000m" \$id
-  done
+    ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g' | perl -p -e 's/\\s*\$//' | perl -p -e 's/\\s+/,/g'`
+    retrieve_sra.py \$ids
   """
 }
 
@@ -604,10 +642,8 @@ process fastq_dump {
 
   script:
   """
-  files=`echo $sra_files | perl -p -e 's/[\\[,\\]]//g'`
-  for sra_file in \$files; do
-    fastq-dump --split-files \$sra_file
-  done
+  files=`echo $sra_files | perl -p -e 's/[\\[,\\]]//g' | perl -p -e 's/\\s*\$//' | perl -p -e 's/\\s+/,/g'`
+  sra2fastq.py \$files
   """
 }
 
@@ -635,13 +671,7 @@ process fastq_merge {
    */
   script:
   """
-    if ls *_1.fastq >/dev/null 2>&1; then
-      cat *_1.fastq >> "${sample_id}_1.fastq"
-    fi
-
-    if ls *_2.fastq >/dev/null 2>&1; then
-      cat *_2.fastq >> "${sample_id}_2.fastq"
-    fi
+  fastq_merge.sh ${sample_id}
   """
 }
 
@@ -687,6 +717,8 @@ KALLISTO_CHANNEL = Channel.create()
 SALMON_CHANNEL = Channel.create()
 COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_CHANNEL) { selected_tool }
 
+
+
 /**
  * Performs KALLISTO alignemnt of fastq files
  */
@@ -707,23 +739,10 @@ process kallisto {
 
   script:
   """
-  if [ -e ${sample_id}_2.fastq ]; then
-    kallisto quant \
-      -i ${kallisto_index} \
-      -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
-      ${sample_id}_1.fastq \
-      ${sample_id}_2.fastq > ${sample_id}.kallisto.log 2>&1
-  else
-    kallisto quant \
-      --single \
-      -l 70 \
-      -s .0000001 \
-      -i ${kallisto_index} \
-      -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
-      ${sample_id}_1.fastq > ${sample_id}.kallisto.log 2>&1
-  fi
+  kallisto.sh ${sample_id} ${kallisto_index} ${params.input.reference_name}
   """
 }
+
 
 
 /**
@@ -744,13 +763,7 @@ process kallisto_tpm {
 
   script:
   """
-  if [[ ${params.output.publish_tpm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.tpm
-  fi
-
-  if [[ ${params.output.publish_raw} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.raw
-  fi
+  kallisto_tpm.sh ${sample_id} ${params.output.publish_tpm} ${params.output.publish_raw} ${params.input.reference_name}
   """
 }
 
@@ -777,24 +790,7 @@ process salmon {
 
   script:
   """
-  if [ -e ${sample_id}_2.fastq ]; then
-    salmon quant \
-      -i . \
-      -l A \
-      -1 ${sample_id}_1.fastq \
-      -2 ${sample_id}_2.fastq \
-      -p ${task.cpus} \
-      -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
-      --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
-  else
-    salmon quant \
-      -i . \
-      -l A \
-      -r ${sample_id}_1.fastq \
-      -p ${task.cpus} \
-      -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
-      --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
-  fi
+  salmon.sh ${sample_id} ${task.cpus} ${params.input.reference_name}
   """
 }
 
@@ -818,13 +814,8 @@ process salmon_tpm {
 
   script:
   """
-  if [[ ${params.output.publish_tpm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.tpm
-  fi
-
-  if [[ ${params.output.publish_raw} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.raw
-  fi
+  salmon_tpm.sh ${params.output.publish_tpm} ${sample_id} \
+  ${params.input.reference_name} ${params.output.publish_raw}
   """
 }
 
@@ -859,68 +850,9 @@ process trimmomatic {
 
   script:
   """
-  # This script calculates average length of fastq files.
-  total=0
-
-  # This if statement checks if the data is single or paired data, and checks length accordingly
-  # This script returns 1 number, which can be used for the minlen in trimmomatic
-  if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
-    for fastq in ${sample_id}_1.fastq ${sample_id}_2.fastq; do
-      a=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' \$fastq \
-      | sort \
-      | awk '{ print \$0, \$1*\$2}' \
-      | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
-    total=(\$a + \$total)
-    done
-    total=( \$total / 2 )
-    minlen=\$total
-
-  elif [ -e ${sample_id}_1.fastq ]; then
-    minlen=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' ${sample_id}_1.fastq \
-      | sort \
-      | awk '{ print \$0, \$1*\$2}' \
-      | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
-  fi
-
-  if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
-    java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
-      PE \
-      -threads ${task.cpus} \
-      ${params.software.trimmomatic.quality} \
-      ${sample_id}_1.fastq \
-      ${sample_id}_2.fastq \
-      ${sample_id}_1p_trim.fastq \
-      ${sample_id}_1u_trim.fastq \
-      ${sample_id}_2p_trim.fastq \
-      ${sample_id}_2u_trim.fastq \
-      ILLUMINACLIP:${fasta_adapter}:2:40:15 \
-      LEADING:${params.software.trimmomatic.LEADING} \
-      TRAILING:${params.software.trimmomatic.TRAILING} \
-      SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
-      MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
-  else
-    # For ease of the next steps, rename the reverse file to the forward.
-    # since these are non-paired it really shouldn't matter.
-    if [ -e ${sample_id}_2.fastq ]; then
-      mv ${sample_id}_2.fastq ${sample_id}_1.fastq
-    fi
-    # Now run trimmomatic
-    java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
-      SE \
-      -threads ${task.cpus} \
-      ${params.software.trimmomatic.quality} \
-      ${sample_id}_1.fastq \
-      ${sample_id}_1u_trim.fastq \
-      ILLUMINACLIP:${fasta_adapter}:2:40:15 \
-      LEADING:${params.software.trimmomatic.LEADING} \
-      TRAILING:${params.software.trimmomatic.TRAILING} \
-      SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
-      MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
-  fi
+  trimmomatic.sh ${sample_id} ${params.software.trimmomatic.MINLEN} ${task.cpus} ${fasta_adapter} ${params.software.trimmomatic.LEADING} ${params.software.trimmomatic.TRAILING} ${params.software.trimmomatic.SLIDINGWINDOW} ${params.software.trimmomatic.quality}
   """
 }
-
-
 
 /**
  * Performs fastqc on fastq files post trimmomatic
@@ -971,35 +903,7 @@ process hisat2 {
 
   script:
   """
-  if [ -e ${sample_id}_2p_trim.fastq ]; then
-    hisat2 \
-      -x ${params.input.hisat2.index_prefix} \
-      --no-spliced-alignment \
-      -q \
-      -1 ${sample_id}_1p_trim.fastq \
-      -2 ${sample_id}_2p_trim.fastq \
-      -U ${sample_id}_1u_trim.fastq,${sample_id}_2u_trim.fastq \
-      -S ${sample_id}_vs_${params.input.reference_name}.sam \
-      -t \
-      -p ${task.cpus} \
-      --un ${sample_id}_un.fastq \
-      --dta-cufflinks \
-      --new-summary \
-      --summary-file ${sample_id}_vs_${params.input.reference_name}.sam.log
-  else
-    hisat2 \
-      -x ${params.input.hisat2.index_prefix} \
-      --no-spliced-alignment \
-      -q \
-      -U ${sample_id}_1u_trim.fastq \
-      -S ${sample_id}_vs_${params.input.reference_name}.sam \
-      -t \
-      -p ${task.cpus} \
-      --un ${sample_id}_un.fastq \
-      --dta-cufflinks \
-      --new-summary \
-      --summary-file ${sample_id}_vs_${params.input.reference_name}.sam.log
-  fi
+  hisat2.sh ${sample_id} ${params.input.reference_name} ${task.cpus}
   """
 }
 
@@ -1120,24 +1024,7 @@ process hisat2_fpkm_tpm {
 
   script:
   """
-  if [[ ${params.output.publish_fpkm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.fpkm
-  fi
-
-  if [[ ${params.output.publish_tpm} == true ]]; then
-    awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.tpm
-  fi
-
-  if [[ ${params.output.publish_raw} == true ]]; then
-    # Run the prepDE.py script provided by stringtie to get the raw counts.
-    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf" > gtf_files
-    prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_name}.raw.pre
-
-    # Reformat the raw file to be the same as the TPM/FKPM files.
-    cat ${sample_id}_vs_${params.input.reference_name}.raw.pre | \
-      grep -v gene_id | \
-      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_name}.Hisat2.raw
-    fi
+  hisat2_fpkm_tpm.sh ${params.output.publish_fpkm} ${sample_id} ${params.input.reference_name} ${params.output.publish_tpm} ${params.output.publish_raw}
   """
 }
 
@@ -1203,27 +1090,7 @@ process create_gem {
 
   script:
   """
-  # FPKM format is only generated if hisat2 is used
-  if [[ ${params.output.publish_fpkm} == true && ${params.software.alignment} == 0 ]]; then
-    create-gem.py \
-      --sources ${workflow.launchDir}/${params.output.dir} \
-      --prefix ${params.project.machine_name} \
-      --type FPKM
-  fi;
-
-  if [[ ${params.output.publish_raw} == true ]]; then
-    create-gem.py \
-      --sources ${workflow.launchDir}/${params.output.dir} \
-      --prefix ${params.project.machine_name} \
-      --type raw
-  fi
-
-  if [[ ${params.output.publish_tpm} == true ]]; then
-    create-gem.py \
-      --sources ${workflow.launchDir}/${params.output.dir} \
-      --prefix ${params.project.machine_name} \
-      --type TPM
-  fi
+  create_gem.sh ${params.output.publish_fpkm} ${params.software.alignment} ${workflow.launchDir} ${params.output.dir} ${params.project.machine_name} ${params.output.publish_raw} ${params.output.publish_tpm}
   """
 }
 
