@@ -108,7 +108,44 @@ if (has_tool > 1) {
   error "Error: Please select only one quantification tool in the 'nextflow.config' file"
 }
 
+// Check to make sure that required reference files exist
+// If Hisat2 was selected:
+if (selected_tool == 0)
+{
+  gtfFile = file("${params.input.reference_dir}/${params.input.hisat2.gtf_file}")
+  if (gtfFile.isEmpty())
+  {
+    error "Error: GTF reference file for Hisat2 does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.hisat2.gtf_file}' (where '*' is the name of your organism)"
+  }
+  hisat2_index_dir = file("${params.input.reference_dir}/${params.input.hisat2.index_dir}")
+  if(!hisat2_index_dir.isDirectory())
+  {
+    error "Error: hisat2 Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.hisat2.index_dir}' (where '*' is the name of your organism)"
+  }
 
+}
+// If Kallisto was selected
+if (selected_tool == 1)
+{
+  kallisto_index_file = file("${params.input.reference_dir}/${params.input.kallisto.index_file}")
+  if (kallisto_index_file.isEmpty())
+  {
+    error "Error: Kallisto Index File does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.kallisto.index_file}' (where '*' is the name of your organism)"
+  }
+}
+// If Salmon was selected
+if (selected_tool == 2)
+{
+  salmon_index_dir = file("${params.input.reference_dir}/${params.input.salmon.index_dir}")
+  if (!salmon_index_dir.isDirectory())
+  {
+    error "Error: Salmon Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.salmon.index_dir}' (where '*' is the name of your organism)"
+  }
+}
 
 /**
  * Create value channels that can be reused
