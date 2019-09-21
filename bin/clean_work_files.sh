@@ -8,22 +8,25 @@
 # The cleaning process empties the file, converts it to a sparse file so it
 # has an acutal size of zero but appears as the original size, the access
 # and modify times are kept the same.
-for file in ${files_list}
-do
-  file=`echo \$file | perl -pi -e 's/[\\[,\\]]//g'`
-  if [ -e \$file ]; then
+files_list="$1"
+
+for file in ${files_list}; do
+  # Remove cruff added by Nextflow
+  file=`echo $file | perl -p -e 's/[\\[,\\]]//g'`
+  if [ -e $file ]; then
     # Log some info about the file for debugging purposes
-    echo "cleaning \$file"
-    stat \$file
+    echo "cleaning $file"
+    stat $file
     # Get file info: size, access and modify times
-    size=`stat --printf="%s" \$file`
-    atime=`stat --printf="%X" \$file`
-    mtime=`stat --printf="%Y" \$file`
+    size=`stat --printf="%s" $file`
+    atime=`stat --printf="%X" $file`
+    mtime=`stat --printf="%Y" $file`
+
     # Make the file size 0 and set as a sparse file
-    > \$file
-    truncate -s \$size \$file
+    > $file
+    truncate -s $size $file
     # Reset the timestamps on the file
-    touch -a -d @\$atime \$file
-    touch -m -d @\$mtime \$file
+    touch -a -d @$atime $file
+    touch -m -d @$mtime $file
   fi
 done
