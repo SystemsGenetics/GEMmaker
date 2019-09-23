@@ -14,7 +14,7 @@ Settings from this config file will be referred to in the following sections and
 
 Initial Setup
 `````````````
-Before proceeding, please clear out the example data that comes with GEMmaker. You can so by executing the following commands from within the GEMmaker directory:
+Before proceeding, please clear out the example data that comes with GEMmaker. You can do so by executing the following commands from within the GEMmaker directory:
 
 .. code:: bash
 

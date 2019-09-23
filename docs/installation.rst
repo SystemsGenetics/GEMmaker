@@ -8,8 +8,9 @@ Dependencies
 
 GEMmaker requires a variety of common and bioinformatics software.  You must install the required software listed in the **Required Dependencies** section below.  Afterwards, there are two ways to ensure all other software dependencies are met:
 
-1.  Install all software manually, on your local machine or computational cluster and ensure that the software verions are compatible.
-2.  Use pre-built containerized versions of the software via `Docker <https://www.docker.com/>`__ or `Singularity <https://sylabs.io/>`__. **(Recommended)**
+1.  Use pre-built containerized versions of the software via `Docker <https://www.docker.com/>`__ or `Singularity <https://sylabs.io/>`__. **(Recommended)**
+2.  Install all software manually, on your local machine or computational cluster and ensure that the software verions are compatible.
+
 
 For easiest use, it is recommended to use pre-built containers. For users not familiar with containers or users without administrative control over the computational machine, it is recommended to use Singularity.  Example instructions provided in this documentation will assume Singularity is available.
 
@@ -20,7 +21,10 @@ At a minimum, GEMmaker requires the following:
 
 - `java <https://www.java.com/en/>`__ v1.8.0 or later: Prerequisite of nextflow.
 - `nextflow <https://www.nextflow.io/>`__ v18.10.1: Executes the workflow.
-- `Singularity <https://sylabs.io/>`__ or `Docker <https://www.docker.com/>`__.
+- `Singularity <https://sylabs.io/>`__ or `Docker <https://www.docker.com/>`__. **(Singularity Recommended)**
+
+.. warning::
+  Nextflow does not yet support Singularity 3.0 or later. You can use any version of Singularity between 2.4 and 2.6.
 
 Container Support
 *****************

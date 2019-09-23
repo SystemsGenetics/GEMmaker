@@ -10,6 +10,18 @@ Using Samples From NCBI SRA
 ```````````````````````````
 GEMmaker supports automatic download and processing of samples from the `NCBI SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__.  To use samples from the SRA, you must first find the list of NCBI SRA Run IDs of the samples you want to process. The run IDs typically start with an **SRR**, **ERR**, or **DRR** prefix.  Do not confuse these with the Experiment IDs which typically start with SRX, ERX or DRX.  The run IDs must be placed, one per line, in the file ``input/SRA_IDs.txt`` file.
 
+Example of a remote ID File:
+
+.. code:: bash
+
+  SRR360147
+  SRR493289
+  SRR1696865
+  SRR2086505
+  SRR2086497
+  SRR1184187
+  SRR1184188
+
 Not Using Samples From NCBI SRA
 ```````````````````````````````
 If you do not wish to use samples from the NCBI SRA, you must edit the ``input.remote_sample_list``  in the ``nextflow.config`` file and set it to ``"none"``.
@@ -36,7 +48,7 @@ If you FASTQ files follow some other naming format other than described above fo
 
 If your files are stored elsewhere
 ''''''''''''''''''''''''''''''''''
-As mentioned previously, the default expectation is that all FASTQ files are present in the ``input`` directory of GEMmaker.  If your files are stored elsewhere, you do not have to move them.  Edit the ``nextflow.config`` file and change the ``input.input_data_dir`` parameter to include the full path where the FASTQ files are housed.  
+As mentioned previously, the default expectation is that all FASTQ files are present in the ``input`` directory of GEMmaker.  If your files are stored elsewhere, you do not have to move them.  Edit the ``nextflow.config`` file and change the ``input.input_data_dir`` parameter to include the full path where the FASTQ files are housed.
 
 If you do not have local files
 ''''''''''''''''''''''''''''''

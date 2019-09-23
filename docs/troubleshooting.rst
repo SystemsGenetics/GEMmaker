@@ -18,6 +18,20 @@ Cannot get property 'remote_list_path' on null object
 
   cp nextflow.config.example nextflow.config
 
+255 ERROR
+~~~~~~~~~
+On local machines, you may encounter the following Singularity error:
+
+.. code:: bash
+
+  ERROR  : Failed to set loop flags on loop device: Resource temporarily unavailable
+  ABORT  : Retval = 255
+
+This is caused by Singularity attempting to access the same image with more than one thread. The first process to access the image will lock it until it is read into memory. This can be safely ignored, as GEMmaker will automatically retry the process.
+
+Why is it taking so long to pull a docker/singularity image?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This is dependent directly on your internet speed. The first time GEMmaker is run, it must download all of the programs it needs to run. This means it may take a little while longer to run the first time it is run on your machine.
 
 Get Help or Suggest Improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -7,7 +7,7 @@ Prepare Genome Data
 
 GEMmaker supports use of `Hisat2 <https://ccb.jhu.edu/software/hisat2/index.shtml>`_, `Kallisto <https://pachterlab.github.io/kallisto/>`_ and `Salmon <https://combine-lab.github.io/salmon/>`_, and allows you to select one of these tools to use for quantification of gene expression.  Each tool requires that transcript sequences of the genome are indexed prior to usage.
 
-First, you must obtain the appropriate genome reference files and have them available on your local machine for indexing. By default, GEMmaker expects to find all genome reference files in the ``input/references`` directory of GEMmaker. Once you have obtained the files and placed them in the ``input/references`` directory, then, you can index the genome by following the instructions in the sections below.  You only need to index the files for the tool you would like GEMmaker to use. For these instructions you must have the tool downloaded and installed on your local machine, or you must have Docker or Singularity.
+First, you must obtain the appropriate genome reference files and have them available on your local machine for indexing. By default, GEMmaker expects to find all genome reference files in the ``input/references`` directory of GEMmaker. Once you have obtained the files and placed them in the ``input/references`` directory, you can index the genome by following the instructions in the sections below. **You only need to index the files for the tool you would like GEMmaker to use.**
 
 
 .. note::
@@ -32,18 +32,24 @@ If you have Kallisto installed locally, you can create the index, using the foll
    kallisto index -i CORG.transcripts.Kallisto.indexed CORG.transcripts
 
 
-Index using Singularity
-.......................
+Index Kallisto using Singularity
+................................
 If you do not have Kallisto installed locally, but you have Singularity installed, you can use the GEMmaker Kallisto docker image to perform the indexing.
 
 .. code-block:: bash
 
   singularity exec -B ${PWD} docker://gemmaker/kallisto:0.45.0-1.1 kallisto index -i CORG.transcripts.Kallisto.indexed CORG.transcripts
 
+The following describes the meaning of the arguments in the command-line above:
+
+- `singularity exec -B ${PWD} docker://gemmaker/kallisto:0.45.0-1.1 kallisto  index`: Downloads the kallisto singularity image to the current directory and runs it
+- `-i CORG.transcripts.Kallisto.indexed`: Name of output (indexed) Kallisto File
+- `CORG.transcripts`: Name of input transcript files
+
 The command above uses the ``gemmaker/kallisto:0.45.0-1.1`` image that was built by the GEMmaker development team to index the transcripts.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the Kallisto index command can be executed.
 
-Index using Docker
-..................
+Index Kallisto using Docker
+...........................
 If you do not have Kallisto installed locally, but you have Docker installed, you can use the GEMmaker Kallisto docker image to perform the indexing.
 
 .. code-block:: bash
@@ -60,7 +66,7 @@ The instructions below provide examples for indexing the fake CORG example data 
 
 
 If Salmon is installed locally
-................................
+..............................
 
 If you have Kallisto installed locally, you can create the index, using the following command:
 
@@ -68,18 +74,25 @@ If you have Kallisto installed locally, you can create the index, using the foll
 
   salmon index -t CORG.transcripts -i CORG.transcripts.Salmon.indexed
 
-Index using Singularity
-.......................
+Index Salmon using Singularity
+..............................
 If you do not have Salmon installed locally, but you have Singularity installed, you can use the GEMmaker Salmon docker image to perform the indexing.
 
 .. code-block:: bash
 
    singularity exec -B ${PWD} docker://gemmaker/salmon:0.12.0-1.1 salmon index -t CORG.transcripts -i CORG.transcripts.Salmon.indexed
 
+The following describes the meaning of the arguments in the command-line above:
+
+- `singularity exec -B ${PWD} docker://gemmaker/salmon:0.12.0-1.1 salmon index`: Downloads the salmon singularity image to the current directory and runs it
+- `-t CORG.transcripts` : Name of input transcript files
+- `-i CORG.transcripts.Salmon.indexed` Name of output (indexed) Salmon fiel
+
+
 The command above uses the ``gemmaker/salmon:0.12.0-1.1`` image that was built by the GEMmaker development team to index the transcripts.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the Salmon index command can be executed.
 
-Index using Docker
-..................
+Index Salmon using Docker
+.........................
 If you do not have Salmon installed locally, but you have Docker installed, you can use the GEMmaker Salmon docker image to perform the indexing.
 
 .. code-block:: bash
@@ -119,18 +132,24 @@ If Hisat2 is installed locally, you can create the indexes, using the following 
     hisat2-build -f CORG.fna CORG
 
 
-Index using Singularity
-.......................
+Index Hisat2 using Singularity
+..............................
 If you do not have Hisat2 installed locally, but you have Singularity installed, you can use the GEMmaker Hisat2 docker image to perform the indexing.
 
 .. code-block:: bash
 
    singularity exec -B ${PWD} docker://gemmaker/hisat2:2.1.0-1.1 hisat2-build -f CORG.fna CORG
 
-The command above uses the ``gemmaker/hisat2:2.1.0-1.1`` image that was built by the GEMmaker development team to index the transcripts.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the Salmon index command can be executed.
+The following describes the meaning of the arguments in the command-line above:
 
-Index using Docker
-..................
+- `singularity exec -B ${PWD} docker://gemmaker/hisat2:2.1.0-1.1 hisat2-build`: Downloads the hisat2 singularity image to the current directory and runs it
+- `-f CORG.fna` : The input genome fasta file
+- `CORG`: The name of the reference organism. This will be used as a prefix for all the reference files.
+
+The command above uses the ``gemmaker/hisat2:2.1.0-1.1`` image that was built by the GEMmaker development team to index the transcripts.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the Hisat2 index command can be executed.
+
+Index Hisat2 using Docker
+.........................
 If you do not have Salmon installed locally, but you have Docker installed, you can use the GEMmaker Salmon docker image to perform the indexing.
 
 .. code-block:: bash

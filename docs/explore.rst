@@ -14,7 +14,7 @@ You can run the example by executing the following command within the GEMmaker d
 The following describes the meaning of the arguments in the command-line above:
 
    - `-profile standard`: instruct Nextflow to run this example on your local machine
-   - `-with-singularity`: instructs Nextflow to use the singularity
+   - `-with-singularity`: instructs Nextflow to use singularity
    - `-with-report`: instructs Nextflow to generate an HTML report indicating performance of the workflow.
    - `-with-timeline`:  instructs Nextflow to generate an HTML report showing a timline of when steps were executed.
 
@@ -26,7 +26,7 @@ You should see an output that looks like this:
 .. code:: bash
 
   N E X T F L O W  ~  version 19.07.0
-  Launching `main.nf` [nasty_heisenberg] - revision: 5d2056118e
+  Launching `main.nf` [happy_heisenberg] - revision: 5d2056118e
 
   ===================================
   G E M M A K E R   P I P E L I N E
@@ -38,7 +38,7 @@ You should see an output that looks like this:
   Launch Directory:   /local/Projects/GEMmaker
   Work Directory:     /local/Projects/GEMmaker/work
   Config Files:       [/local/Projects/GEMmaker/nextflow.config]
-  Container Engine:   singularity
+  Container Engine:   singularity<https://www.vim.org/>`
   Profile(s):         standard
 
 
@@ -152,12 +152,12 @@ About the Example Data
 
 The example data provided here belongs to the imaginary organism "Cool Organism" (CORG). For the local example, we use a set of 3 artificially made RNA-seq runs. The fictitious CORG organism has a very small "genome" of only 2,336 nucleotides, 3 "chromosomes" and 6 "genes". The 6 genes are named ``gene_Alpha``, ``gene_Beta``, ``gene_Zeta``, ``gene_Gamma``, ``gene_Delta``, ``gene_Epsilon``.
 
-For the remote data file, GEMmaker automatically downloads a very small RNA-seq file from NCBI. This dataset is from an uncharacterized bacteria, but luckily, CORG shares 3 of the genes with this bacteria so we can use CORG's reference file. This remote sample was selected becasue it is an unusually small file, making it  ideal four the example dataset.
+For the remote data file, GEMmaker automatically downloads a very small RNA-seq file from NCBI. This dataset is from an uncharacterized bacteria, but luckily, CORG shares 3 of the genes with this bacteria so we can use CORG's reference file. This remote sample was selected becasue it is an unusually small file, making it  ideal for the example dataset.
 
 Using Salmon or Hisat2
 ~~~~~~~~~~~~~~~~~~~~~~
 
-By default, GEMmaker uses Kallisto for transcript expression level quantification. If you would like to use Salmon or Hisat2 instead, you must edit ``nextflow.config`` and enable Salmon or Kallisto. In the GEMmaker directory, edit the ``nextflow.config`` file using your favorite text editor. Here we use `vim <https://www.vim.org/>`__ on the command line:
+By default, GEMmaker uses Kallisto for transcript expression level quantification. If you would like to use Salmon or Hisat2 instead, you must edit ``nextflow.config`` and enable Salmon or Kallisto. In the GEMmaker directory, edit the ``nextflow.config`` file using your favorite text editor. Note that you should not use a  text editors such as LibreOffice or Microsoft Word, as they are not Plain Text Editors. Examples of popular plain text editors include GUI based editors such as `gedit (Text Editor) <https://wiki.gnome.org/Apps/Gedit>`__ (Preinstalled on Ubuntu) and `Atom <https://atom.io/>`__, as well as command line based editors such as `vi <https://en.wikipedia.org/wiki/Vi>`__, `vim <https://www.vim.org/>`__, and `nano <https://www.nano-editor.org/>`__. Here we use vim on the command line:
 
 .. code:: bash
 
