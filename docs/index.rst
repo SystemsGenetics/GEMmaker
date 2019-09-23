@@ -15,8 +15,7 @@ GEMmaker is a `Nextflow <https://www.nextflow.io/>`__ workflow for large-scale g
    :caption: Contents:
 
    installation
+   explore
    usage
-   examples
-   configuration
-   execution
+   whats_next
    troubleshooting

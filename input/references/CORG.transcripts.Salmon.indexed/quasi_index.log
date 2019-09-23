@@ -1,60 +1,12 @@
-[2018-11-01 10:42:25.629] [jointLog] [info] [Step 1 of 4] : counting k-mers
-[2018-11-01 10:42:25.658] [jointLog] [info] Replaced 0 non-ATCG nucleotides
-[2018-11-01 10:42:25.658] [jointLog] [info] Clipped poly-A tails from 0 transcripts
-[2018-11-01 10:42:25.658] [jointLog] [info] Building rank-select dictionary and saving to disk
-[2018-11-01 10:42:25.658] [jointLog] [info] done
-[2018-11-01 10:42:25.660] [jointLog] [info] Writing sequence data to file . . . 
-[2018-11-01 10:42:25.660] [jointLog] [info] done
-[2018-11-01 10:42:25.673] [jointLog] [info] Building 32-bit suffix array (length of generalized text is 303)
-[2018-11-01 10:42:25.675] [jointLog] [info] Building suffix array . . . 
-[2018-11-01 10:42:25.677] [jointLog] [info] khash had 210 keys
-[2018-11-01 10:42:25.678] [jointLog] [info] saving hash to disk . . . 
-[2018-11-01 10:42:25.678] [jointLog] [info] done
-[2018-11-05 12:21:48.421] [jointLog] [info] [Step 1 of 4] : counting k-mers
-[2018-11-05 12:21:48.570] [jointLog] [info] Replaced 0 non-ATCG nucleotides
-[2018-11-05 12:21:48.570] [jointLog] [info] Clipped poly-A tails from 0 transcripts
-[2018-11-05 12:21:48.571] [jointLog] [info] Building rank-select dictionary and saving to disk
-[2018-11-05 12:21:48.571] [jointLog] [info] done
-[2018-11-05 12:21:48.639] [jointLog] [info] Writing sequence data to file . . . 
-[2018-11-05 12:21:48.639] [jointLog] [info] done
-[2018-11-05 12:21:48.639] [jointLog] [info] Building 32-bit suffix array (length of generalized text is 303)
-[2018-11-05 12:21:48.656] [jointLog] [info] Building suffix array . . . 
-[2018-11-05 12:21:48.715] [jointLog] [info] khash had 210 keys
-[2018-11-05 12:21:48.772] [jointLog] [info] saving hash to disk . . . 
-[2018-11-05 12:21:48.772] [jointLog] [info] done
-[2018-12-12 15:46:43.963] [jointLog] [info] [Step 1 of 4] : counting k-mers
-[2018-12-12 15:46:44.060] [jointLog] [info] Replaced 0 non-ATCG nucleotides
-[2018-12-12 15:46:44.060] [jointLog] [info] Clipped poly-A tails from 0 transcripts
-[2018-12-12 15:46:44.062] [jointLog] [info] Building rank-select dictionary and saving to disk
-[2018-12-12 15:46:44.062] [jointLog] [info] done
-[2018-12-12 15:46:44.217] [jointLog] [info] Writing sequence data to file . . . 
-[2018-12-12 15:46:44.217] [jointLog] [info] done
-[2018-12-12 15:46:44.218] [jointLog] [info] Building 32-bit suffix array (length of generalized text is 405)
-[2018-12-12 15:46:44.611] [jointLog] [info] Building suffix array . . . 
-[2018-12-12 15:46:44.612] [jointLog] [info] khash had 281 keys
-[2018-12-12 15:46:44.673] [jointLog] [info] saving hash to disk . . . 
-[2018-12-12 15:46:44.673] [jointLog] [info] done
-[2018-12-13 10:36:57.319] [jointLog] [info] [Step 1 of 4] : counting k-mers
-[2018-12-13 10:36:57.323] [jointLog] [info] Replaced 0 non-ATCG nucleotides
-[2018-12-13 10:36:57.323] [jointLog] [info] Clipped poly-A tails from 0 transcripts
-[2018-12-13 10:36:57.326] [jointLog] [info] Building rank-select dictionary and saving to disk
-[2018-12-13 10:36:57.326] [jointLog] [info] done
-[2018-12-13 10:36:57.329] [jointLog] [info] Writing sequence data to file . . . 
-[2018-12-13 10:36:57.329] [jointLog] [info] done
-[2018-12-13 10:36:57.330] [jointLog] [info] Building 32-bit suffix array (length of generalized text is 611)
-[2018-12-13 10:36:57.333] [jointLog] [info] Building suffix array . . . 
-[2018-12-13 10:36:57.346] [jointLog] [info] khash had 425 keys
-[2018-12-13 10:36:57.366] [jointLog] [info] saving hash to disk . . . 
-[2018-12-13 10:36:57.367] [jointLog] [info] done
-[2018-12-13 10:37:50.257] [jointLog] [info] [Step 1 of 4] : counting k-mers
-[2018-12-13 10:37:50.262] [jointLog] [info] Replaced 0 non-ATCG nucleotides
-[2018-12-13 10:37:50.262] [jointLog] [info] Clipped poly-A tails from 0 transcripts
-[2018-12-13 10:37:50.264] [jointLog] [info] Building rank-select dictionary and saving to disk
-[2018-12-13 10:37:50.264] [jointLog] [info] done
-[2018-12-13 10:37:50.266] [jointLog] [info] Writing sequence data to file . . . 
-[2018-12-13 10:37:50.266] [jointLog] [info] done
-[2018-12-13 10:37:50.268] [jointLog] [info] Building 32-bit suffix array (length of generalized text is 611)
-[2018-12-13 10:37:50.271] [jointLog] [info] Building suffix array . . . 
-[2018-12-13 10:37:50.306] [jointLog] [info] khash had 425 keys
-[2018-12-13 10:37:50.308] [jointLog] [info] saving hash to disk . . . 
-[2018-12-13 10:37:50.308] [jointLog] [info] done
+[2019-09-20 22:49:49.770] [jointLog] [info] [Step 1 of 4] : counting k-mers
+[2019-09-20 22:49:49.771] [jointLog] [info] Replaced 0 non-ATCG nucleotides
+[2019-09-20 22:49:49.771] [jointLog] [info] Clipped poly-A tails from 0 transcripts
+[2019-09-20 22:49:49.772] [jointLog] [info] Building rank-select dictionary and saving to disk
+[2019-09-20 22:49:49.772] [jointLog] [info] done
+[2019-09-20 22:49:49.772] [jointLog] [info] Writing sequence data to file . . . 
+[2019-09-20 22:49:49.772] [jointLog] [info] done
+[2019-09-20 22:49:49.772] [jointLog] [info] Building 32-bit suffix array (length of generalized text is 611)
+[2019-09-20 22:49:49.772] [jointLog] [info] Building suffix array . . . 
+[2019-09-20 22:49:49.779] [jointLog] [info] khash had 425 keys
+[2019-09-20 22:49:49.779] [jointLog] [info] saving hash to disk . . . 
+[2019-09-20 22:49:49.779] [jointLog] [info] done
