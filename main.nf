@@ -662,7 +662,6 @@ process fastq_merge {
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_COUNTING
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_FASTQC_1
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_FASTQ_FOR_CLEANING
-    set val(sample_id), val(1) into CLEAN_DOWNLOADED_FASTQ_SIGNAL
 
   /**
    * This command tests to see if ls produces a 0 or not by checking
@@ -671,7 +670,7 @@ process fastq_merge {
    */
   script:
   """
-  fastq_merge.sh ${sample_id}
+  fastq_merge.sh ${sample_id} ${params.input.publish_downloaded_fastq}
   """
 }
 
@@ -1129,36 +1128,10 @@ process clean_sra {
     params.output.publish_sra == false
 
   script:
-    template "clean_work_files.sh"
+  """
+  clean_work_files.sh ${files_list}
+  """
 }
-
-
-
-/**
- * Merge the fastq_dump files with fastq_merge signal
- * so that we can remove these files.
- */
-
-RFCLEAN = DOWNLOADED_FASTQ_FOR_CLEANING.mix(CLEAN_DOWNLOADED_FASTQ_SIGNAL)
-RFCLEAN.groupTuple(size: 2).set { DOWNLOADED_FASTQ_CLEANUP_READY }
-
-/**
- * Cleans downloaded fastq files
- */
-process clean_downloaded_fastq {
-  tag { sample_id }
-
-  input:
-    set val(sample_id), val(files_list) from DOWNLOADED_FASTQ_CLEANUP_READY
-
-  when:
-    params.output.publish_downloaded_fastq == false
-
-  script:
-    template "clean_work_files.sh"
-}
-
-
 
 /**
  * Merge the merged fastq files with the signals from hista2,
@@ -1183,7 +1156,9 @@ process clean_merged_fastq {
     params.output.publish_downloaded_fastq == false
 
   script:
-    template "clean_work_files.sh"
+  """
+  clean_work_files.sh ${files_list}
+  """
 }
 
 
@@ -1209,7 +1184,9 @@ process clean_trimmed_fastq {
     params.output.publish_trimmed_fastq == false
 
   script:
-    template "clean_work_files.sh"
+  """
+  clean_work_files.sh ${files_list}
+  """
 }
 
 
@@ -1234,7 +1211,9 @@ process clean_sam {
     params.output.publish_sam == false
 
   script:
-    template "clean_work_files.sh"
+  """
+  clean_work_files.sh ${files_list}
+  """
 }
 
 
@@ -1259,7 +1238,9 @@ process clean_bam {
     params.output.publish_bam == false
 
   script:
-    template "clean_work_files.sh"
+  """
+  clean_work_files.sh ${files_list}
+  """
 }
 
 /**
@@ -1282,7 +1263,9 @@ process clean_kallisto_ga {
     params.output.publish_gene_abundance == false
 
   script:
-    template "clean_work_dirs.sh"
+  """
+  clean_work_dirs.sh ${directory}
+  """
 }
 
 /**
@@ -1305,7 +1288,9 @@ process clean_salmon_ga {
     params.output.publish_gene_abundance == false
 
   script:
-    template "clean_work_files.sh"
+  """
+  clean_work_files.sh ${files_list}
+  """
 }
 
 
@@ -1329,5 +1314,7 @@ process clean_stringtie_ga {
     params.output.publish_stringtie_gtf_and_ga == false
 
   script:
-    template "clean_work_files.sh"
+  """
+  clean_work_files.sh ${files_list}
+  """
 }
