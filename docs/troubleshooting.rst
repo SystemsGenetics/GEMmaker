@@ -33,6 +33,16 @@ Why is it taking so long to pull a docker/singularity image?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This is dependent directly on your internet speed. The first time GEMmaker is run, it must download all of the programs it needs to run. This means it may take a little while longer to run the first time it is run on your machine.
 
+What are all these WARN: messages?!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When running GEMmaker, you may see messages like this:
+
+.. code:: bash
+  WARN: The channel `create` method is deprecated -- it will be removed in a future release
+  WARN: The `close` operator is deprecated -- it will be removed in a future release
+
+Nextflow, the language GEMmaker is based on, is undergoing some upgrades. GEMmaker is based on a stable version of Nextflow that does not use the currently in progress changes. These errors can be safely ignored, as they are just warnings that Nextflow is undergoing upgrades.
+
 Get Help or Suggest Improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
