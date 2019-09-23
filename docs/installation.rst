@@ -82,10 +82,8 @@ GEMmaker can be used on a `Kubernetes <https://kubernetes.io/>`__ cluster with m
 Installing GEMmaker
 ~~~~~~~~~~~~~~~~~~~
 
-Once all of the necessary software dependencies have been installed, clone GEMmaker into your working directory and checkout the stable version of your choice:
+Once all of the necessary software dependencies have been installed, clone GEMmaker into your working directory:
 
 .. code:: bash
 
   nextflow clone SystemsGenetics/GEMmaker
-  cd GEMmaker
-  checkout v1.1
