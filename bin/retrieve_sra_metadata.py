@@ -48,6 +48,9 @@ def download_runs_meta(run_ids, page_size=100):
         }).encode()
         request = urllib.request.Request(url, data)
 
+        sys.stderr.write("Fetching IDs: %s.  " % (",".join(ids)))
+
+
         # parse the XML response
         response_obj = urllib.request.urlopen(request)
         response_xml = response_obj.read().decode(response_obj.headers.get_content_charset())
