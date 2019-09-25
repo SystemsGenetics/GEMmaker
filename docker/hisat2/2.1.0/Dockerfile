@@ -6,3 +6,6 @@ RUN wget -q ftp://ftp.ccb.jhu.edu/pub/infphilo/hisat2/downloads/hisat2-2.1.0-Lin
   && mv hisat2-2.1.0 /usr/local
 
 ENV PATH "$PATH:/usr/local/hisat2-2.1.0"
+
+# We need python to run hisat2-build
+RUN apt-get install -y python
