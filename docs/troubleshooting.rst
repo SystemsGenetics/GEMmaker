@@ -2,24 +2,20 @@
 
 Troubleshooting
 ---------------
-When running GEMmaker you may encounter the following issues.
 
-Cannot get property 'remote_list_path' on null object
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-**Problem**: I received the following error:
-
-.. code:: bash
-
-  ERROR ~ Cannot get property 'remote_list_path' on null object
-
-**Solution**: You forgot to create ``nextflow.config`` from the example config:
+ERROR  : No valid /bin/sh in container
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you encounter the following error:
 
 .. code:: bash
 
-  cp nextflow.config.example nextflow.config
+ ERROR  : No valid /bin/sh in container
+ ABORT  : Retval = 255
 
-255 ERROR
-~~~~~~~~~
+This is most likely due to using Singularity other than version 2, which is required by Nextflow. Using Singularity verion 3, for instance, will cause this problem.
+
+ERROR  : Failed to set loop flags on loop device: Resource temporarily unavailable
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 On local machines, you may encounter the following Singularity error:
 
 .. code:: bash
