@@ -25,6 +25,18 @@ On local machines, you may encounter the following Singularity error:
 
 This is caused by Singularity attempting to access the same image with more than one thread. The first process to access the image will lock it until it is read into memory. This can be safely ignored, as GEMmaker will automatically retry the process.
 
+Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This error can occur when GEMmaker runs the FastQC process and there is insufficient RAM available.  If running on a local machine you can adjust the ``params.execution.queue_size`` in the configuration file to decrease the number of concurrent jobs that run at a given time.  If running on an HPC system, you can increase the amount of memory requested for the job by altering the setting in the ``withlabel:fastqc`` section of the configuration file.  For example, to set the memory to 2 GB: 
+
+.. code:: bash
+
+   withLabel:fastqc {
+     container = "gemmaker/fastqc:0.11.7-1.1"
+     time = "24h"
+     memory = "2 GB"
+   }
+
 Why is it taking so long to pull a docker/singularity image?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This is dependent directly on your internet speed. The first time GEMmaker is run, it must download all of the programs it needs to run. This means it may take a little while longer to run the first time it is run on your machine.
