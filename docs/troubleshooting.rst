@@ -51,7 +51,15 @@ When running GEMmaker, you may see messages like this:
 
 Nextflow, the language GEMmaker is based on, is undergoing some upgrades. GEMmaker is based on a stable version of Nextflow that does not use the currently in progress changes. These errors can be safely ignored, as they are just warnings that Nextflow is undergoing upgrades.
 
+GEMmaker seems hung and does not complete
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If GEMmaker seems to have processed all the samples provided, but does not move on to the ``create_gem`` step it may be hung.  Sometimes this can occur if you've tried to run GEMmaker multiple times but changed the list of samples to process between runs.  The best solution is to not only run GEMmaker with one set of samples, and to create a new installation of GEMmaker for other samples.  However, if you do not want to lose results, you can try to run the following to clear out the GEMmaker batch directories:
+
+.. code:: bash
+
+  rm -rf work/GEMmaker/*
+  
 Get Help or Suggest Improvements
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------
 
 If you have questions, comments, suggestions for improvement or require help with setup and execution of GEMmaker please consider posting to the `GEMmaker issue board <https://github.com/SystemsGenetics/GEMmaker/issues>`_ on Github.
