@@ -2,6 +2,10 @@ Use GEMmaker
 ------------
 To use GEMmaker you must prepare the genomic reference data, organize your samples and configure the workflow with settings to deliver the outputs you desire.
 
+.. important ::
+
+  You should only use GEMmaker with one set of samples.  You can use as many samples as you like, but avoid changing the sample list between runs of GEMmaker.  If you have multiple projects each with a different set of samples, you should install an instance of GEMmaker for each project.   Also, if you have used GEMmaker for testing, it is best to not reuse the same GEMmaker installation used for testing with an actual sample set.  Instead create a new installation.
+
 Configuration File
 ``````````````````
 GEMmaker uses the ``nextflow.config`` file to provide customizations. The configuration file has three primary sections:
