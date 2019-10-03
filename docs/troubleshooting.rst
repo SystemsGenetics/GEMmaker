@@ -57,6 +57,7 @@ What are all these WARN: messages?!
 When running GEMmaker, you may see messages like this:
 
 .. code:: bash
+
   WARN: The channel `create` method is deprecated -- it will be removed in a future release
   WARN: The `close` operator is deprecated -- it will be removed in a future release
 
