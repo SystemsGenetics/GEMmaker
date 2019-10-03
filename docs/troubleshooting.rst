@@ -3,6 +3,17 @@
 Troubleshooting
 ---------------
 
+ERROR  : Unknown image format/type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you encounter the following error:
+
+.. code:: bash
+
+  ERROR  : Unknown image format/type: <directory to a singularity image file>
+  ABORT  : Retval = 255
+
+Most likely, Singularity encountered some problem when retrieving and building the software images that GEMmaker uses.  The solution is to just resume the GEMmaker workflow and the problem will most likely resolve itself.
+
 ERROR  : No valid /bin/sh in container
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 If you encounter the following error:
