@@ -18,8 +18,10 @@ fi
 if [ ! -e ${sample_id}_1.done ]; then
   files1=`ls *_1.fastq | grep -v ${sample_id} | sort`
   for file in $files1; do
+     echo "Concatenate file: ${file} to ${sample_id}_1.fastq"
      cat $file >> "${sample_id}_1.fastq"
   done
+  echo "Done with ${sample_id}_1.fastq" 
   touch ${sample_id}_1.done
 fi
 
@@ -27,9 +29,10 @@ fi
 if [ ! -e ${sample_id}_2.done ]; then
    files2=`ls *_2.fastq | grep -v ${sample_id} | sort`
    for file in $files2; do
-      # Copy the contents of the run FASTQ into the sample FASTQ
+      echo "Concatenate file: ${file} to ${sample_id}_2.fastq"
       cat $file >> "${sample_id}_2.fastq"
    done
+   echo "Done with ${sample_id}_2.fastq"
    touch ${sample_id}_2.done
 fi
 
@@ -37,6 +40,7 @@ fi
 if [ -e ${sample_id}_1.done ] && [ -e ${sample_id}_2.done ]; then
    files=`ls *.fastq | grep -v ${sample_id} | sort`
    for file in $files; do 
+     echo "Cleaning file: ${file}"
      # Get the linked path for the original run FASTQ file and
      # cleanup the run files.
      lpath=`stat -c %N  $file | awk -F"'" '{print $4}'`
