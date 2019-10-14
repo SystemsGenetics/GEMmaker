@@ -37,7 +37,9 @@ Input
 
 reference_name
 ==============
-The unique name for the genome reference assembly. It must not contain spaces or special characters, only alphanumeric characters (0-9, a-z, A-Z) and underscores. This name will be used when creating intermediate files that you may want to keep, such as BAM files.
+The unique name for the genome reference assembly. It must not contain spaces or special characters, only alphanumeric characters (0-9, a-z, A-Z) and underscores. This name will be used when creating intermediate files that you may want to keep, such as BAM files. 
+
+If Hisat2 is being used as the quanitifaction tool, this name must match the reference name used while running Hisat2 for building indexes in the previous step.
 
 reference_dir
 =============
