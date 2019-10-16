@@ -37,7 +37,9 @@ Input
 
 reference_name
 ==============
-The unique name for the genome reference assembly. It must not contain spaces or special characters, only alphanumeric characters (0-9, a-z, A-Z) and underscores. This name will be used when creating intermediate files that you may want to keep, such as BAM files.
+The unique name for the genome reference assembly. It must not contain spaces or special characters, only alphanumeric characters (0-9, a-z, A-Z) and underscores. This name will be used when creating intermediate files that you may want to keep, such as BAM files. 
+
+If Hisat2 is being used as the quanitifaction tool, this name must match the reference name used while running Hisat2 for building indexes in the previous step.
 
 reference_dir
 =============
@@ -79,9 +81,9 @@ hisat2
 
 If you want to use the Hisat2 pipeline for alignment and quantification of reads, set ``enable`` to ``true``.   If Hisat2 is enabled, the trimmomatic, samtools and stringtie processes will be enabled as well.
 
-The ``index_files`` should be a `GLOB <https://en.wikipedia.org/wiki/Glob_(programming)>`__ pattern that identifies the index files that are found in the directory specified by the ``input.reference_dir`` parameter.  This should always be ``*.ht2``. These indexes should have been built with from the reference genome using the ``hisat2-build`` program.
+The ``index_dir`` should be the location where the Hisat2 `.ht2` files are located.  This folder must be inside the directory specified by the ``input.reference_dir`` setting.
 
-The ``gtf_file`` parameter should be a `GLOB <https://en.wikipedia.org/wiki/Glob_(programming)>`__ pattern specifying a GTF file containing the genes annotated from the reference genome.
+The ``gtf_file`` parameter should be the name of the GTF file. The file must be inside the directory specified by the ``input.reference_dir`` setting.
 
 Default values:
 
@@ -89,8 +91,8 @@ Default values:
 
   hisat2 {
       enable = false
-      index_files = "*.ht2"
-      gtf_file = "*.transcripts.gtf"
+      index_dir = "CORG.genome.Hisat2.indexed"
+      gtf_file = "CORG.transcripts.gtf"
   }
 
 
@@ -99,13 +101,13 @@ salmon
 
 If you want to use Salmon for quantification of reads, set ``enable`` to ``true``.
 
-The ``index_dir`` should be a `GLOB <https://en.wikipedia.org/wiki/Glob_(programming)>`__ pattern that identifies the directory where Salmon index files are found within the directory specified by the ``input.reference_dir`` parameter. These indexes should have been built with from the reference transcript FASTA file using the ``salmon index`` program.
+The ``index_dir`` should be the name of the directory where Salmon index files are found. These indexes should have been built with from the reference transcript FASTA file using the ``salmon index`` program. The directory must be inside the directory specified by the ``input.reference_dir`` setting.
 
 .. code:: bash
 
   salmon {
     enable = false
-    index_dir = "*.transcripts.Salmon.indexed"
+    index_dir = "CORG.transcripts.Salmon.indexed"
   }
 
 kallisto
@@ -113,13 +115,13 @@ kallisto
 
 If you want to use Kallisto for quantification of reads, set ``enable`` to ``true``.
 
-The ``index_file`` should be a `GLOB <https://en.wikipedia.org/wiki/Glob_(programming)>`__ pattern that identifies the index files that are found in the directory specified by the ``input.reference_dir`` parameter.  This index file should have been built with from the reference genome using the ``kallisto index`` program.
+The ``index_file`` should be the name of the index file.  This index file should have been built with from the reference genome using the ``kallisto index`` program.  The directory must be inside the directory specified by the ``input.reference_dir`` setting.
 
 .. code:: bash
 
   kallisto {
     enable = true
-    index_file = "*.transcripts.Kallisto.indexed"
+    index_file = "CORG.transcripts.Kallisto.indexed"
   }
 
 .. warning::
