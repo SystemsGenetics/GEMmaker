@@ -64,6 +64,10 @@ You can follow a similar organization or simply place the index files into the `
 
 The following sections describe in more detail the arguments of the Input section of the configuration file.
 
+.. warning::
+
+  GEMmaker provides sample data in the default ``input`` directory to make it easier for someone to test. Before you begin with your own project data, remember to remove the sample data from the ``input`` and ``input/references`` directories.
+
 reference_name
 ==============
 The unique name for the genome reference assembly. It must not contain spaces or special characters, only alphanumeric characters (0-9, a-z, A-Z) and underscores. This name will be used when creating intermediate files that you may want to keep, such as BAM files. 
