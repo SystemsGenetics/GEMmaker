@@ -71,6 +71,17 @@ If GEMmaker seems to have processed all the samples provided, but does not move 
 
   rm -rf work/GEMmaker/*
   
+SLURM:  exceeded memory limit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you are launching GEMmaker on an HPC system with the SLURM scheduler you can sometimes get an `exceeded memory limit` similar to the following: 
+
+.. code:: bash
+
+  slurmstepd: error: Job 12254566 exceeded memory limit (7871840 > 6553600), being killed
+  
+If you have a lot of samples, Nextflow may need more memory.  Increasing the amount of memory in your SLURM submission script will correct this problem.  Remember to restart GEMmaker with the ``-resume`` flag to have it continue where it left off.
+
+  
 Get Help or Suggest Improvements
 --------------------------------
 
