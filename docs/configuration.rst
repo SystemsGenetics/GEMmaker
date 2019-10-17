@@ -151,7 +151,7 @@ kallisto
 
 If you want to use Kallisto for quantification of reads, set ``enable`` to ``true``.
 
-The ``index_file`` should be the name of the index file.  This index file should have been built with from the reference genome using the ``kallisto index`` program.  By default, Kallisto indexing creates a singe index file. This file is expected to be placed in the ``input/references`` directory.  If you do not want to use the defaults you must change the  directory specified in the ``input.reference_dir` setting and place the Kallisto index file there.
+The ``index_file`` should be the name of the index file.  This index file should have been built with from the reference genome using the ``kallisto index`` program.  By default, Kallisto indexing creates a singe index file. This file is expected to be placed in the ``input/references`` directory.  If you do not want to use the defaults you must change the  directory specified in the ``input.reference_dir`` setting and place the Kallisto index file there.
 
 .. code:: bash
 
