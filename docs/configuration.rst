@@ -60,27 +60,29 @@ organized into subdirectories and files such as :
   CORG.transcripts.Salmon.indexed/
   CORG.transcripts.Kallisto.indexed
 
-You can follow a similar organization or simply place the index files into the ``input_references`` directory.  Be sure to set the appropriate ``hisat2.index_dir``, ``salmon.index_dir``, or ``kallisto.index_file``.   If you simply place the index files for hisat2 and salmon into the ``input_referecnes`` directory then you can just set the ``hisat2.index_dir`` or ``salmon.index_dir`` to a ``.`` (period).  This tells GEMmaker they are not in a subdirectory.  For the ``kallisto.index_file`` you must always indicate the file name, if it's directly in the ``input_references`` directory or the subdirectory and filename if you have it in a subdirectory.
-
-The following sections describe in more detail the arguments of the Input section of the configuration file.
+You can follow a similar organization or simply place the index files into the ``input_references`` directory.  Be sure to set the appropriate ``hisat2.index_dir``, ``salmon.index_dir``, or ``kallisto.index_file`` settings.   If you simply place the index files derived from Hisat2 and Salmon into the ``input_references`` directory then you can set the ``hisat2.index_dir`` or ``salmon.index_dir`` to a ``.`` (period).  This tells GEMmaker they are not in a subdirectory.  For the ``kallisto.index_file`` you must always indicate the file name if it is directly in the ``input_references`` directory. If it is in a subdirectory, then you should provide only the subdirectory name and the file name (i.e. a relative path within the ``input_references`` directory).
 
 .. warning::
 
-  GEMmaker provides sample data in the default ``input`` directory to make it easier for someone to test. Before you begin with your own project data, remember to remove the sample data from the ``input`` and ``input/references`` directories.
+  There are sample data in the default ``input`` directory to make it easier for someone to test GEMmaker. Before you begin with your own project data, remember to remove the sample data from the ``input`` and ``input/references`` directories.
+
+The following sections describe in more detail the arguments of the Input section of the configuration file.
 
 reference_name
 ==============
 The unique name for the genome reference assembly. It must not contain spaces or special characters, only alphanumeric characters (0-9, a-z, A-Z) and underscores. This name will be used when creating intermediate files that you may want to keep, such as BAM files. 
 
-If Hisat2 is being used as the quanitifaction tool, this name must match the reference name used while running Hisat2 for building indexes in the previous step.
+.. note:: 
+
+  If Hisat2 is being used as the quanitifaction tool, this name must match the reference name used while running Hisat2 for building indexes in the previous step. 
 
 reference_dir
 =============
-The path to the directory where the genome reference files are housed.  Each quantification tool (Hisat2, Salmon or Kallisto) requires different files.  If no preceeding `/` is used the path is expected to be in the GEMmaker directory. The default is set to the ``input/references`` directory of GEMmaker.
+The path to the directory where the genome reference files are housed.  Each quantification tool (Hisat2, Salmon or Kallisto) requires different files.  If no preceeding `/` is used the path is expected to be in the GEMmaker directory. By deafault, reference files are expected to be located in the  ``input/references`` directory of GEMmaker.
 
 input_data_dir
 ==============
-The path to the directory where any locally stored FASTQ files are housed.  If no preceeding ``/`` is used the path is expected to be in the GEMmaker directory. The default is set to the ``input`` directory of GEMmaker.
+The path to the directory where any locally stored FASTQ files are housed.  If no preceeding ``/`` is used then the path is expected to be in the GEMmaker directory. The default, FASTQ files are expected to be located in the ``input`` directory of GEMmaker.
 
 remote_sample_list
 ==================
@@ -96,27 +98,28 @@ The path to the file containing a list of SRA Run IDs. These runs will be downlo
   SRR1184187
   SRR1184188
 
-If no remote files are to be downloaded, set this parameter to ``"none"``.  This file must be found in the directory specified by the ``params.input.input_data_dir``.
+If no remote files are to be downloaded, set this parameter to ``"none"``.  By default the SRR accession numbers are expected to be placed in the ``input/SRA_IDs.txt`` file.  If you do not want to use the default, make sure the input file with the SRR numbers is found in the directory specified by the ``params.input.input_data_dir``.
 
 
 local_sample_files
 ==================
-
-The `GLOB <https://en.wikipedia.org/wiki/Glob_(programming)>`__ pattern, that identifies locally stored FASTQ files in the directory specified by the ``input.input_data_dir`` parameter. The default GLOB pattern can find paired or non-paired data that have a ``_1.fastq`` and a ``_2.fastq`` file suffix using the GLOB pattern:
+The `GLOB <https://en.wikipedia.org/wiki/Glob_(programming)>`__ pattern, that identifies locally stored FASTQ files in the directory specified by the ``input.input_data_dir`` parameter. By deafault, FASTQ files are expected to be found in the ``input`` directory of GEMmaker.  The default GLOB pattern will find paired or non-paired data that have a ``_1.fastq`` and a ``_2.fastq`` file suffix using the GLOB pattern:
 
 .. code::
 
   "*_{1,2}.fastq"
 
+.. note::
+
+  If the paired data you are using does not have a ``_1.fastq`` and a ``_2.fastq`` extension you can adjust the GLOB pattern or you must rename them to include this type of suffix.
 
 hisat2
 ======
-
 If you want to use the Hisat2 pipeline for alignment and quantification of reads, set ``enable`` to ``true``.   If Hisat2 is enabled, the trimmomatic, samtools and stringtie processes will be enabled as well.
 
-The ``index_dir`` should be the location where the Hisat2 `.ht2` files are located.  This folder must be inside the directory specified by the ``input.reference_dir`` setting.
+The ``index_dir`` should be the location where the Hisat2 `.ht2` files are located.  By default, Hisat2 creates a variety of ``*.ht2`` index files. These files are expected to be placed in the ``input/references`` directory.  If you do not want to use the defaults you must change the  directory specified in the ``input.reference_dir` setting and place the Hisat2 index directory there.
 
-The ``gtf_file`` parameter should be the name of the GTF file. The file must be inside the directory specified by the ``input.reference_dir`` setting.
+The ``gtf_file`` parameter should be the name of the GTF file. By deafult, the GTF file should be located in the ``input/references`` folder of GEMmaker.  If you do not want to use the defaults you must change the directory specified in the ``input.reference_dir` setting and place the GTF file there.  
 
 Default values:
 
@@ -134,7 +137,7 @@ salmon
 
 If you want to use Salmon for quantification of reads, set ``enable`` to ``true``.
 
-The ``index_dir`` should be the name of the directory where Salmon index files are found. These indexes should have been built with from the reference transcript FASTA file using the ``salmon index`` program. The directory must be inside the directory specified by the ``input.reference_dir`` setting.
+The ``index_dir`` should be the name of the directory where Salmon index files are found. These indexes should have been built with from the reference transcript FASTA file using the ``salmon index`` program.  By default, Salmon indexing creates a directory. This directory is expected to be placed in the ``input/references`` directory.  If you do not want to use the defaults you must change the directory specified in the ``input.reference_dir` setting and place the Salmon index directory there.
 
 .. code:: bash
 
@@ -148,7 +151,7 @@ kallisto
 
 If you want to use Kallisto for quantification of reads, set ``enable`` to ``true``.
 
-The ``index_file`` should be the name of the index file.  This index file should have been built with from the reference genome using the ``kallisto index`` program.  The directory must be inside the directory specified by the ``input.reference_dir`` setting.
+The ``index_file`` should be the name of the index file.  This index file should have been built with from the reference genome using the ``kallisto index`` program.  By default, Kallisto indexing creates a singe index file. This file is expected to be placed in the ``input/references`` directory.  If you do not want to use the defaults you must change the  directory specified in the ``input.reference_dir` setting and place the Kallisto index file there.
 
 .. code:: bash
 
