@@ -34,6 +34,35 @@ In order to help others understand the purpose for the GEMmaker run, you should 
 
 Input
 ~~~~~
+The input section of the configuration file is for you to specify two types of input data: the genomic reference and the set of input RNA-seq data files.  The type and format of these data will differ depending if you want to use Hiast2, Kallisto or Salmon.   By default, GEMmaker has provided a set of directories to make it easy to organize the input files.  You can find the following directories and files in GEMmaker:
+
+.. code::
+
+  input/
+  input/references/
+  input/SRA_IDs.txt
+  input/samples2skip.txt
+
+You can place your genomic reference index files and the RNA-Seq data files in these directories.  
+
+**Input RNA-Seq Data**
+
+If you are using remote RNA-seq data from NCBI SRA you can use the directories and files above.  Edit the ``input/SRA_IDs.txt`` file and add the SRR accession numbers (i.e. run IDs) to this file (one per line).  Alternatively, if you are using local FASTQ files you can place those files directly into the ``input`` directory.  If you have a combination of remote and local files you can do both.  
+
+**Input Genome Reference Data**
+
+All of your genome references index files should go into the ``input/references`` directory.  The demo data that comes with GEMmaker is 
+organized into subdirectories and files such as :
+
+.. code::
+
+  CORG.genome.Hisat2.indexed/
+  CORG.transcripts.Salmon.indexed/
+  CORG.transcripts.Kallisto.indexed
+
+You can follow a similar organization or simply place the index files into the ``input_references`` directory.  Be sure to set the appropriate ``hisat2.index_dir``, ``salmon.index_dir``, or ``kallisto.index_file``.   If you simply place the index files for hisat2 and salmon into the ``input_referecnes`` directory then you can just set the ``hisat2.index_dir`` or ``salmon.index_dir`` to a ``.`` (period).  This tells GEMmaker they are not in a subdirectory.  For the ``kallisto.index_file`` you must always indicate the file name, if it's directly in the ``input_references`` directory or the subdirectory and filename if you have it in a subdirectory.
+
+The following sections describe in more detail the arguments of the Input section of the configuration file.
 
 reference_name
 ==============
