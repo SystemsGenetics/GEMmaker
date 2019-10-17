@@ -47,7 +47,7 @@ You can place your genomic reference index files and the RNA-Seq data files in t
 
 **Input RNA-Seq Data**
 
-If you are using remote RNA-seq data from NCBI SRA you can use the directories and files above.  Edit the ``input/SRA_IDs.txt`` file and add the SRR accession numbers (i.e. run IDs) to this file (one per line).  Alternatively, if you are using local FASTQ files you can place those files directly into the ``input`` directory.  If you have a combination of remote and local files you can do both.  
+If you are using remote RNA-seq data from NCBI SRA you can edit the ``input/SRA_IDs.txt`` file and add the SRR accession numbers (i.e. run IDs) to this file (one per line).  Alternatively, if you are using local FASTQ files you can place those files directly into the ``input`` directory.  If you have a combination of remote and local files you can do both.  
 
 **Input Genome Reference Data**
 
