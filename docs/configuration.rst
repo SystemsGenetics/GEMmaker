@@ -1,9 +1,9 @@
 .. _configuration:
 
-The Configuration File
-----------------------
+Step 4: Adjust the Configuration File
+-------------------------------------
 
-GEMmaker uses the ``nextflow.config`` file which allows you to be customize where input data is housed, which tools to execute, which data to publish, and to specify resource limitations for your compute environment. The config file has three main sections:
+GEMmaker uses the ``nextflow.config`` file which allows you to be customize where input data is housed, which tools to execute, which intermediate data to publish (i.e. which to keep), and to specify resource limitations for your compute environment. The config file has three main sections:
 
 - ``project``:  Parameters providing background information about the GEMmaker run to be performed.
 - ``params``: Parameters for input files, output files, and software.
@@ -14,6 +14,7 @@ The following provides detailed information on each parameter in ``nextflow.conf
 
 Project
 ~~~~~~~
+The project section provides details about this run of GEMmaker. Aside from the ``machine_name`` setting, the others are not used for processing of the RNA-seq data but are used to document the project.  Please provide values that will help others understand the how and why you are processing the data.
 
 name
 ====
@@ -43,15 +44,15 @@ The input section of the configuration file is for you to specify two types of i
   input/SRA_IDs.txt
   input/samples2skip.txt
 
-You can place your genomic reference index files and the RNA-Seq data files in these directories.  
+You can place your genomic reference index files and the RNA-Seq data files in these directories.
 
 **Input RNA-Seq Data**
 
-If you are using remote RNA-seq data from NCBI SRA you can edit the ``input/SRA_IDs.txt`` file and add the SRR accession numbers (i.e. run IDs) to this file (one per line).  Alternatively, if you are using local FASTQ files you can place those files directly into the ``input`` directory.  If you have a combination of remote and local files you can do both.  
+If you are using remote RNA-seq data from NCBI SRA you can edit the ``input/SRA_IDs.txt`` file and add the SRR accession numbers (i.e. run IDs) to this file (one per line).  Alternatively, if you are using local FASTQ files you can place those files directly into the ``input`` directory.  If you have a combination of remote and local files you can do both.
 
 **Input Genome Reference Data**
 
-All of your genome references index files should go into the ``input/references`` directory.  The demo data that comes with GEMmaker is 
+All of your genome references index files should go into the ``input/references`` directory.  The demo data that comes with GEMmaker is
 organized into subdirectories and files such as :
 
 .. code::
@@ -70,11 +71,11 @@ The following sections describe in more detail the arguments of the Input sectio
 
 reference_name
 ==============
-The unique name for the genome reference assembly. It must not contain spaces or special characters, only alphanumeric characters (0-9, a-z, A-Z) and underscores. This name will be used when creating intermediate files that you may want to keep, such as BAM files. 
+The unique name for the genome reference assembly. It must not contain spaces or special characters, only alphanumeric characters (0-9, a-z, A-Z) and underscores. This name will be used when creating intermediate files that you may want to keep, such as BAM files.
 
-.. note:: 
+.. note::
 
-  If Hisat2 is being used as the quanitifaction tool, this name must match the reference name used while running Hisat2 for building indexes in the previous step. 
+  If Hisat2 is being used as the quanitifaction tool, this name must match the reference name used while running Hisat2 for building indexes in the previous step.
 
 reference_dir
 =============
@@ -117,9 +118,9 @@ hisat2
 ======
 If you want to use the Hisat2 pipeline for alignment and quantification of reads, set ``enable`` to ``true``.   If Hisat2 is enabled, the trimmomatic, samtools and stringtie processes will be enabled as well.
 
-The ``index_dir`` should be the location where the Hisat2 `.ht2` files are located.  By default, Hisat2 creates a variety of ``*.ht2`` index files. These files are expected to be placed in the ``input/references`` directory.  If you do not want to use the defaults you must change the  directory specified in the ``input.reference_dir` setting and place the Hisat2 index directory there.
+The ``index_dir`` should be the location where the Hisat2 `.ht2` files are located.  By default, Hisat2 creates a variety of ``*.ht2`` index files. These files are expected to be placed in the ``input/references`` directory.  If you do not want to use the defaults you must change the  directory specified in the ``input.reference_dir`` setting and place the Hisat2 index directory there.
 
-The ``gtf_file`` parameter should be the name of the GTF file. By deafult, the GTF file should be located in the ``input/references`` folder of GEMmaker.  If you do not want to use the defaults you must change the directory specified in the ``input.reference_dir` setting and place the GTF file there.  
+The ``gtf_file`` parameter should be the name of the GTF file. By deafult, the GTF file should be located in the ``input/references`` folder of GEMmaker.  If you do not want to use the defaults you must change the directory specified in the ``input.reference_dir`` setting and place the GTF file there.
 
 Default values:
 
@@ -137,7 +138,7 @@ salmon
 
 If you want to use Salmon for quantification of reads, set ``enable`` to ``true``.
 
-The ``index_dir`` should be the name of the directory where Salmon index files are found. These indexes should have been built with from the reference transcript FASTA file using the ``salmon index`` program.  By default, Salmon indexing creates a directory. This directory is expected to be placed in the ``input/references`` directory.  If you do not want to use the defaults you must change the directory specified in the ``input.reference_dir` setting and place the Salmon index directory there.
+The ``index_dir`` should be the name of the directory where Salmon index files are found. These indexes should have been built with from the reference transcript FASTA file using the ``salmon index`` program.  By default, Salmon indexing creates a directory. This directory is expected to be placed in the ``input/references`` directory.  If you do not want to use the defaults you must change the directory specified in the ``input.reference_dir`` setting and place the Salmon index directory there.
 
 .. code:: bash
 
@@ -179,6 +180,10 @@ The output section of the configuration file therefore provides control for wher
 .. note::
 
   The average user will NOT need to change any of the default output parameters.
+
+.. warning::
+
+  If you change the publish settings of GEMmaker and execute a workflow you cannot come back later and change these settings. This is because any intermediate files that are not published are cleaned up and no longer available.  If you decide later you want some files published you will need to restart GEMmaker without the ``-resume`` flag.
 
 The following settings and their defaults are :
 
@@ -411,3 +416,11 @@ travis
 ======
 
 The ``travis`` profile is used by Travis CI for testing new builds.
+
+Performance Considerations
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+For large experiments on an HPC system, it is important to make sure that you are effectively utilizing the resources of the system. There are a few settings in ``nextflow.config`` which can be used to maximize performance based on the capabilities of your system:
+
+- **Multithreading**: Processes which support multithreading (such as trimmomatic) will use multiple threads according to the number of CPUs allocated to the process. Refer to the ``pbs`` and ``slurm`` profiles for examples of how to allocate more CPUs for multithreaded processes. This setting should be determined by the number of cores per node on your system; for example, if your system has nodes with 16 cores per node then you could set the number of threads to 16 to make full use of those nodes. Note, however, that you may also need to consider the memory available on each node, as well as the potentially higher queueing time for jobs that request more resources.
+
+- **Queue size**: Nextflow will only run up to 100 processes at a time by default (``params.execution.queue_size``), but you may be able to increase this value based on the queue limits of your system.

@@ -1,5 +1,5 @@
-Prepare Genome Data
--------------------
+Step 2: Prepare Genome Data
+---------------------------
 
 .. warning::
 

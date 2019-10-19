@@ -1,5 +1,5 @@
-Prepare Sample Data
--------------------
+Step 3: Prepare Sample Data
+---------------------------
 GEMmaker is capable of processing both locally stored RNA-seq files and automatically downloading samples stored in the `NCBI SRA <https://www.ncbi.nlm.nih.gov/sra>`__ database.  You can provide both types of files to be included in a single run of GEMmaker, or use only local or only remote files.
 
 .. warning::
