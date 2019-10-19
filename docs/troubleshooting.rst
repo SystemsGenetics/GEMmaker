@@ -69,7 +69,7 @@ Nextflow, the language GEMmaker is based on, is undergoing some upgrades. GEMmak
 
 GEMmaker seems hung and does not complete
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-If GEMmaker seems to have processed all the samples provided, but does not move on to the ``create_gem`` step it may be hung.  Sometimes this can occur if you have tried to run GEMmaker multiple times but changed the list of samples between runs.  The best solution is to only run GEMmaker with one set of samples, and to create a new installation of GEMmaker for other samples.  However, if you do not want to lose results, you can try to run the following to clear out the GEMmaker batch directories:
+If GEMmaker seems to have processed all the samples provided, but does not move on to the ``create_gem`` step it may be hung.  Sometimes this can occur if you have tried to run GEMmaker multiple times but changed the list of samples between runs.  A case when this could occur is running the demo data with GEMmaker and then using the same GEMmaker instance to then run your own samples.  The best solution is to only run GEMmaker with one set of samples, and to create a new installation of GEMmaker for other samples.  However, if you do not want to lose results, you can try to run the following to clear out the GEMmaker batch directories:
 
 .. code:: bash
 
