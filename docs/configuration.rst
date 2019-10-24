@@ -81,6 +81,10 @@ reference_dir
 =============
 The path to the directory where the genome reference files are housed.  Each quantification tool (Hisat2, Salmon or Kallisto) requires different files.  If no preceeding `/` is used the path is expected to be in the GEMmaker directory. By deafault, reference files are expected to be located in the  ``input/references`` directory of GEMmaker.
 
+.. warning::
+
+  Be sure that the only contents in the ``reference_dir`` are the Hisat2, Kallisto or Salmon index files for your genome (as well as the GTF file if you are using Hisat2).
+
 input_data_dir
 ==============
 The path to the directory where any locally stored FASTQ files are housed.  If no preceeding ``/`` is used then the path is expected to be in the GEMmaker directory. The default, FASTQ files are expected to be located in the ``input`` directory of GEMmaker.
