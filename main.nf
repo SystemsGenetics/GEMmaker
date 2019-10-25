@@ -891,7 +891,6 @@ process hisat2 {
   input:
     set val(sample_id), file(input_files) from TRIMMED_SAMPLES_FOR_HISAT2
     file indexes from HISAT2_INDEXES
-    file gtf_file from GTF_FILE
 
   output:
     set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.sam") into INDEXED_SAMPLES
