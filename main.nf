@@ -1088,7 +1088,7 @@ process create_gem {
 
   script:
   """
-  create_gem.sh ${params.output.publish_fpkm} ${params.software.alignment} ${workflow.launchDir} ${params.output.dir} ${params.project.machine_name} ${params.output.publish_raw} ${params.output.publish_tpm}
+  create_gem.sh ${params.output.publish_fpkm} ${params.input.hisat2.enable} ${workflow.launchDir} ${params.output.dir} ${params.project.machine_name} ${params.output.publish_raw} ${params.output.publish_tpm}
   """
 }
 

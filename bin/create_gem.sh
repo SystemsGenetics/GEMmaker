@@ -2,7 +2,7 @@
 
 
 params_output_publish_fpkm="$1"
-params_software_alignment="$2"
+params_input_hisat2_enable="$2"
 workflow_launchDir="$3"
 params_output_dir="$4"
 params_project_machine_name="$5"
@@ -10,7 +10,7 @@ params_output_publish_raw="$6"
 params_output_publish_tpm="$7"
 
 # FPKM format is only generated if hisat2 is used
-if [[ ${params_output_publish_fpkm} == true && ${params_software_alignment} == 0 ]]; then
+if [[ ${params_output_publish_fpkm} == true && ${params_input_hisat2_enable} == true ]]; then
   create-gem.py \
     --sources ${workflow_launchDir}/${params_output_dir} \
     --prefix ${params_project_machine_name} \
