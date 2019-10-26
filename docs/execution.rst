@@ -59,7 +59,7 @@ GEMmaker can be run on a `Kubernetes <https://kubernetes.io/>`__ cluster with mi
 Resuming a Previous Run
 ```````````````````````
 
-In the event of a failure you can resume a previous workflow run:
+In the event of a failure you can resume a previous workflow run by simply adding the ``-resume`` flag on the end of nextflow command you ran previously.  If you previously ran the command ``nextflow run main.nf`` then you would run the following to resume the workflow:
 
 .. code:: bash
 
