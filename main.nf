@@ -662,6 +662,7 @@ process fastq_merge {
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_COUNTING
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_FASTQC_1
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_FASTQ_FOR_CLEANING
+    set val(sample_id), val(1) into CLEAN_FASTQ_SIGNAL
 
   /**
    * This command tests to see if ls produces a 0 or not by checking
@@ -1132,12 +1133,39 @@ process clean_sra {
   """
 }
 
+FCLEAN = DOWNLOADED_FASTQ_FOR_CLEANING.mix(CLEAN_FASTQ_SIGNAL)
+FCLEAN.groupTuple(size: 2).set { FASTQ_CLEANUP_READY }
+
+process clean_fastq {
+  tag { sample_id }
+
+  input:
+    set val(sample_id), val(files_list) from FASTQ_CLEANUP_READY
+
+  script:
+  """
+  clean_work_files.sh ${files_list}
+  """
+}
 /**
- * Merge the merged fastq files with the signals from hista2,
- * kallisto, salmon and fastqc_1 to clean up merged fastq files. This
- * is only needed for remote files that were downloaded
- * and then merged into a single sample in the fastq_merge
- * process.
+ * The "signal" to clean up the merged FASTQ files consists of:
+ *
+ *   1. The list of FASTQ files in the work directory to clean up. This comes
+ *      from the MERGED_FASTQ_FOR_CLEANING channel.
+ *   2. The signal from the alignment tool that it is complete. This comes
+ *      from one of these channels:  CLEAN_MERGED_FASTQ_HISAT_SIGNAL,
+ *      CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL, CLEAN_MERGED_FASTQ_SALMON_SIGNAL.
+ *   3. The signal from the FastQC tool that it is complete. This comes
+ *      from this signal: CLEAN_MERGED_FASTQ_FASTQC_SIGNAL.
+ *
+ * Each element from these channels is a list (or tuple), where the key
+ * (first element) is the sample ID.  We use a groupTuple to ensure that
+ * three elements are combined together into a single tuple that gets emited
+ * into the MERGED_FASTQ_CLEANUP_READY channel once all 3 signals are received.
+ * Only when all the tuple has all three values is it emited.
+ *
+ * The first element of the tuple should be the files because they should
+ * always come first via the MERGED_FASTQ_FOR_CLEANING channel.
  */
 MFCLEAN = MERGED_FASTQ_FOR_CLEANING.mix(CLEAN_MERGED_FASTQ_HISAT_SIGNAL, CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL, CLEAN_MERGED_FASTQ_SALMON_SIGNAL, CLEAN_MERGED_FASTQ_FASTQC_SIGNAL)
 MFCLEAN.groupTuple(size: 3).set { MERGED_FASTQ_CLEANUP_READY }

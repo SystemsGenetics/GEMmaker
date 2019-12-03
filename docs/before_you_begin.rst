@@ -15,18 +15,3 @@ GEMmaker uses the ``nextflow.config`` file to provide customizations. The config
 - ``profiles``: Example profiles for running on different environments such as an HPC system.
 
 To use GEMmaker you must edit the ``nextflow.config`` file and update the settings appropriate for your data. The file is pre-configured for the example data that comes with GEMmaker. Appropriate values for the settings in the config file will be described in the :doc:`./configuration` section.
-
-Initial Setup
-`````````````
-Before proceeding, please clear out the example data that comes with GEMmaker. You can do so by executing the following commands from within the GEMmaker directory:
-
-.. code:: bash
-
-  # Remove the example FASTQ files
-  rm ./input/*.fastq
-
-  # Remove the example genome reference files
-  rm -rf ./inputs/reference/*
-
-  # Clear out the list of  remote NCBI SRA samples to retrieve.
-  echo "" > ./inputs/SRA_IDs.txt
