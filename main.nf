@@ -1129,7 +1129,7 @@ process clean_sra {
 
   script:
   """
-  clean_work_files.sh ${files_list}
+  clean_work_files.sh "${files_list[0]}"
   """
 }
 
@@ -1143,8 +1143,9 @@ process clean_fastq {
     set val(sample_id), val(files_list) from FASTQ_CLEANUP_READY
 
   script:
+  flist = files_list[0].join(" ")
   """
-  clean_work_files.sh ${files_list}
+  clean_work_files.sh "${flist}"
   """
 }
 /**
@@ -1183,8 +1184,9 @@ process clean_merged_fastq {
     params.output.publish_downloaded_fastq == false
 
   script:
+  flist = files_list[0].join(" ")
   """
-  clean_work_files.sh ${files_list}
+  clean_work_files.sh "${flist}"
   """
 }
 
@@ -1211,8 +1213,9 @@ process clean_trimmed_fastq {
     params.output.publish_trimmed_fastq == false
 
   script:
+  flist = files_list[0].join(" ")
   """
-  clean_work_files.sh ${files_list}
+  clean_work_files.sh "${flist}"
   """
 }
 
@@ -1239,7 +1242,7 @@ process clean_sam {
 
   script:
   """
-  clean_work_files.sh ${files_list}
+  clean_work_files.sh "${files_list[0]}"
   """
 }
 
@@ -1266,7 +1269,7 @@ process clean_bam {
 
   script:
   """
-  clean_work_files.sh ${files_list}
+  clean_work_files.sh "${files_list[0]}"
   """
 }
 
@@ -1291,7 +1294,7 @@ process clean_kallisto_ga {
 
   script:
   """
-  clean_work_dirs.sh ${directory}
+  clean_work_dirs.sh "${directory[0]}"
   """
 }
 
@@ -1316,7 +1319,7 @@ process clean_salmon_ga {
 
   script:
   """
-  clean_work_files.sh ${files_list}
+  clean_work_files.sh "${files_list[0]}"
   """
 }
 
@@ -1341,7 +1344,8 @@ process clean_stringtie_ga {
     params.output.publish_stringtie_gtf_and_ga == false
 
   script:
+  flist = files_list[0].join(" ")
   """
-  clean_work_files.sh ${files_list}
+  clean_work_files.sh "${flist}"
   """
 }
