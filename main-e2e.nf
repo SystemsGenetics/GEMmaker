@@ -150,7 +150,7 @@ if (selected_tool == 2)
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.index_files}").collect()
+HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.index_dir}/*").collect()
 KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}/${params.input.kallisto.index_file}").collect()
 SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
@@ -627,7 +627,7 @@ process create_gem {
   script:
   """
   # FPKM format is only generated if hisat2 is used
-  if [[ ${params.output.publish_fpkm} == true && ${params.input.salmon.enable} == hisat2 ]]; then
+  if [[ ${params.output.publish_fpkm} == true && ${params.input.hisat2.enable} == true ]]; then
     create-gem.py \
       --sources ${workflow.launchDir}/${params.output.dir} \
       --prefix ${params.project.machine_name} \
