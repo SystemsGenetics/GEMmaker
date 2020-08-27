@@ -19,7 +19,7 @@
 println """\
 
 ===================================
-G E M M A K E R   P I P E L I N E
+ G E M M A K E R   P I P E L I N E
 ===================================
 
 Workflow Information:
@@ -34,22 +34,22 @@ Workflow Information:
 
 Input Parameters:
 -----------------
-  Remote fastq list path:     ${params.input.remote_list_path}
-  Local sample glob:          ${params.input.local_samples_path}
+  Remote fastq list path:     ${params.input.input_data_dir}/${params.input.remote_sample_list}
+  Local sample glob:          ${params.input.input_data_dir}/${params.input.local_sample_files}
 
 
 Quantification Tool Input:
 --------------------------
-
   Use Hisat2:                 ${params.input.hisat2.enable}
   Hisat2 Index Prefix:        ${params.input.reference_name}
   Hisat2 GTF File:            ${params.input.hisat2.gtf_file}
+  Hisat2 Index Directory:     ${params.input.hisat2.index_dir}
 
   Use Kallisto:               ${params.input.kallisto.enable}
   Kallisto Index File:        ${params.input.kallisto.index_file}
 
   Use Salmon:                 ${params.input.salmon.enable}
-  Salmon Index File:          ${params.input.salmon.index_dir}
+  Salmon Index Directory:     ${params.input.salmon.index_dir}
 
 
 Output Parameters:
@@ -294,37 +294,27 @@ process process_sample {
     # download SRA files from NCBI
     SRR_IDS="${remote_ids.join(' ')}"
 
-    for id in \$SRR_IDS; do
-      ascp_path=`which ascp`
-      prefetch -v --max-size 50G --output-directory . --ascp-path "\$ascp_path|\$ASPERA_KEY" --ascp-options "-k 1 -T -l 1000m" \$id
-    done
+    retrieve_sra.py \${SRR_IDS}
 
     # extract FASTQ files from SRA files
     SRA_FILES=\$(ls *.sra)
 
-    for sra_file in \$SRA_FILES; do
-      fastq-dump --split-files \$sra_file
-    done
+    sra2fastq.py \${SRA_FILES}
 
     # remove SRA files if they will not be published
     if [[ ${params.output.publish_sra} == false ]]; then
-      rm -f \$SRA_FILES
+      rm -f \${SRA_FILES}
     fi
 
-    # merge the FASTQ files from each run in the experiment
+    # determine list of downloaded FASTQ files
     DOWNLOADED_FASTQ_FILES=\$(ls *.fastq)
 
-    if ls *_1.fastq >/dev/null 2>&1; then
-      cat *_1.fastq >> "${sample_id}_1.fastq"
-    fi
-
-    if ls *_2.fastq >/dev/null 2>&1; then
-      cat *_2.fastq >> "${sample_id}_2.fastq"
-    fi
+    # merge the FASTQ files from each run in the experiment
+    fastq_merge.sh ${sample_id}
 
     # remove downloaded FASTQ files if they will not be published
     if [[ ${params.output.publish_downloaded_fastq} == false ]]; then
-      rm -f \$DOWNLOADED_FASTQ_FILES
+      rm -f \${DOWNLOADED_FASTQ_FILES}
     fi
 
   # for local samples, fetch FASTQ files from filesystem
@@ -335,116 +325,32 @@ process process_sample {
   # perform fastqc on raw FASTQ files
   MERGED_FASTQ_FILES=\$(ls ${sample_id}_?.fastq)
 
-  fastqc \$MERGED_FASTQ_FILES
+  fastqc \${MERGED_FASTQ_FILES}
 
-  # use hisat2 for alignment
+  # use hisat2 for alignment if specified
   if [[ ${params.input.hisat2.enable} == "true" ]]; then
     # perform trimmomatic on all fastq files
-    # This script calculates average length of fastq files.
-    total=0
-
-    # This if statement checks if the data is single or paired data, and checks length accordingly
-    # This script returns 1 number, which can be used for the minlen in trimmomatic
-    if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
-      for fastq in ${sample_id}_1.fastq ${sample_id}_2.fastq; do
-        a=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' \$fastq \
-        | sort \
-        | awk '{ print \$0, \$1*\$2}' \
-        | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
-      total=(\$a + \$total)
-      done
-      total=( \$total / 2 )
-      minlen=\$total
-
-    elif [ -e ${sample_id}_1.fastq ]; then
-      minlen=`awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' ${sample_id}_1.fastq \
-        | sort \
-        | awk '{ print \$0, \$1*\$2}' \
-        | awk '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * ${params.software.trimmomatic.MINLEN})} '`
-    fi
-
-    if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
-      java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
-        PE \
-        -threads ${task.cpus} \
-        ${params.software.trimmomatic.quality} \
-        ${sample_id}_1.fastq \
-        ${sample_id}_2.fastq \
-        ${sample_id}_1p_trim.fastq \
-        ${sample_id}_1u_trim.fastq \
-        ${sample_id}_2p_trim.fastq \
-        ${sample_id}_2u_trim.fastq \
-        ILLUMINACLIP:${params.software.trimmomatic.clip_path}:2:40:15 \
-        LEADING:${params.software.trimmomatic.LEADING} \
-        TRAILING:${params.software.trimmomatic.TRAILING} \
-        SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
-        MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
-    else
-      # For ease of the next steps, rename the reverse file to the forward.
-      # since these are non-paired it really shouldn't matter.
-      if [ -e ${sample_id}_2.fastq ]; then
-        mv ${sample_id}_2.fastq ${sample_id}_1.fastq
-      fi
-      # Now run trimmomatic
-      java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
-        SE \
-        -threads ${task.cpus} \
-        ${params.software.trimmomatic.quality} \
-        ${sample_id}_1.fastq \
-        ${sample_id}_1u_trim.fastq \
-        ILLUMINACLIP:${fasta_adapter}:2:40:15 \
-        LEADING:${params.software.trimmomatic.LEADING} \
-        TRAILING:${params.software.trimmomatic.TRAILING} \
-        SLIDINGWINDOW:${params.software.trimmomatic.SLIDINGWINDOW} \
-        MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
-    fi
+    trimmomatic.sh ${sample_id} ${params.software.trimmomatic.MINLEN} ${task.cpus} ${fasta_adapter} ${params.software.trimmomatic.LEADING} ${params.software.trimmomatic.TRAILING} ${params.software.trimmomatic.SLIDINGWINDOW} ${params.software.trimmomatic.quality}
 
     # remove merged fastq files if they will not be published
     if [[ ${params.output.publish_downloaded_fastq} == false ]]; then
-      rm -f \$MERGED_FASTQ_FILES
+      rm -f \${MERGED_FASTQ_FILES}
     fi
 
     # perform fastqc on all trimmed fastq files
     TRIMMED_FASTQ_FILES=\$(ls ${sample_id}_*trim.fastq)
 
-    fastqc \$TRIMMED_FASTQ_FILES
+    fastqc \${TRIMMED_FASTQ_FILES}
 
     # perform hisat2 alignment of fastq files to a genome reference
-    if [ -e ${sample_id}_2p_trim.fastq ]; then
-      hisat2 \
-        -x ${params.input.reference_name} \
-        --no-spliced-alignment \
-        -q \
-        -1 ${sample_id}_1p_trim.fastq \
-        -2 ${sample_id}_2p_trim.fastq \
-        -U ${sample_id}_1u_trim.fastq,${sample_id}_2u_trim.fastq \
-        -S ${sample_id}_vs_${params.input.reference_name}.sam \
-        -t \
-        -p ${task.cpus} \
-        --un ${sample_id}_un.fastq \
-        --dta-cufflinks \
-        --new-summary \
-        --summary-file ${sample_id}_vs_${params.input.reference_name}.sam.log
-    else
-      hisat2 \
-        -x ${params.input.reference_name} \
-        --no-spliced-alignment \
-        -q \
-        -U ${sample_id}_1u_trim.fastq \
-        -S ${sample_id}_vs_${params.input.reference_name}.sam \
-        -t \
-        -p ${task.cpus} \
-        --un ${sample_id}_un.fastq \
-        --dta-cufflinks \
-        --new-summary \
-        --summary-file ${sample_id}_vs_${params.input.reference_name}.sam.log
-    fi
+    hisat2.sh ${sample_id} ${params.input.reference_name} ${task.cpus}
 
+    # remove unused hisat2 output files
     rm -f ${sample_id}_un.fastq
 
     # remove trimmed fastq files if they will not be published
     if [[ ${params.output.publish_trimmed_fastq} == false ]]; then
-      rm -f \$TRIMMED_FASTQ_FILES
+      rm -f \${TRIMMED_FASTQ_FILES}
     fi
 
     # sort the SAM alignment file and convert it to BAM
@@ -478,92 +384,36 @@ process process_sample {
     fi
 
     # generate raw counts from hisat2/stringtie
-    # Run the prepDE.py script provided by stringtie to get the raw counts.
-    echo "${sample_id}\t./${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf" > gtf_files
-    prepDE.py -i gtf_files -g ${sample_id}_vs_${params.input.reference_name}.raw.pre
+    hisat2_fpkm_tpm.sh ${params.output.publish_fpkm} ${sample_id} ${params.input.reference_name} ${params.output.publish_tpm} ${params.output.publish_raw}
 
-    # Reformat the raw file to be the same as the TPM/FKPM files.
-    cat ${sample_id}_vs_${params.input.reference_name}.raw.pre | \
-      grep -v gene_id | \
-      perl -pi -e "s/,/\\t/g" > ${sample_id}_vs_${params.input.reference_name}.Hisat2.raw
-
-    # generate the final FPKM and TPM files
-    if [[ ${params.output.publish_fpkm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.fpkm
-    fi
-
-    if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga > ${sample_id}_vs_${params.input.reference_name}.Hisat2.tpm
-    fi
-
+    # remove stringtie output files if they will not be published
     if [[ ${params.output.publish_stringtie_gtf_and_ga} == false ]]; then
       rm -rf *.ga
       rm -rf *.gtf
     fi
 
-  # or use kallisto
+  # or use KALLISTO if specified
   elif [[ ${params.input.kallisto.enable} == "true" ]]; then
-    # perform Kallisto alignment of fastq files
-    if [ -e ${sample_id}_2.fastq ]; then
-      kallisto quant \
-        -i  ${indexes} \
-        -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
-        ${sample_id}_1.fastq \
-        ${sample_id}_2.fastq > ${sample_id}.kallisto.log 2>&1
-    else
-      kallisto quant \
-        --single \
-        -l 70 \
-        -s .0000001 \
-        -i ${indexes} \
-        -o ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga \
-        ${sample_id}_1.fastq > ${sample_id}.kallisto.log 2>&1
-    fi
+    # perform KALLISTO alignment of fastq files
+    kallisto.sh ${sample_id} ${indexes} ${params.input.reference_name}
 
-    # generate TPM and raw count files
-    if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.tpm
-    fi
+    # generate final TPM and raw count files
+    kallisto_tpm.sh ${sample_id} ${params.output.publish_tpm} ${params.output.publish_raw} ${params.input.reference_name}
 
-    if [[ ${params.output.publish_raw} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Kallisto.ga/abundance.tsv > ${sample_id}_vs_${params.input.reference_name}.Kallisto.raw
-    fi
-
+    # remove gene abundance files if they will not be published
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
       rm -rf *.ga
     fi
 
-  # or use salmon
+  # or use SALMON if specified
   elif [[ ${params.input.salmon.enable} == "true" ]]; then
     # perform SALMON alignment of fastq files
-    if [ -e ${sample_id}_2.fastq ]; then
-      salmon quant \
-        -i . \
-        -l A \
-        -1 ${sample_id}_1.fastq \
-        -2 ${sample_id}_2.fastq \
-        -p ${task.cpus} \
-        -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
-        --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
-    else
-      salmon quant \
-        -i . \
-        -l A \
-        -r ${sample_id}_1.fastq \
-        -p ${task.cpus} \
-        -o ${sample_id}_vs_${params.input.reference_name}.Salmon.ga \
-        --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
-    fi
+    salmon.sh ${sample_id} ${task.cpus} ${params.input.reference_name}
 
     # generate final TPM and raw count files
-    if [[ ${params.output.publish_tpm} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.tpm
-    fi
+    salmon_tpm.sh ${params.output.publish_tpm} ${sample_id} ${params.input.reference_name} ${params.output.publish_raw}
 
-    if [[ ${params.output.publish_raw} == true ]]; then
-      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf > ${sample_id}_vs_${params.input.reference_name}.Salmon.raw
-    fi
-
+    # remove gene abundance files if they will not be published
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
       rm -rf `find *.ga -type f | egrep -v "aux_info/meta_info.json|/libParams/flenDist.txt"`
     fi
@@ -626,26 +476,6 @@ process create_gem {
 
   script:
   """
-  # FPKM format is only generated if hisat2 is used
-  if [[ ${params.output.publish_fpkm} == true && ${params.input.hisat2.enable} == true ]]; then
-    create-gem.py \
-      --sources ${workflow.launchDir}/${params.output.dir} \
-      --prefix ${params.project.machine_name} \
-      --type FPKM
-  fi;
-
-  if [[ ${params.output.publish_raw} == true ]]; then
-    create-gem.py \
-      --sources ${workflow.launchDir}/${params.output.dir} \
-      --prefix ${params.project.machine_name} \
-      --type raw
-  fi
-
-  if [[ ${params.output.publish_tpm} == true ]]; then
-    create-gem.py \
-      --sources ${workflow.launchDir}/${params.output.dir} \
-      --prefix ${params.project.machine_name} \
-      --type TPM
-  fi
+  create_gem.sh ${params.output.publish_fpkm} ${params.input.hisat2.enable} ${workflow.launchDir} ${params.output.dir} ${params.project.machine_name} ${params.output.publish_raw} ${params.output.publish_tpm}
   """
 }

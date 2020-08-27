@@ -163,7 +163,7 @@ GTF_FILE = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2
 
 
 /**
- * Local Sample Input.FASTA_ADAPTER
+ * Local Sample Input.
  * This checks the folder that the user has given
  */
 if (params.input.local_sample_files == "none") {
@@ -671,7 +671,7 @@ process fastq_merge {
    */
   script:
   """
-  fastq_merge.sh ${sample_id} ${params.input.publish_downloaded_fastq}
+  fastq_merge.sh ${sample_id}
   """
 }
 
@@ -814,8 +814,7 @@ process salmon_tpm {
 
   script:
   """
-  salmon_tpm.sh ${params.output.publish_tpm} ${sample_id} \
-  ${params.input.reference_name} ${params.output.publish_raw}
+  salmon_tpm.sh ${params.output.publish_tpm} ${sample_id} ${params.input.reference_name} ${params.output.publish_raw}
   """
 }
 
