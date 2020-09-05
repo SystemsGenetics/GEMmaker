@@ -4,7 +4,6 @@
 # them together
 
 sample_id="$1"
-publish="$2"
 
 
 # First, concatenate all of the set 1 files
