@@ -285,7 +285,7 @@ process retrieve_sra_metadata {
 
   script:
     """
-    retrieve_sra_metadata.py --run_id_file ${srr_file} --meta_dir ${workflow.launchDir}/${params.output.dir} --skip_file ${params.input.input_data_dir}/${params.input.skip_list_path}
+    retrieve_sra_metadata.py --run_id_file ${srr_file} --meta_dir ${workflow.launchDir}/${params.output.dir} --skip_file ${workflow.launchDir}/${params.input.input_data_dir}/${params.input.skip_list_path}
     """
 }
 
