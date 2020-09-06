@@ -20,16 +20,21 @@ import sys
 import urllib
 import xmltodict
 import pprint
+import pathlib
+import os
 
 
 
-def download_runs_meta(run_ids, page_size=100):
+
+
+def download_runs_meta(run_ids, meta_dir, page_size=100):
     """
     Downloads the metadata for the runs contained the input file.
 
     :param run_ids: the list of run IDs
     """
     experiments = []
+    found_runs = []
 
     # query the run IDs in "pages" because the NCBI endpoint is fragile
     page = 0
@@ -49,7 +54,6 @@ def download_runs_meta(run_ids, page_size=100):
         request = urllib.request.Request(url, data)
 
         sys.stderr.write("Fetching IDs: %s.  " % (",".join(ids)))
-
 
         # parse the XML response
         response_obj = urllib.request.urlopen(request)
@@ -104,24 +108,26 @@ def download_runs_meta(run_ids, page_size=100):
             run_id = run["@accession"]
             if run_id in run_ids:
                 num_runs_found = num_runs_found + 1
+                found_runs.append(run_id)
+
                 # Write out the experiment details in JSON metadata files
-                save_ncbi_meta(experiment, sample, run)
+                save_ncbi_meta(experiment, sample, run, meta_dir)
 
-                # Convert the data to a JSON array of controlled vocabulary terms
-                save_gemmaker_meta(experiment, sample, run)
-
-                # Write in CSV format to stdout
-                sys.stdout.write("%s,%s\n" % (run_id, exp_id))
             else:
                 sys.stderr.write('Notice: the run, %s, is part of the experiment %s but not included in the input file of runs' % (run_id, exp_id))
 
     if (num_runs_found != len(run_ids)):
-        expstr = pprint.pformat(experiment, indent=2)
-        raise Exception ('There was an unknown problem retrieving metadata for all of the runs provided: %d != %d. Response: %s' % (num_runs_found, len(run_ids), expstr))
+        # Found out which runs are missing metadata.
+        missing_runs = set(run_ids).difference(set(found_runs))
+        raise Exception ('Could not retrieve metadata for the all runs: %d != %d. Missing runs: %s' % (num_runs_found, len(run_ids), ' '.join(missing_runs)))
 
     sys.stderr.write("Metadata for %d runs retrieved\n" % (num_runs_found))
 
-def save_ncbi_meta(experiment, sample, run):
+
+
+
+
+def save_ncbi_meta(experiment, sample, run, meta_dir):
     """
     Creates .meta.json files containing run, experiment and sample info.
 
@@ -129,155 +135,120 @@ def save_ncbi_meta(experiment, sample, run):
     :param sample: A dictionary containing the sample metadata.
     :param run: A dictionary containing the run metadta.
     """
-    # Write out the metadata for the experiment
+    # Write out the metadata for the experiment if it doesn't exist.
     exp_id = experiment["EXPERIMENT"]["IDENTIFIERS"]["PRIMARY_ID"]
-    expfile = open("%s.ncbi.meta.json" % (exp_id), "w")
-    json.dump(experiment, expfile)
+    exp_dir = get_accession_directory(meta_dir, exp_id)
+    exp_path = "%s/%s.ncbi.meta.json" % (exp_dir, exp_id)
+    if not os.path.exists(exp_path):
+        expfile = open(exp_path, "w")
+        json.dump(experiment, expfile)
+        expfile.close()
 
-    # Write out the sample metadata file
+    # Write out the sample metadata file if it doesn't exist
     sample_id = sample["@accession"]
-    samplefile = open("%s.ncbi.meta.json" % (sample_id), "w")
-    json.dump(sample, samplefile)
+    sample_dir = get_accession_directory(meta_dir, sample_id)
+    sample_path = "%s/%s.ncbi.meta.json" % (sample_dir, sample_id)
+    if not os.path.exists(sample_path):
+        samplefile = open(sample_path, "w")
+        json.dump(sample, samplefile)
+        samplefile.close()
 
-    # Write out the run metadata file
+    # Write out the run metadata file if it doesn't exist.
     run_id = run["@accession"]
-    runfile = open("%s.ncbi.meta.json" % (run_id), "w")
-    json.dump(run, runfile)
+    run_dir = get_accession_directory(meta_dir, run_id)
+    run_path = "%s/%s.ncbi.meta.json" % (run_dir, run_id)
+    if not os.path.exists(run_path):
+        runfile = open(run_path, "w")
+        json.dump(run, runfile)
+        runfile.close()
 
 
 
-def save_gemmaker_meta(experiment, sample, run):
+
+
+def get_accession_directory(meta_dir, accession):
     """
-    Writes a file using controlled vocabulary terms for metadata.
+    Given an NCBI SRA accession number, generate a directory path for it.
 
-    This function creates both a JSON and tab delimited metadata file that
-    maps metadata from NCBI to known controlled vocabulary terms. The purpose
-    of this is to help ensure uniformity in metadata details between
-    runs of GEMmaker and between different sample sets.
+    This function breaks each accession into 3-character string and
+    creates a directory heirarchy based on the sequence of those sets of
+    characters. If the directory does not exist it will be created.
 
-    :param experiment: A dictionary containing the experiment metadata.
-    :param sample: A dictionary containing the sample metadata.
-    :param run: A dictionary containing the run metatdata.
+    :param meta_dir:  The base directory where metadata files will be saved.
+    :param accession: The NCBI SRA accession ID (experiment, run, sample, etc.)
     """
-    # Now that we have all the metadata loaded create the non-nested
-    # annotation dictionary
-    annots = {}
+    dir = meta_dir + '/SRA_META/' + '/'.join([accession[i:i+3] for i in range(0, len(accession), 3)])
+    pathlib.Path(dir).mkdir(parents=True, exist_ok=True)
+    return dir
 
-    # Run info
-    annots["data:2091"] = run["@accession"]
 
-    # The Experiment
-    annots["local:SRX_id"] = experiment["EXPERIMENT"]["@accession"]
 
-    # Biological Sample
-    annots["sep:00195"] = {}
-    annots["sep:00195"]["data:2091"] = sample.get("@accession", "")
-    annots["sep:00195"]["schema:title"] = sample.get("TITLE", "")
-    annots["sep:00195"]["schema:name"] = sample.get("@alias", "")
-    annots["sep:00195"]["obi:organism"] = {}
-    annots["sep:00195"]["obi:organism"]["rdfs:label"] = sample["SAMPLE_NAME"].get("SCIENTIFIC_NAME", "")
-    annots["sep:00195"]["obi:organism"]["NCIT:C43459"] = sample["SAMPLE_NAME"].get("SCIENTIFIC_NAME", "")
-    annots["sep:00195"]["obi:organism"]["data:1179"] = sample["SAMPLE_NAME"].get("TAXON_ID", "")
 
-    # Set defaults
-    annots["sep:00195"]["NCIT:C25150"] = ""
-    annots["sep:00195"]["NCIT:C16631"] = ""
-    annots["sep:00195"]["NCIT:C12801"] = ""
-    annots["sep:00195"]["NCIT:C43531"] = ""
-    annots["NCIT:C25206"] = ""
-    annots["EFO:0000721"] = ""
-    annots["EFO:0000727"] = ""
 
-    # Iterate through the sample attributes
-    if "SAMPLE_ATTRIBUTES" in sample and "SAMPLE_ATTRIBUTE" in sample["SAMPLE_ATTRIBUTES"]:
-      attrs = sample["SAMPLE_ATTRIBUTES"]["SAMPLE_ATTRIBUTE"]
-      if not isinstance(attrs, list):
-        attrs = [attrs]
+def find_downloaded_runs(meta_dir, run_ids):
+    """
+    Checks if runs have already been downloaded.
 
-      for attr in attrs:
-        # Add the cultivar
-        if attr["TAG"] == "cultivar":
-          if attr["VALUE"] != "missing":
-            annots["sep:00195"]["obi:organism"]["local:infraspecific_type"] = "cultivar"
-            annots["sep:00195"]["obi:organism"]["TAXRANK:0000045"] = attr["VALUE"]
+    :param mata_dir: The location where metafiles are stored.
+    :param run_ids: The list of SRA run IDs.
 
-        # Add the age
-        elif attr["TAG"] == "age":
-          if attr["VALUE"] != "missing":
-            annots["sep:00195"]["NCIT:C25150"] = attr["VALUE"]
+    :return: A list of run IDs that do not have metadata.
+    """
+    missing_runs = []
 
-        # Add the genotype
-        elif attr["TAG"] == "Genotype" or attr["TAG"] == "genotype":
-          if attr["VALUE"] != "missing":
-            annots["sep:00195"]["NCIT:C16631"] = attr["VALUE"]
+    for run_id in run_ids:
+        run_dir = get_accession_directory(meta_dir, run_id)
+        run_path = "%s/%s.ncbi.meta.json" % (run_dir, run_id)
+        if not os.path.exists(run_path):
+            missing_runs.append(run_id)
+    return missing_runs
 
-        # Add the tissue
-        elif attr["TAG"] == "tissue":
-          if attr["VALUE"] != "missing":
-            annots["sep:00195"]["NCIT:C12801"] = attr["VALUE"]
 
-        # Add the developmental stage
-        elif attr["TAG"] == "dev_stage":
-          if attr["VALUE"] != "missing":
-            annots["sep:00195"]["NCIT:C43531"] = attr["VALUE"]
 
-        # Add the temperature
-        elif attr["TAG"] == "temp":
-          if attr["VALUE"] != "missing":
-            annots["NCIT:C25206"] = attr["VALUE"]
 
-        # Add the time
-        elif attr["TAG"] == "time":
-          if attr["VALUE"] != "missing":
-            annots["EFO:0000721"] = attr["VALUE"]
 
-        # Add the treatment
-        elif attr["TAG"] == "treatment":
-          if attr["VALUE"] != "missing":
-            annots["EFO:0000727"] = attr["VALUE"]
+def map_run_to_exp(meta_dir, run_ids):
+    """
+    Performs a looking for each run to get it's experiment and prints it.
 
-        else:
-          sys.stderr.write("Unhandled sample attribute: \"%s\": \"%s\"\n" % (attr["TAG"], attr["VALUE"]))
+    Prints the results to STDOUT
 
-    # Save the heirarchical JSON metadata from GEMmaker
-    jsonfilename = "%s.GEMmaker.meta.json" % (annots["local:SRX_id"])
-    jsonfile = open(jsonfilename, "w")
-    json.dump(annots, jsonfile)
+    :param mata_dir: The location where metafiles are stored.
+    :param run_ids: The list of SRA run IDs.
+    """
 
-    # Save a flattened CSV file
-    tabfilename = "%s.GEMmaker.meta.tab" % (annots["local:SRX_id"])
-    tabfile = codecs.open(tabfilename, "w", "utf-8")
+    for run_id in run_ids:
+        run_dir = get_accession_directory(meta_dir, run_id)
+        run_path = "%s/%s.ncbi.meta.json" % (run_dir, run_id)
+        if os.path.exists(run_path):
+            with open(run_path, "r") as run_file:
+                run = json.load(run_file)
+                exp_id = run['EXPERIMENT_REF']['@accession']
+                # Write in CSV format to stdout
+                sys.stdout.write("%s,%s\n" % (run_id, exp_id))
 
-    fields = [
-        annots["data:2091"],
-        annots["local:SRX_id"],
-        annots["sep:00195"]["data:2091"],
-        annots["sep:00195"]["schema:title"],
-        annots["sep:00195"]["schema:name"],
-        annots["sep:00195"]["obi:organism"]["NCIT:C43459"],
-        annots["sep:00195"]["NCIT:C25150"],
-        annots["sep:00195"]["NCIT:C43531"],
-        annots["sep:00195"]["NCIT:C16631"],
-        annots["sep:00195"]["NCIT:C12801"],
-        annots["NCIT:C25206"],
-        annots["EFO:0000721"],
-        annots["EFO:0000727"]
-    ]
 
-    tabfile.write("\t".join(fields) + "\n")
 
 
 
 if __name__ == "__main__":
+
+    # Holds the mapping of SRA runs to experiments.
+    run_to_exp = {}
+
     # parse command-line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("SRR_ID_FILE", help="SRA run ID file")
+    parser.add_argument("--run_id_file", help="SRA run ID file", required=True)
+    parser.add_argument("--meta_dir", help="The directory were meta data should be stored", required=True)
     parser.add_argument("--page-size", type=int, default=100, help="number of SRA run IDs to query at a time", dest="PAGE_SIZE")
 
     args = parser.parse_args()
 
+    # Get the meta output dir
+    meta_dir = args.meta_dir
+
     # load SRA run IDs
-    srr_file = open(args.SRR_ID_FILE, "r")
+    srr_file = open(args.run_id_file, "r")
     run_ids = [line.strip() for line in srr_file]
     run_ids = [run_id for run_id in run_ids if run_id]
 
@@ -288,5 +259,11 @@ if __name__ == "__main__":
       if not sra_pattern.match(run_id):
           raise ValueError("Improper SRA run ID: %s" % (run_id))
 
-    # download metadata for each SRA run ID
-    download_runs_meta(run_ids, page_size=args.PAGE_SIZE)
+    # Find runs whose metadata has already been retreived.
+    missing_runs = find_downloaded_runs(meta_dir, run_ids)
+
+    # Download metadata for each SRA run ID that is not already present
+    download_runs_meta(missing_runs, meta_dir, args.PAGE_SIZE)
+
+    # Now iterate through the metadata and and map runs to experiments.
+    map_run_to_exp(meta_dir, run_ids)

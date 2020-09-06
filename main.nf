@@ -282,11 +282,10 @@ process retrieve_sra_metadata {
 
   output:
     stdout REMOTE_SAMPLES_LIST
-    file "*.GEMmaker.meta.*"
 
   script:
     """
-    retrieve_sra_metadata.py ${srr_file}
+    retrieve_sra_metadata.py --run_id_file ${srr_file} --meta_dir ${workflow.launchDir}/${params.output.dir}
     """
 }
 
