@@ -262,7 +262,7 @@ if __name__ == "__main__":
     if args.skip_file and os.path.exists(args.skip_file):
         skip_file = open(args.skip_file, "r")
         skip_ids = [line.strip() for line in skip_file]
-        skip_ids = [skip_id for run_id in skip_ids if skip_id]
+        skip_ids = [skip_id for skip_id in skip_ids if skip_id]
         skip_file.close()
         run_ids = list(set(run_ids).difference(set(skip_ids)))
 
@@ -277,8 +277,8 @@ if __name__ == "__main__":
     missing_runs = find_downloaded_runs(meta_dir, run_ids)
 
     if len(run_ids) - len(missing_runs) > 0:
-        sys.stderr.write("Found %d SRA run file(s) already retreived. Skipping these.\n" % (len(missing_runs)))
-      
+        sys.stderr.write("Found %d SRA run file(s) already retreived. Skipping retreival of these.\n" % (len(run_ids) - len(missing_runs)))
+
     # Download metadata for each SRA run ID that is not already present
     download_runs_meta(missing_runs, meta_dir, args.PAGE_SIZE)
 
