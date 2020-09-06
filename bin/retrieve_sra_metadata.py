@@ -56,7 +56,11 @@ def download_runs_meta(run_ids, meta_dir, page_size=100):
         sys.stderr.write("Fetching IDs: %s.  " % (",".join(ids)))
 
         # parse the XML response
-        response_obj = urllib.request.urlopen(request)
+        try: response_obj = urllib.request.urlopen(request)
+        except urllib.error.URLError as e:
+            sys.stderr.write("ERROR Retrieving SRA Metadata: %s\n" % (e.reason))
+            sys.exit(1)
+
         response_xml = response_obj.read().decode(response_obj.headers.get_content_charset())
         response = xmltodict.parse(response_xml)
 
@@ -236,9 +240,10 @@ if __name__ == "__main__":
     # Holds the mapping of SRA runs to experiments.
     run_to_exp = {}
 
-    # parse command-line arguments
+    # Parse command-line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run_id_file", help="SRA run ID file", required=True)
+    parser.add_argument("--run_id_file", help="A file containing the SRA run IDs.", required=True)
+    parser.add_argument("--skip_file", help="A file containing the SRA run IDs to skip")
     parser.add_argument("--meta_dir", help="The directory were meta data should be stored", required=True)
     parser.add_argument("--page-size", type=int, default=100, help="number of SRA run IDs to query at a time", dest="PAGE_SIZE")
 
@@ -247,12 +252,21 @@ if __name__ == "__main__":
     # Get the meta output dir
     meta_dir = args.meta_dir
 
-    # load SRA run IDs
+    # Load SRA run IDs
     srr_file = open(args.run_id_file, "r")
     run_ids = [line.strip() for line in srr_file]
     run_ids = [run_id for run_id in run_ids if run_id]
+    srr_file.close()
 
-    # make sure that each SRA run ID is correct
+    # Load the file for skipping and remove any IDs to skip.
+    if args.skip_file and os.path.exists(args.skip_file):
+        skip_file = open(args.skip_file, "r")
+        skip_ids = [line.strip() for line in skip_file]
+        skip_ids = [skip_id for run_id in skip_ids if skip_id]
+        skip_file.close()
+        run_ids = list(set(run_ids).difference(set(skip_ids)))
+
+    # Make sure that each SRA run ID is correct
     sra_pattern = re.compile("^[SED]RR\d+$")
 
     for run_id in run_ids:
@@ -262,6 +276,9 @@ if __name__ == "__main__":
     # Find runs whose metadata has already been retreived.
     missing_runs = find_downloaded_runs(meta_dir, run_ids)
 
+    if len(run_ids) - len(missing_runs) > 0:
+        sys.stderr.write("Found %d SRA run file(s) already retreived. Skipping these.\n" % (len(missing_runs)))
+      
     # Download metadata for each SRA run ID that is not already present
     download_runs_meta(missing_runs, meta_dir, args.PAGE_SIZE)
 
