@@ -117,8 +117,8 @@ def download_https(run_id, urls):
         r.raw.decode_content = True
         with open("{}.sra".format(run_id), 'wb') as sra_file:
             shutil.copyfileobj(r.raw, sra_file) 
-    except Exception as e: 
-        print(e, file=sys.stderr)
+    except requests.exceptions.RequestException as e:
+        print(str(e), file=sys.stderr)
         ec = 1
     return ec 
 
