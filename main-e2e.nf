@@ -303,7 +303,6 @@ process process_sample {
   echo "#TRACE publish_sra=${params.output.publish_sra}}"
   echo "#TRACE publish_downloaded_fastq=${params.output.publish_downloaded_fastq}}"
   echo "#TRACE publish_trimmed_fastq=${params.output.publish_trimmed_fastq}}"
-  echo "#TRACE publish_sam=${params.output.publish_san}}"
   echo "#TRACE publish_bam=${params.output.publish_bam}}"
   echo "#TRACE publish_stringtie_gtf_and_ga=${params.output.publish_stringtie_gtf_and_ga}}"
   echo "#TRACE publish_gene_abundance=${params.output.publish_gene_abundance}}"
@@ -316,7 +315,7 @@ process process_sample {
     # download SRA files from NCBI
     echo "#TRACE n_remote_run_ids=${remote_ids.size()}"
 
-    retrieve_sra.py ${remote_ids.join(' ')}
+    retrieve_sra.py ${remote_ids.join(',')}
 
     # extract FASTQ files from SRA files
     echo "#TRACE sra_bytes=`stat -c '%s' *.sra | paste -sd+ | bc`"
