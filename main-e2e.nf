@@ -271,7 +271,7 @@ process process_sample {
   publishDir params.output.sample_dir, mode: params.output.publish_mode
 
   input:
-    set val(sample_id), val(type), val(remote_ids), val(local_files) from ALL_SAMPLES
+    set val(sample_id), val(sample_type), val(remote_ids), val(local_files) from ALL_SAMPLES
     file fasta_adapter from FASTA_ADAPTER
     file indexes from INDEXES
     file gtf_file from GTF_FILE
@@ -294,7 +294,7 @@ process process_sample {
   script:
   """
   # for remote samples, prepare FASTQ files from NCBI
-  if [[ "${type}" == "remote" ]]; then
+  if [[ "${sample_type}" == "remote" ]]; then
     # download SRA files from NCBI
     retrieve_sra.py ${remote_ids.join(' ')}
 
@@ -317,7 +317,7 @@ process process_sample {
     fi
 
   # for local samples, fetch FASTQ files from filesystem
-  elif [[ "${type}" == "local" ]]; then
+  elif [[ "${sample_type}" == "local" ]]; then
     cp ${local_files.join(' ')} .
   fi
 
