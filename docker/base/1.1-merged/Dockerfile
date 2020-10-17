@@ -63,8 +63,16 @@ RUN wget -q https://github.com/pachterlab/kallisto/releases/download/v0.45.0/kal
 
 
 
+# Install MultiQC
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
+
+RUN pip3 install -q https://github.com/ewels/MultiQC/archive/v1.8.zip
+
+
+
 # install python 3.7 modules
-RUN pip3 install -q numpy pandas requests xmltodict
+RUN pip3 install -q decorator>=4.3.0 networkx numpy pandas requests xmltodict
 
 
 
@@ -89,12 +97,15 @@ ENV PATH="$PATH:/usr/local/samtools-1.9/bin"
 
 
 
-# install SRA toolkit 2.9.6
-RUN wget -q https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.9.6/sratoolkit.2.9.6-ubuntu64.tar.gz \
-  && tar -xf sratoolkit.2.9.6-ubuntu64.tar.gz \
-  && mv sratoolkit.2.9.6-ubuntu64 /usr/local/sratoolkit.2.9.6
+# install sratoolkit 2.10.0
+RUN wget -q https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.10.0/sratoolkit.2.10.0-ubuntu64.tar.gz \
+  && tar -xf sratoolkit.2.10.0-ubuntu64.tar.gz \
+  && mv sratoolkit.2.10.0-ubuntu64 /usr/local/sratoolkit.2.10.0
 
-ENV PATH "$PATH:/usr/local/sratoolkit.2.9.6/bin"
+ENV PATH "$PATH:/usr/local/sratoolkit.2.10.0/bin"
+
+# The SRAToolkit needs a missing perl module
+RUN cpan install -T URI XML::LibXML
 
 
 
