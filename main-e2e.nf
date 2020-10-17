@@ -216,6 +216,8 @@ process retrieve_sra_metadata {
 
   script:
   """
+  >&2 echo "#TRACE n_remote_run_ids=`cat ${srr_file} | wc -l`"
+
   retrieve_sra_metadata.py ${srr_file}
   """
 }
@@ -293,12 +295,32 @@ process process_sample {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE sample_type=${sample_type}"
+  echo "#TRACE hisat2_enable=${params.input.hisat2.enable}}"
+  echo "#TRACE kallisto_enable=${params.input.kallisto.enable}}"
+  echo "#TRACE salmon_enable=${params.input.salmon.enable}}"
+  echo "#TRACE publish_sra=${params.output.publish_sra}}"
+  echo "#TRACE publish_downloaded_fastq=${params.output.publish_downloaded_fastq}}"
+  echo "#TRACE publish_trimmed_fastq=${params.output.publish_trimmed_fastq}}"
+  echo "#TRACE publish_sam=${params.output.publish_san}}"
+  echo "#TRACE publish_bam=${params.output.publish_bam}}"
+  echo "#TRACE publish_stringtie_gtf_and_ga=${params.output.publish_stringtie_gtf_and_ga}}"
+  echo "#TRACE publish_gene_abundance=${params.output.publish_gene_abundance}}"
+  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}}"
+  echo "#TRACE publish_tpm=${params.output.publish_tpm}}"
+  echo "#TRACE publish_raw=${params.output.publish_raw}}"
+
   # for remote samples, prepare FASTQ files from NCBI
   if [[ "${sample_type}" == "remote" ]]; then
     # download SRA files from NCBI
+    echo "#TRACE n_remote_run_ids=${remote_ids.size()}"
+
     retrieve_sra.py ${remote_ids.join(' ')}
 
     # extract FASTQ files from SRA files
+    echo "#TRACE sra_bytes=`stat -c '%s' *.sra | paste -sd+ | bc`"
+
     sra2fastq.py *.sra
 
     # remove SRA files if they will not be published
@@ -323,12 +345,20 @@ process process_sample {
 
   # perform fastqc on raw FASTQ files
   MERGED_FASTQ_FILES=\$(ls ${sample_id}_?.fastq)
+  echo "#TRACE fastq_lines=`cat \${MERGED_FASTQ_FILES} | wc -l`"
 
   fastqc \${MERGED_FASTQ_FILES}
 
   # use hisat2 for alignment if specified
   if [[ ${params.input.hisat2.enable} == "true" ]]; then
     # perform trimmomatic on all fastq files
+    echo "#TRACE n_cpus=${task.cpus}"
+    echo "#TRACE minlen=${params.software.trimmomatic.MINLEN}"
+    echo "#TRACE leading=${params.software.trimmomatic.LEADNING}"
+    echo "#TRACE trailing=${params.software.trimmomatic.TRAILING}"
+    echo "#TRACE slidingwindow=${params.software.trimmomatic.SLIDINGWINDOW}"
+    echo "#TRACE fasta_lines=`cat ${fasta_adapter} | wc -l`"
+
     trimmomatic.sh \
       ${sample_id} \
       ${params.software.trimmomatic.MINLEN} \
@@ -346,10 +376,13 @@ process process_sample {
 
     # perform fastqc on all trimmed fastq files
     TRIMMED_FASTQ_FILES=\$(ls ${sample_id}_*trim.fastq)
+    echo "#TRACE trimmed_fastq_lines=`cat \${TRIMMED_FASTQ_FILES} | wc -l`"
 
     fastqc \${TRIMMED_FASTQ_FILES}
 
     # perform hisat2 alignment of fastq files to a genome reference
+    echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | paste -sd+ | bc`"
+
     hisat2.sh \
       ${sample_id} \
       ${params.input.reference_name} \
@@ -364,6 +397,8 @@ process process_sample {
     fi
 
     # sort the SAM alignment file and convert it to BAM
+    echo "#TRACE sam_lines=`cat *.sam | wc -l`"
+
     samtools sort \
       -o ${sample_id}_vs_${params.input.reference_name}.bam \
       -O bam \
@@ -374,10 +409,14 @@ process process_sample {
     rm -f *.sam
 
     # index BAM alignment file
+    echo "#TRACE bam_bytes=`stat -c '%s' *.bam`"
+
     samtools index ${sample_id}_vs_${params.input.reference_name}.bam
     samtools stats ${sample_id}_vs_${params.input.reference_name}.bam > ${sample_id}_vs_${params.input.reference_name}.bam.log
 
     # generate expression-level transcript abundance
+    echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
+
     stringtie \
       -v \
       -p ${task.cpus} \
@@ -395,6 +434,9 @@ process process_sample {
     fi
 
     # generate raw counts from hisat2/stringtie
+    echo "#TRACE ga_lines=`cat *.ga | wc -l`"
+    echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
+
     hisat2_fpkm_tpm.sh \
       ${params.output.publish_fpkm} \
       ${sample_id} \
@@ -411,6 +453,8 @@ process process_sample {
   # or use KALLISTO if specified
   elif [[ ${params.input.kallisto.enable} == "true" ]]; then
     # perform KALLISTO alignment of fastq files
+    echo "#TRACE index_bytes=`stat -c '%s' ${indexes}`"
+
     kallisto.sh \
       ${sample_id} \
       ${indexes} \
@@ -422,6 +466,8 @@ process process_sample {
     fi
 
     # generate final TPM and raw count files
+    echo "#TRACE ga_lines=`cat *.Kallisto.ga | wc -l`"
+
     kallisto_tpm.sh \
       ${sample_id} \
       ${params.output.publish_tpm} \
@@ -436,6 +482,8 @@ process process_sample {
   # or use SALMON if specified
   elif [[ ${params.input.salmon.enable} == "true" ]]; then
     # perform SALMON alignment of fastq files
+    echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | paste -sd+ | bc`"
+
     salmon.sh \
       ${sample_id} \
       ${task.cpus} \
@@ -516,6 +564,14 @@ process create_gem {
 
   script:
   """
+  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}}"
+  echo "#TRACE hisat2_enable=${params.input.hisat2.enable}}"
+  echo "#TRACE publish_tpm=${params.output.publish_tpm}}"
+  echo "#TRACE publish_raw=${params.output.publish_raw}}"
+  echo "#TRACE fpkm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.fpkm 2> /dev/null | wc -l`"
+  echo "#TRACE tpm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.tpm 2> /dev/null | wc -l`"
+  echo "#TRACE raw_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.raw 2> /dev/null | wc -l`"
+
   create_gem.sh \
     ${params.output.publish_fpkm} \
     ${params.input.hisat2.enable} \

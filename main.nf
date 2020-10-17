@@ -273,6 +273,8 @@ process retrieve_sra_metadata {
 
   script:
   """
+  >&2 echo "#TRACE n_remote_run_ids=`cat ${srr_file} | wc -l`"
+
   retrieve_sra_metadata.py ${srr_file}
   """
 }
@@ -603,6 +605,8 @@ process download_runs {
 
   script:
   """
+  #TRACE n_remote_run_ids=${run_ids.size()}
+
   ids=`echo ${run_ids} | perl -p -e 's/[\\[,\\]]//g' | perl -p -e 's/\\s*\$//' | perl -p -e 's/\\s+/,/g'`
   retrieve_sra.py \${ids}
   """
@@ -628,6 +632,9 @@ process fastq_dump {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE sra_bytes=`stat -c '%s' *.sra | paste -sd+ | bc`"
+
   sra2fastq.py ${sra_files}
   """
 }
@@ -651,6 +658,9 @@ process fastq_merge {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
+
   fastq_merge.sh ${sample_id}
   """
 }
@@ -680,6 +690,9 @@ process fastqc_1 {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
+
   fastqc ${fastq_files}
   """
 }
@@ -719,6 +732,10 @@ process kallisto {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
+  echo "#TRACE index_bytes=`stat -c '%s' ${kallisto_index}`"
+
   kallisto.sh \
     ${sample_id} \
     ${kallisto_index} \
@@ -746,6 +763,9 @@ process kallisto_tpm {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE ga_lines=`cat *.ga | wc -l`"
+
   kallisto_tpm.sh \
     ${sample_id} \
     ${params.output.publish_tpm} \
@@ -777,6 +797,10 @@ process salmon {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
+  echo "#TRACE index_bytes=`stat -c '%s' ${salmon_index} | paste -sd+ | bc`"
+
   salmon.sh \
     ${sample_id} \
     ${task.cpus} \
@@ -804,6 +828,8 @@ process salmon_tpm {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+
   salmon_tpm.sh \
     ${params.output.publish_tpm} \
     ${sample_id} \
@@ -843,6 +869,15 @@ process trimmomatic {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE n_cpus=${task.cpus}"
+  echo "#TRACE minlen=${params.software.trimmomatic.MINLEN}"
+  echo "#TRACE leading=${params.software.trimmomatic.LEADNING}"
+  echo "#TRACE trailing=${params.software.trimmomatic.TRAILING}"
+  echo "#TRACE slidingwindow=${params.software.trimmomatic.SLIDINGWINDOW}"
+  echo "#TRACE fasta_lines=`cat ${fasta_adapter} | wc -l`"
+  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
+
   trimmomatic.sh \
     ${sample_id} \
     ${params.software.trimmomatic.MINLEN} \
@@ -875,6 +910,9 @@ process fastqc_2 {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
+
   fastqc ${fastq_files}
   """
 }
@@ -905,6 +943,11 @@ process hisat2 {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE n_cpus=${task.cpus}"
+  echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
+  echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | paste -sd+ | bc`"
+
   hisat2.sh \
     ${sample_id} \
     ${params.input.reference_name} \
@@ -934,6 +977,9 @@ process samtools_sort {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE sam_lines=`cat *.sam | wc -l`"
+
   samtools sort \
     -o ${sample_id}_vs_${params.input.reference_name}.bam \
     -O bam \
@@ -964,6 +1010,9 @@ process samtools_index {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE bam_bytes=`stat -c '%s' *.bam`"
+
   samtools index ${bam_file}
   samtools stats ${bam_file} > ${sample_id}_vs_${params.input.reference_name}.bam.log
   """
@@ -993,6 +1042,10 @@ process stringtie {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE bam_bytes=`stat -c '%s' *.bam`"
+  echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
+
   stringtie \
     -v \
     -p ${task.cpus} \
@@ -1027,6 +1080,13 @@ process hisat2_fpkm_tpm {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}}"
+  echo "#TRACE publish_tpm=${params.output.publish_tpm}}"
+  echo "#TRACE publish_raw=${params.output.publish_raw}}"
+  echo "#TRACE ga_lines=`cat *.ga | wc -l`"
+  echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
+
   hisat2_fpkm_tpm.sh \
     ${params.output.publish_fpkm} \
     ${sample_id} \
@@ -1098,6 +1158,14 @@ process create_gem {
 
   script:
   """
+  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}}"
+  echo "#TRACE hisat2_enable=${params.input.hisat2.enable}}"
+  echo "#TRACE publish_tpm=${params.output.publish_tpm}}"
+  echo "#TRACE publish_raw=${params.output.publish_raw}}"
+  echo "#TRACE fpkm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.fpkm 2> /dev/null  | wc -l`"
+  echo "#TRACE tpm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.tpm 2> /dev/null | wc -l`"
+  echo "#TRACE raw_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.raw 2> /dev/null | wc -l`"
+
   create_gem.sh \
     ${params.output.publish_fpkm} \
     ${params.input.hisat2.enable} \
