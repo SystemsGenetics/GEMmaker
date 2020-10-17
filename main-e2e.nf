@@ -296,7 +296,7 @@ process process_sample {
   # for remote samples, prepare FASTQ files from NCBI
   if [[ "${sample_type}" == "remote" ]]; then
     # download SRA files from NCBI
-    retrieve_sra.py ${remote_ids.join(' ')}
+    retrieve_sra.py ${remote_ids.join(',')}
 
     # extract FASTQ files from SRA files
     sra2fastq.py *.sra
