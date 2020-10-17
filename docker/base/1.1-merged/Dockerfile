@@ -64,7 +64,7 @@ RUN wget -q https://github.com/pachterlab/kallisto/releases/download/v0.45.0/kal
 
 
 # install python 3.7 modules
-RUN pip3 install -q numpy pandas xmltodict
+RUN pip3 install -q numpy pandas requests xmltodict
 
 
 

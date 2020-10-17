@@ -9,7 +9,7 @@ ENV PATH "$PATH:/usr/local/sratoolkit.2.10.0/bin"
 
 # We need Python for the retrieve_sra.py script that comes with GEMmaker
 RUN apt-get update && apt-get install -qq -y python3-pip \
-  && pip3 install -q numpy pandas xmltodict requests
+  && pip3 install -q numpy pandas requests xmltodict
 
 # The SRAToolkit needs a missing perl module
 RUN apt-get install -qq -y libxml2-dev && cpan install -T XML::LibXML && cpan install -T URI
