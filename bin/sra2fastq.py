@@ -74,15 +74,12 @@ if __name__ == "__main__":
 
     # Parse command-line arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument("SRA_Files", help="SRA file list provided as a single comma-separated string.")
+    parser.add_argument("sra_files", help="list of input SRA files", nargs="+")
 
     args = parser.parse_args()
 
-    # Convert the SRA_Files arg into a list.
-    sras = args.SRA_Files.split(",")
-
     # Download the samples:
-    ec = dump_samples(sras)
+    ec = dump_samples(args.sra_files)
 
     # If the exit code is not zero then clean up so that
     # we don't waste space as Nextflow doesn't clean up
