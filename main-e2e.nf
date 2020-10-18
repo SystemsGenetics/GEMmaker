@@ -318,7 +318,7 @@ process process_sample {
     retrieve_sra.py ${remote_ids.join(',')}
 
     # extract FASTQ files from SRA files
-    echo "#TRACE sra_bytes=`stat -c '%s' *.sra | paste -sd+ | bc`"
+    echo "#TRACE sra_bytes=`stat -c '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
 
     sra2fastq.py *.sra
 
@@ -380,7 +380,7 @@ process process_sample {
     fastqc \${TRIMMED_FASTQ_FILES}
 
     # perform hisat2 alignment of fastq files to a genome reference
-    echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | paste -sd+ | bc`"
+    echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
 
     hisat2.sh \
       ${sample_id} \
@@ -481,7 +481,7 @@ process process_sample {
   # or use SALMON if specified
   elif [[ ${params.input.salmon.enable} == "true" ]]; then
     # perform SALMON alignment of fastq files
-    echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | paste -sd+ | bc`"
+    echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
 
     salmon.sh \
       ${sample_id} \

@@ -633,7 +633,7 @@ process fastq_dump {
   script:
   """
   echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE sra_bytes=`stat -c '%s' *.sra | paste -sd+ | bc`"
+  echo "#TRACE sra_bytes=`stat -c '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
 
   sra2fastq.py ${sra_files}
   """
@@ -799,7 +799,7 @@ process salmon {
   """
   echo "#TRACE sample_id=${sample_id}"
   echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-  echo "#TRACE index_bytes=`stat -c '%s' ${salmon_index} | paste -sd+ | bc`"
+  echo "#TRACE index_bytes=`stat -c '%s' ${salmon_index} | awk '{sum += \$1} END {print sum}'`"
 
   salmon.sh \
     ${sample_id} \
@@ -946,7 +946,7 @@ process hisat2 {
   echo "#TRACE sample_id=${sample_id}"
   echo "#TRACE n_cpus=${task.cpus}"
   echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
-  echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | paste -sd+ | bc`"
+  echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
 
   hisat2.sh \
     ${sample_id} \
