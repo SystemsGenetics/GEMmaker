@@ -314,7 +314,7 @@ process process_sample {
     # download SRA files from NCBI
     echo "#TRACE n_remote_run_ids=${remote_ids.size()}"
 
-    retrieve_sra.py ${remote_ids.join(',')}
+    retrieve_sra.py ${remote_ids.join(' ')}
 
     # extract FASTQ files from SRA files
     echo "#TRACE sra_bytes=`stat -Lc '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
