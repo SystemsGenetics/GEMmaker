@@ -269,7 +269,6 @@ process process_sample {
   tag { sample_id }
   label "gemmaker"
   label "multithreaded"
-  label "retry_ignore"
   publishDir params.output.sample_dir, mode: params.output.publish_mode
 
   input:

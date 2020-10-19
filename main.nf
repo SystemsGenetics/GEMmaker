@@ -605,10 +605,9 @@ process download_runs {
 
   script:
   """
-  #TRACE n_remote_run_ids=${run_ids.size()}
+  #TRACE n_remote_run_ids=${run_ids.tokenize(' ').size()}
 
-  ids=`echo ${run_ids} | perl -p -e 's/[\\[,\\]]//g' | perl -p -e 's/\\s*\$//' | perl -p -e 's/\\s+/,/g'`
-  retrieve_sra.py \${ids}
+  retrieve_sra.py ${run_ids}
   """
 }
 

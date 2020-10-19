@@ -173,23 +173,20 @@ if __name__ == "__main__":
 
     # Parse command-line arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument("SRR_IDs", help="SRA run ID list provided as a single comma-separated string.")
+    parser.add_argument("run_ids", help="list of SRA run IDs", nargs="+")
 
     args = parser.parse_args()
-
-    # Convert the SRR IDs into a list.
-    run_ids = args.SRR_IDs.split(",")
 
     # Use this RE to make sure that each SRA run ID is correct.
     srr_re = re.compile("^[SED]RR\d+$")
 
     # Iterate through the run IDs and make sure they are all good.
-    for run_id in run_ids:
+    for run_id in args.run_ids:
         if not srr_re.match(run_id):
             raise ValueError("Improper SRA run ID: %s" % (run_id))
 
     # Download the samples:
-    ec = download_samples(run_ids)
+    ec = download_samples(args.run_ids)
 
     # If the exit code is not zero then clean up so that
     # we don't waste space as Nextflow doesn't clean up
