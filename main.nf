@@ -603,8 +603,7 @@ process download_runs {
 
   script:
   """
-  ids=`echo ${run_ids} | perl -p -e 's/[\\[,\\]]//g' | perl -p -e 's/\\s*\$//' | perl -p -e 's/\\s+/,/g'`
-  retrieve_sra.py \${ids}
+  retrieve_sra.py ${run_ids}
   """
 }
 
