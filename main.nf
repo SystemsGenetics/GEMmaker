@@ -633,7 +633,7 @@ process fastq_dump {
   script:
   """
   echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE sra_bytes=`stat -c '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
+  echo "#TRACE sra_bytes=`stat -Lc '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
 
   sra2fastq.py ${sra_files}
   """
@@ -734,7 +734,7 @@ process kallisto {
   """
   echo "#TRACE sample_id=${sample_id}"
   echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-  echo "#TRACE index_bytes=`stat -c '%s' ${kallisto_index}`"
+  echo "#TRACE index_bytes=`stat -Lc '%s' ${kallisto_index}`"
 
   kallisto.sh \
     ${sample_id} \
@@ -799,7 +799,7 @@ process salmon {
   """
   echo "#TRACE sample_id=${sample_id}"
   echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-  echo "#TRACE index_bytes=`stat -c '%s' ${salmon_index} | awk '{sum += \$1} END {print sum}'`"
+  echo "#TRACE index_bytes=`stat -Lc '%s' ${salmon_index} | awk '{sum += \$1} END {print sum}'`"
 
   salmon.sh \
     ${sample_id} \
@@ -946,7 +946,7 @@ process hisat2 {
   echo "#TRACE sample_id=${sample_id}"
   echo "#TRACE n_cpus=${task.cpus}"
   echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
-  echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
+  echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
 
   hisat2.sh \
     ${sample_id} \
@@ -1011,7 +1011,7 @@ process samtools_index {
   script:
   """
   echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE bam_bytes=`stat -c '%s' *.bam`"
+  echo "#TRACE bam_bytes=`stat -Lc '%s' *.bam`"
 
   samtools index ${bam_file}
   samtools stats ${bam_file} > ${sample_id}_vs_${params.input.reference_name}.bam.log
@@ -1043,7 +1043,7 @@ process stringtie {
   script:
   """
   echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE bam_bytes=`stat -c '%s' *.bam`"
+  echo "#TRACE bam_bytes=`stat -Lc '%s' *.bam`"
   echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
 
   stringtie \

@@ -318,7 +318,7 @@ process process_sample {
     retrieve_sra.py ${remote_ids.join(',')}
 
     # extract FASTQ files from SRA files
-    echo "#TRACE sra_bytes=`stat -c '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
+    echo "#TRACE sra_bytes=`stat -Lc '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
 
     sra2fastq.py *.sra
 
@@ -380,7 +380,7 @@ process process_sample {
     fastqc \${TRIMMED_FASTQ_FILES}
 
     # perform hisat2 alignment of fastq files to a genome reference
-    echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
+    echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
 
     hisat2.sh \
       ${sample_id} \
@@ -408,7 +408,7 @@ process process_sample {
     rm -f *.sam
 
     # index BAM alignment file
-    echo "#TRACE bam_bytes=`stat -c '%s' *.bam`"
+    echo "#TRACE bam_bytes=`stat -Lc '%s' *.bam`"
 
     samtools index ${sample_id}_vs_${params.input.reference_name}.bam
     samtools stats ${sample_id}_vs_${params.input.reference_name}.bam > ${sample_id}_vs_${params.input.reference_name}.bam.log
@@ -452,7 +452,7 @@ process process_sample {
   # or use KALLISTO if specified
   elif [[ ${params.input.kallisto.enable} == "true" ]]; then
     # perform KALLISTO alignment of fastq files
-    echo "#TRACE index_bytes=`stat -c '%s' ${indexes}`"
+    echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes}`"
 
     kallisto.sh \
       ${sample_id} \
@@ -481,7 +481,7 @@ process process_sample {
   # or use SALMON if specified
   elif [[ ${params.input.salmon.enable} == "true" ]]; then
     # perform SALMON alignment of fastq files
-    echo "#TRACE index_bytes=`stat -c '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
+    echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
 
     salmon.sh \
       ${sample_id} \
