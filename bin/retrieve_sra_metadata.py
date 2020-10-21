@@ -50,7 +50,6 @@ def download_runs_meta(run_ids, page_size=100):
 
         sys.stderr.write("Fetching IDs: %s.  " % (",".join(ids)))
 
-
         # parse the XML response
         response_obj = urllib.request.urlopen(request)
         response_xml = response_obj.read().decode(response_obj.headers.get_content_charset())
@@ -84,7 +83,7 @@ def download_runs_meta(run_ids, page_size=100):
     experiments = {exp["EXPERIMENT"]["IDENTIFIERS"]["PRIMARY_ID"]: exp for exp in experiments}.values()
 
     # process the metadata from each experiment
-    num_runs_found = 0
+    n_runs_found = 0
     for experiment in experiments:
 
         # Get the experiment ID
@@ -103,7 +102,7 @@ def download_runs_meta(run_ids, page_size=100):
         for run in runs:
             run_id = run["@accession"]
             if run_id in run_ids:
-                num_runs_found = num_runs_found + 1
+                n_runs_found = n_runs_found + 1
                 # Write out the experiment details in JSON metadata files
                 save_ncbi_meta(experiment, sample, run)
 
@@ -115,11 +114,12 @@ def download_runs_meta(run_ids, page_size=100):
             else:
                 sys.stderr.write('Notice: the run, %s, is part of the experiment %s but not included in the input file of runs' % (run_id, exp_id))
 
-    if (num_runs_found != len(run_ids)):
-        expstr = pprint.pformat(experiment, indent=2)
-        raise Exception ('There was an unknown problem retrieving metadata for all of the runs provided: %d != %d. Response: %s' % (num_runs_found, len(run_ids), expstr))
+    if n_runs_found != len(run_ids):
+        sys.stderr.write('Notice: there was an unknown problem retrieving metadata for all of the runs provided: %d != %d' % (n_runs_found, len(run_ids)))
 
-    sys.stderr.write("Metadata for %d runs retrieved\n" % (num_runs_found))
+    sys.stderr.write("Metadata for %d runs retrieved\n" % (n_runs_found))
+
+
 
 def save_ncbi_meta(experiment, sample, run):
     """
@@ -190,54 +190,50 @@ def save_gemmaker_meta(experiment, sample, run):
 
     # Iterate through the sample attributes
     if "SAMPLE_ATTRIBUTES" in sample and "SAMPLE_ATTRIBUTE" in sample["SAMPLE_ATTRIBUTES"]:
-      attrs = sample["SAMPLE_ATTRIBUTES"]["SAMPLE_ATTRIBUTE"]
-      if not isinstance(attrs, list):
-        attrs = [attrs]
+        attrs = sample["SAMPLE_ATTRIBUTES"]["SAMPLE_ATTRIBUTE"]
+        if not isinstance(attrs, list):
+            attrs = [attrs]
 
-      for attr in attrs:
-        # Add the cultivar
-        if attr["TAG"] == "cultivar":
-          if attr["VALUE"] != "missing":
-            annots["sep:00195"]["obi:organism"]["local:infraspecific_type"] = "cultivar"
-            annots["sep:00195"]["obi:organism"]["TAXRANK:0000045"] = attr["VALUE"]
+        for attr in attrs:
+            # skip this attribute if it has a missing value
+            if attr["VALUE"] == "missing":
+                continue
 
-        # Add the age
-        elif attr["TAG"] == "age":
-          if attr["VALUE"] != "missing":
-            annots["sep:00195"]["NCIT:C25150"] = attr["VALUE"]
+            # Add the cultivar
+            if attr["TAG"] == "cultivar":
+                annots["sep:00195"]["obi:organism"]["local:infraspecific_type"] = "cultivar"
+                annots["sep:00195"]["obi:organism"]["TAXRANK:0000045"] = attr["VALUE"]
 
-        # Add the genotype
-        elif attr["TAG"] == "Genotype" or attr["TAG"] == "genotype":
-          if attr["VALUE"] != "missing":
-            annots["sep:00195"]["NCIT:C16631"] = attr["VALUE"]
+            # Add the age
+            elif attr["TAG"] == "age":
+                annots["sep:00195"]["NCIT:C25150"] = attr["VALUE"]
 
-        # Add the tissue
-        elif attr["TAG"] == "tissue":
-          if attr["VALUE"] != "missing":
-            annots["sep:00195"]["NCIT:C12801"] = attr["VALUE"]
+            # Add the genotype
+            elif attr["TAG"] == "Genotype" or attr["TAG"] == "genotype":
+                annots["sep:00195"]["NCIT:C16631"] = attr["VALUE"]
 
-        # Add the developmental stage
-        elif attr["TAG"] == "dev_stage":
-          if attr["VALUE"] != "missing":
-            annots["sep:00195"]["NCIT:C43531"] = attr["VALUE"]
+            # Add the tissue
+            elif attr["TAG"] == "tissue":
+                annots["sep:00195"]["NCIT:C12801"] = attr["VALUE"]
 
-        # Add the temperature
-        elif attr["TAG"] == "temp":
-          if attr["VALUE"] != "missing":
-            annots["NCIT:C25206"] = attr["VALUE"]
+            # Add the developmental stage
+            elif attr["TAG"] == "dev_stage":
+                annots["sep:00195"]["NCIT:C43531"] = attr["VALUE"]
 
-        # Add the time
-        elif attr["TAG"] == "time":
-          if attr["VALUE"] != "missing":
-            annots["EFO:0000721"] = attr["VALUE"]
+            # Add the temperature
+            elif attr["TAG"] == "temp":
+                annots["NCIT:C25206"] = attr["VALUE"]
 
-        # Add the treatment
-        elif attr["TAG"] == "treatment":
-          if attr["VALUE"] != "missing":
-            annots["EFO:0000727"] = attr["VALUE"]
+            # Add the time
+            elif attr["TAG"] == "time":
+                annots["EFO:0000721"] = attr["VALUE"]
 
-        else:
-          sys.stderr.write("Unhandled sample attribute: \"%s\": \"%s\"\n" % (attr["TAG"], attr["VALUE"]))
+            # Add the treatment
+            elif attr["TAG"] == "treatment":
+                annots["EFO:0000727"] = attr["VALUE"]
+
+            else:
+                sys.stderr.write("Unhandled sample attribute: \"%s\": \"%s\"\n" % (attr["TAG"], attr["VALUE"]))
 
     # Save the heirarchical JSON metadata from GEMmaker
     jsonfilename = "%s.GEMmaker.meta.json" % (annots["local:SRX_id"])
