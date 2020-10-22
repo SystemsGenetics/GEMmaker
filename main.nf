@@ -605,7 +605,7 @@ process download_runs {
 
   script:
   """
-  #TRACE n_remote_run_ids=${run_ids.tokenize(' ').size()}
+  echo "#TRACE n_remote_run_ids=${run_ids.tokenize(' ').size()}"
 
   retrieve_sra.py ${run_ids}
   """

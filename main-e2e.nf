@@ -373,10 +373,9 @@ process process_sample {
     fi
 
     # perform fastqc on all trimmed fastq files
-    TRIMMED_FASTQ_FILES=\$(ls ${sample_id}_*trim.fastq)
-    echo "#TRACE trimmed_fastq_lines=`cat \${TRIMMED_FASTQ_FILES} | wc -l`"
+    echo "#TRACE trimmed_fastq_lines=`cat *_trim.fastq | wc -l`"
 
-    fastqc \${TRIMMED_FASTQ_FILES}
+    fastqc *_trim.fastq
 
     # perform hisat2 alignment of fastq files to a genome reference
     echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
@@ -391,7 +390,7 @@ process process_sample {
 
     # remove trimmed fastq files if they will not be published
     if [[ ${params.output.publish_trimmed_fastq} == false ]]; then
-      rm -f \${TRIMMED_FASTQ_FILES}
+      rm -f *_trim.fastq
     fi
 
     # sort the SAM alignment file and convert it to BAM
