@@ -352,7 +352,7 @@ process process_sample {
     # perform trimmomatic on all fastq files
     echo "#TRACE n_cpus=${task.cpus}"
     echo "#TRACE minlen=${params.software.trimmomatic.MINLEN}"
-    echo "#TRACE leading=${params.software.trimmomatic.LEADNING}"
+    echo "#TRACE leading=${params.software.trimmomatic.LEADING}"
     echo "#TRACE trailing=${params.software.trimmomatic.TRAILING}"
     echo "#TRACE slidingwindow=${params.software.trimmomatic.SLIDINGWINDOW}"
     echo "#TRACE fasta_lines=`cat ${fasta_adapter} | wc -l`"

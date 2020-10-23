@@ -871,7 +871,7 @@ process trimmomatic {
   echo "#TRACE sample_id=${sample_id}"
   echo "#TRACE n_cpus=${task.cpus}"
   echo "#TRACE minlen=${params.software.trimmomatic.MINLEN}"
-  echo "#TRACE leading=${params.software.trimmomatic.LEADNING}"
+  echo "#TRACE leading=${params.software.trimmomatic.LEADING}"
   echo "#TRACE trailing=${params.software.trimmomatic.TRAILING}"
   echo "#TRACE slidingwindow=${params.software.trimmomatic.SLIDINGWINDOW}"
   echo "#TRACE fasta_lines=`cat ${fasta_adapter} | wc -l`"
