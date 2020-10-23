@@ -1080,9 +1080,9 @@ process hisat2_fpkm_tpm {
   script:
   """
   echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}}"
-  echo "#TRACE publish_tpm=${params.output.publish_tpm}}"
-  echo "#TRACE publish_raw=${params.output.publish_raw}}"
+  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}"
+  echo "#TRACE publish_tpm=${params.output.publish_tpm}"
+  echo "#TRACE publish_raw=${params.output.publish_raw}"
   echo "#TRACE ga_lines=`cat *.ga | wc -l`"
   echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
 
@@ -1157,10 +1157,10 @@ process create_gem {
 
   script:
   """
-  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}}"
-  echo "#TRACE hisat2_enable=${params.input.hisat2.enable}}"
-  echo "#TRACE publish_tpm=${params.output.publish_tpm}}"
-  echo "#TRACE publish_raw=${params.output.publish_raw}}"
+  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}"
+  echo "#TRACE hisat2_enable=${params.input.hisat2.enable}"
+  echo "#TRACE publish_tpm=${params.output.publish_tpm}"
+  echo "#TRACE publish_raw=${params.output.publish_raw}"
   echo "#TRACE fpkm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.fpkm 2> /dev/null  | wc -l`"
   echo "#TRACE tpm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.tpm 2> /dev/null | wc -l`"
   echo "#TRACE raw_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.raw 2> /dev/null | wc -l`"
