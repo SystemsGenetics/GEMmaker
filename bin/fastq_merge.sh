@@ -25,6 +25,6 @@ echo "Done with ${sample_id}_2.fastq"
 
 # If there is a FASTQ sample with _2 suffix but no _1  then rename
 # to _1 so that count software will work
-if [ -e ${sample_id}_2 ] && [ ! -e ${sample_id}_2 ]; then
-  mv ${sample_id}_2 ${sample_id}_1
+if [ -e ${sample_id}_2.fastq ] && [ ! -e ${sample_id}_1.fastq ]; then
+  mv ${sample_id}_2.fastq ${sample_id}_1.fastq
 fi
