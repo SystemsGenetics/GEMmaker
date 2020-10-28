@@ -108,44 +108,49 @@ if (has_tool > 1) {
   error "Error: Please select only one quantification tool in the 'nextflow.config' file"
 }
 
-// Check to make sure that required reference files exist
+
+
+/**
+ * Check to make sure that required reference files exist
+ */
 // If Hisat2 was selected:
-if (selected_tool == 0)
-{
+if (selected_tool == 0) {
   gtfFile = file("${params.input.reference_dir}/${params.input.hisat2.gtf_file}")
-  if (gtfFile.isEmpty())
-  {
+
+  if (gtfFile.isEmpty()) {
     error "Error: GTF reference file for Hisat2 does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.hisat2.gtf_file}' (where '*' is the name of your organism)"
   }
+
   hisat2_index_dir = file("${params.input.reference_dir}/${params.input.hisat2.index_dir}")
-  if(!hisat2_index_dir.isDirectory())
-  {
+
+  if (!hisat2_index_dir.isDirectory()) {
     error "Error: hisat2 Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.hisat2.index_dir}' (where '*' is the name of your organism)"
   }
-
 }
+
 // If Kallisto was selected
-if (selected_tool == 1)
-{
+if (selected_tool == 1) {
   kallisto_index_file = file("${params.input.reference_dir}/${params.input.kallisto.index_file}")
-  if (kallisto_index_file.isEmpty())
-  {
+
+  if (kallisto_index_file.isEmpty()) {
     error "Error: Kallisto Index File does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.kallisto.index_file}' (where '*' is the name of your organism)"
   }
 }
+
 // If Salmon was selected
-if (selected_tool == 2)
-{
+if (selected_tool == 2) {
   salmon_index_dir = file("${params.input.reference_dir}/${params.input.salmon.index_dir}")
-  if (!salmon_index_dir.isDirectory())
-  {
+
+  if (!salmon_index_dir.isDirectory()) {
     error "Error: Salmon Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.salmon.index_dir}' (where '*' is the name of your organism)"
   }
 }
+
+
 
 /**
  * Create value channels that can be reused
@@ -155,7 +160,6 @@ KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}/${params.input.
 SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
 GTF_FILE = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.gtf_file}").collect()
-
 
 
 
@@ -211,9 +215,11 @@ process retrieve_sra_metadata {
     file "*.GEMmaker.meta.*"
 
   script:
-    """
-    retrieve_sra_metadata.py ${srr_file}
-    """
+  """
+  >&2 echo "#TRACE n_remote_run_ids=`cat ${srr_file} | wc -l`"
+
+  retrieve_sra_metadata.py ${srr_file}
+  """
 }
 
 
@@ -263,53 +269,66 @@ process process_sample {
   tag { sample_id }
   label "gemmaker"
   label "multithreaded"
-  label "retry_ignore"
   publishDir params.output.sample_dir, mode: params.output.publish_mode
 
   input:
-    set val(sample_id), val(type), val(remote_ids), val(local_files) from ALL_SAMPLES
+    set val(sample_id), val(sample_type), val(remote_ids), val(local_files) from ALL_SAMPLES
     file fasta_adapter from FASTA_ADAPTER
     file indexes from INDEXES
     file gtf_file from GTF_FILE
 
   output:
     val(sample_id) into COMPLETED_SAMPLES
-    file("*.sra") optional true into SRA_FILES
-    file("*.fastq") optional true into FASTQ_FILES
-    file("*fastqc.*") optional true into FASTQC_FILES
-    file("*.log") optional true into LOG_FILES
-    file("*.sam") optional true into SAM_FILES
-    file("*.bam") optional true into BAM_FILES
-    file("*.bam.bai") optional true into BAI_FILES
-    file("*.ga") optional true into GA_FILES
-    file("*.gtf") optional true into GTF_FILES
-    file("*.raw") optional true into RAW_FILES
-    file("*.fpkm") optional true into FPKM_FILES
-    file("*.tpm") optional true into TPM_FILES
+    file("*.sra")      optional true into SRA_FILES
+    file("*.fastq")    optional true into FASTQ_FILES
+    file("*_fastqc.*") optional true into FASTQC_FILES
+    file("*.log")      optional true into LOG_FILES
+    file("*.sam")      optional true into SAM_FILES
+    file("*.bam")      optional true into BAM_FILES
+    file("*.bam.bai")  optional true into BAI_FILES
+    file("*.ga")       optional true into GA_FILES
+    file("*.gtf")      optional true into GTF_FILES
+    file("*.raw")      optional true into RAW_FILES
+    file("*.fpkm")     optional true into FPKM_FILES
+    file("*.tpm")      optional true into TPM_FILES
 
   script:
   """
-  # for remote samples, prepare FASTQ files from NCBI
-  if [[ "${type}" == "remote" ]]; then
-    # download SRA files from NCBI
-    SRR_IDS="${remote_ids.join(' ')}"
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE sample_type=${sample_type}"
+  echo "#TRACE hisat2_enable=${params.input.hisat2.enable}"
+  echo "#TRACE kallisto_enable=${params.input.kallisto.enable}"
+  echo "#TRACE salmon_enable=${params.input.salmon.enable}"
+  echo "#TRACE publish_sra=${params.output.publish_sra}"
+  echo "#TRACE publish_downloaded_fastq=${params.output.publish_downloaded_fastq}"
+  echo "#TRACE publish_trimmed_fastq=${params.output.publish_trimmed_fastq}"
+  echo "#TRACE publish_bam=${params.output.publish_bam}"
+  echo "#TRACE publish_stringtie_gtf_and_ga=${params.output.publish_stringtie_gtf_and_ga}"
+  echo "#TRACE publish_gene_abundance=${params.output.publish_gene_abundance}"
+  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}"
+  echo "#TRACE publish_tpm=${params.output.publish_tpm}"
+  echo "#TRACE publish_raw=${params.output.publish_raw}"
 
-    retrieve_sra.py \${SRR_IDS}
+  # for remote samples, prepare FASTQ files from NCBI
+  if [[ "${sample_type}" == "remote" ]]; then
+    # download SRA files from NCBI
+    echo "#TRACE n_remote_run_ids=${remote_ids.size()}"
+
+    retrieve_sra.py ${remote_ids.join(' ')}
 
     # extract FASTQ files from SRA files
-    SRA_FILES=\$(ls *.sra)
+    echo "#TRACE sra_bytes=`stat -Lc '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
 
-    sra2fastq.py \${SRA_FILES}
+    sra2fastq.py *.sra
 
     # remove SRA files if they will not be published
     if [[ ${params.output.publish_sra} == false ]]; then
-      rm -f \${SRA_FILES}
+      rm -f *.sra
     fi
 
-    # determine list of downloaded FASTQ files
+    # merge the FASTQ files from each run in the experiment
     DOWNLOADED_FASTQ_FILES=\$(ls *.fastq)
 
-    # merge the FASTQ files from each run in the experiment
     fastq_merge.sh ${sample_id}
 
     # remove downloaded FASTQ files if they will not be published
@@ -318,19 +337,35 @@ process process_sample {
     fi
 
   # for local samples, fetch FASTQ files from filesystem
-  elif [[ "${type}" == "local" ]]; then
+  elif [[ "${sample_type}" == "local" ]]; then
     cp ${local_files.join(' ')} .
   fi
 
   # perform fastqc on raw FASTQ files
   MERGED_FASTQ_FILES=\$(ls ${sample_id}_?.fastq)
+  echo "#TRACE fastq_lines=`cat \${MERGED_FASTQ_FILES} | wc -l`"
 
   fastqc \${MERGED_FASTQ_FILES}
 
   # use hisat2 for alignment if specified
   if [[ ${params.input.hisat2.enable} == "true" ]]; then
     # perform trimmomatic on all fastq files
-    trimmomatic.sh ${sample_id} ${params.software.trimmomatic.MINLEN} ${task.cpus} ${fasta_adapter} ${params.software.trimmomatic.LEADING} ${params.software.trimmomatic.TRAILING} ${params.software.trimmomatic.SLIDINGWINDOW} ${params.software.trimmomatic.quality}
+    echo "#TRACE n_cpus=${task.cpus}"
+    echo "#TRACE minlen=${params.software.trimmomatic.MINLEN}"
+    echo "#TRACE leading=${params.software.trimmomatic.LEADING}"
+    echo "#TRACE trailing=${params.software.trimmomatic.TRAILING}"
+    echo "#TRACE slidingwindow=${params.software.trimmomatic.SLIDINGWINDOW}"
+    echo "#TRACE fasta_lines=`cat ${fasta_adapter} | wc -l`"
+
+    trimmomatic.sh \
+      ${sample_id} \
+      ${params.software.trimmomatic.MINLEN} \
+      ${task.cpus} \
+      ${fasta_adapter} \
+      ${params.software.trimmomatic.LEADING} \
+      ${params.software.trimmomatic.TRAILING} \
+      ${params.software.trimmomatic.SLIDINGWINDOW} \
+      ${params.software.trimmomatic.quality}
 
     # remove merged fastq files if they will not be published
     if [[ ${params.output.publish_downloaded_fastq} == false ]]; then
@@ -338,22 +373,29 @@ process process_sample {
     fi
 
     # perform fastqc on all trimmed fastq files
-    TRIMMED_FASTQ_FILES=\$(ls ${sample_id}_*trim.fastq)
+    echo "#TRACE trimmed_fastq_lines=`cat *_trim.fastq | wc -l`"
 
-    fastqc \${TRIMMED_FASTQ_FILES}
+    fastqc *_trim.fastq
 
     # perform hisat2 alignment of fastq files to a genome reference
-    hisat2.sh ${sample_id} ${params.input.reference_name} ${task.cpus}
+    echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
+
+    hisat2.sh \
+      ${sample_id} \
+      ${params.input.reference_name} \
+      ${task.cpus}
 
     # remove unused hisat2 output files
     rm -f ${sample_id}_un.fastq
 
     # remove trimmed fastq files if they will not be published
     if [[ ${params.output.publish_trimmed_fastq} == false ]]; then
-      rm -f \${TRIMMED_FASTQ_FILES}
+      rm -f *_trim.fastq
     fi
 
     # sort the SAM alignment file and convert it to BAM
+    echo "#TRACE sam_lines=`cat *.sam | wc -l`"
+
     samtools sort \
       -o ${sample_id}_vs_${params.input.reference_name}.bam \
       -O bam \
@@ -364,10 +406,14 @@ process process_sample {
     rm -f *.sam
 
     # index BAM alignment file
+    echo "#TRACE bam_bytes=`stat -Lc '%s' *.bam`"
+
     samtools index ${sample_id}_vs_${params.input.reference_name}.bam
     samtools stats ${sample_id}_vs_${params.input.reference_name}.bam > ${sample_id}_vs_${params.input.reference_name}.bam.log
 
     # generate expression-level transcript abundance
+    echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
+
     stringtie \
       -v \
       -p ${task.cpus} \
@@ -375,7 +421,8 @@ process process_sample {
       -o ${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf \
       -G ${gtf_file} \
       -A ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga \
-      -l ${sample_id} ${sample_id}_vs_${params.input.reference_name}.bam
+      -l ${sample_id} \
+      ${sample_id}_vs_${params.input.reference_name}.bam
 
     # remove BAM file if it will not be published
     if [[ ${params.output.publish_bam} == false ]]; then
@@ -384,7 +431,15 @@ process process_sample {
     fi
 
     # generate raw counts from hisat2/stringtie
-    hisat2_fpkm_tpm.sh ${params.output.publish_fpkm} ${sample_id} ${params.input.reference_name} ${params.output.publish_tpm} ${params.output.publish_raw}
+    echo "#TRACE ga_lines=`cat *.ga | wc -l`"
+    echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
+
+    hisat2_fpkm_tpm.sh \
+      ${params.output.publish_fpkm} \
+      ${sample_id} \
+      ${params.input.reference_name} \
+      ${params.output.publish_tpm} \
+      ${params.output.publish_raw}
 
     # remove stringtie output files if they will not be published
     if [[ ${params.output.publish_stringtie_gtf_and_ga} == false ]]; then
@@ -395,10 +450,26 @@ process process_sample {
   # or use KALLISTO if specified
   elif [[ ${params.input.kallisto.enable} == "true" ]]; then
     # perform KALLISTO alignment of fastq files
-    kallisto.sh ${sample_id} ${indexes} ${params.input.reference_name}
+    echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes}`"
+
+    kallisto.sh \
+      ${sample_id} \
+      ${indexes} \
+      ${params.input.reference_name}
+
+    # remove merged fastq files if they will not be published
+    if [[ ${params.output.publish_downloaded_fastq} == false ]]; then
+      rm -f \${MERGED_FASTQ_FILES}
+    fi
 
     # generate final TPM and raw count files
-    kallisto_tpm.sh ${sample_id} ${params.output.publish_tpm} ${params.output.publish_raw} ${params.input.reference_name}
+    echo "#TRACE ga_lines=`cat *.Kallisto.ga | wc -l`"
+
+    kallisto_tpm.sh \
+      ${sample_id} \
+      ${params.output.publish_tpm} \
+      ${params.output.publish_raw} \
+      ${params.input.reference_name}
 
     # remove gene abundance files if they will not be published
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
@@ -408,10 +479,24 @@ process process_sample {
   # or use SALMON if specified
   elif [[ ${params.input.salmon.enable} == "true" ]]; then
     # perform SALMON alignment of fastq files
-    salmon.sh ${sample_id} ${task.cpus} ${params.input.reference_name}
+    echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
+
+    salmon.sh \
+      ${sample_id} \
+      ${task.cpus} \
+      ${params.input.reference_name}
+
+    # remove merged fastq files if they will not be published
+    if [[ ${params.output.publish_downloaded_fastq} == false ]]; then
+      rm -f \${MERGED_FASTQ_FILES}
+    fi
 
     # generate final TPM and raw count files
-    salmon_tpm.sh ${params.output.publish_tpm} ${sample_id} ${params.input.reference_name} ${params.output.publish_raw}
+    salmon_tpm.sh \
+      ${params.output.publish_tpm} \
+      ${sample_id} \
+      ${params.input.reference_name} \
+      ${params.output.publish_raw}
 
     # remove gene abundance files if they will not be published
     if [[ ${params.output.publish_gene_abundance} == false ]]; then
@@ -448,12 +533,12 @@ process multiqc {
     params.output.multiqc == true
 
   script:
-    """
-    multiqc \
-      --ignore ${workflow.launchDir}/${params.output.dir}/GEMs \
-      --ignore ${workflow.launchDir}/${params.output.dir}/reports \
-      ${workflow.launchDir}/${params.output.dir}
-    """
+  """
+  multiqc \
+    --ignore ${workflow.launchDir}/${params.output.dir}/GEMs \
+    --ignore ${workflow.launchDir}/${params.output.dir}/reports \
+    ${workflow.launchDir}/${params.output.dir}
+  """
 }
 
 
@@ -476,6 +561,21 @@ process create_gem {
 
   script:
   """
-  create_gem.sh ${params.output.publish_fpkm} ${params.input.hisat2.enable} ${workflow.launchDir} ${params.output.dir} ${params.project.machine_name} ${params.output.publish_raw} ${params.output.publish_tpm}
+  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}"
+  echo "#TRACE hisat2_enable=${params.input.hisat2.enable}"
+  echo "#TRACE publish_tpm=${params.output.publish_tpm}"
+  echo "#TRACE publish_raw=${params.output.publish_raw}"
+  echo "#TRACE fpkm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.fpkm 2> /dev/null | wc -l`"
+  echo "#TRACE tpm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.tpm 2> /dev/null | wc -l`"
+  echo "#TRACE raw_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.raw 2> /dev/null | wc -l`"
+
+  create_gem.sh \
+    ${params.output.publish_fpkm} \
+    ${params.input.hisat2.enable} \
+    ${workflow.launchDir} \
+    ${params.output.dir} \
+    ${params.project.machine_name} \
+    ${params.output.publish_raw} \
+    ${params.output.publish_tpm}
   """
 }

@@ -2,7 +2,7 @@
 
 import java.nio.channels.FileLock
 import java.nio.channels.FileChannel
-import java.nio.channels.OverlappingFileLockException;
+import java.nio.channels.OverlappingFileLockException
 
 /**
  * ========
@@ -112,44 +112,49 @@ if (has_tool > 1) {
   error "Error: Please select only one quantification tool in the 'nextflow.config' file"
 }
 
-// Check to make sure that required reference files exist
+
+
+/**
+ * Check to make sure that required reference files exist
+ */
 // If Hisat2 was selected:
-if (selected_tool == 0)
-{
+if (selected_tool == 0) {
   gtfFile = file("${params.input.reference_dir}/${params.input.hisat2.gtf_file}")
-  if (gtfFile.isEmpty())
-  {
+
+  if (gtfFile.isEmpty()) {
     error "Error: GTF reference file for Hisat2 does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.hisat2.gtf_file}' (where '*' is the name of your organism)"
   }
+
   hisat2_index_dir = file("${params.input.reference_dir}/${params.input.hisat2.index_dir}")
-  if(!hisat2_index_dir.isDirectory())
-  {
+
+  if (!hisat2_index_dir.isDirectory()) {
     error "Error: hisat2 Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.hisat2.index_dir}' (where '*' is the name of your organism)"
   }
-
 }
+
 // If Kallisto was selected
-if (selected_tool == 1)
-{
+if (selected_tool == 1) {
   kallisto_index_file = file("${params.input.reference_dir}/${params.input.kallisto.index_file}")
-  if (kallisto_index_file.isEmpty())
-  {
+
+  if (kallisto_index_file.isEmpty()) {
     error "Error: Kallisto Index File does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.kallisto.index_file}' (where '*' is the name of your organism)"
   }
 }
+
 // If Salmon was selected
-if (selected_tool == 2)
-{
+if (selected_tool == 2) {
   salmon_index_dir = file("${params.input.reference_dir}/${params.input.salmon.index_dir}")
-  if (!salmon_index_dir.isDirectory())
-  {
+
+  if (!salmon_index_dir.isDirectory()) {
     error "Error: Salmon Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.input.reference_dir}/${params.input.salmon.index_dir}' (where '*' is the name of your organism)"
   }
 }
+
+
 
 /**
  * Create value channels that can be reused
@@ -187,6 +192,8 @@ else {
   Channel.fromPath("${params.input.input_data_dir}/${params.input.remote_sample_list}").set { SRR_FILE }
 }
 
+
+
 /**
  * Make sure that at least one output format is enabled.
  */
@@ -198,74 +205,54 @@ if ( params.input.hisat2.enabled == false && params.output.publish_raw == false 
   error "Error: at least one output format (raw, tpm) must be enabled for kallisto / salmon"
 }
 
+
+
 /**
  * Set the pattern for publishing downloaded FASTQ files
  */
-publish_pattern_fastq_dump = "{none}";
-if (params.output.publish_downloaded_fastq == true) {
-  publish_pattern_fastq_dump = "{*.fastq}";
-}
-
-
+publish_pattern_fastq_dump = params.output.publish_downloaded_fastq
+  ? "{*.fastq}"
+  : "{none}"
 
 /**
  * Set the pattern for publishing trimmed FASTQ files
  */
-publish_pattern_trimmomatic = "{*.trim.log}";
-if (params.output.publish_trimmed_fastq == true) {
-  publish_pattern_trimmomatic = "{*.trim.log,*_trim.fastq}";
-}
-
-
+publish_pattern_trimmomatic = params.output.publish_trimmed_fastq
+  ? "{*.trim.log,*_trim.fastq}"
+  : "{*.trim.log}"
 
 /**
  * Set the pattern for publishing BAM files
  */
-publish_pattern_samtools_sort = "{*.log}";
-publish_pattern_samtools_index = "{*.log}";
+publish_pattern_samtools_sort = params.output.publish_bam
+  ? "{*.log,*.bam}"
+  : "{*.log}"
 
-if (params.output.publish_bam == true) {
-  publish_pattern_samtools_sort = "{*.log,*.bam}";
-  publish_pattern_samtools_index = "{*.log,*.bam.bai}";
-}
+publish_pattern_samtools_index = params.output.publish_bam
+  ? "{*.log,*.bam.bai}"
+  : "{*.log}"
 
 /**
  * Set the pattern for publishing Kallisto GA files
  */
-publish_pattern_Kallisto_GA = "{*.log}";
-if (params.output.publish_gene_abundance == true) {
-  publish_pattern_Kallisto_GA = "{*.ga,*.log}";
-}
+publish_pattern_Kallisto_GA = params.output.publish_gene_abundance
+  ? "{*.ga,*.log}"
+  : "{*.log}"
 
 /**
  * Set the pattern for publishing Salmon GA files
- * Publishs only log file used by multiqc if false
+ * Publishes only log file used by multiqc if false
  */
-publish_pattern_Salmon_GA = "{*.ga/aux_info/meta_info.json,*.ga/libParams/flenDist.txt}"
-if (params.output.publish_gene_abundance == true) {
-  publish_pattern_Salmon_GA = "{*.ga}";
-}
-
+publish_pattern_Salmon_GA = params.output.publish_gene_abundance
+  ? "{*.ga}"
+  : "{*.ga/aux_info/meta_info.json,*.ga/libParams/flenDist.txt}"
 
 /**
  * Set the pattern for publishing STRINGTIE GA and GTF files
  */
-publish_pattern_stringtie_gtf_and_ga = "{none}"
-if (params.output.publish_stringtie_gtf_and_ga == true) {
-  publish_pattern_stringtie_gtf_and_ga = "{*.ga, *.gtf}";
-}
-
-
-/**
- * Make sure that at least one output format is enabled.
- */
-if ( params.software.alignment == 0 && params.output.publish_raw == false && params.output.publish_fpkm == false && params.output.publish_tpm == false ) {
-  error "Error: at least one output format (raw, fpkm, tpm) must be enabled for hisat2"
-}
-
-if ( params.software.alignment != 0 && params.output.publish_raw == false && params.output.publish_tpm == false ) {
-  error "Error: at least one output format (raw, tpm) must be enabled for kallisto / salmon"
-}
+publish_pattern_stringtie_gtf_and_ga = params.output.publish_stringtie_gtf_and_ga
+  ? "{*.ga, *.gtf}"
+  : "{none}"
 
 
 
@@ -420,7 +407,7 @@ process start_first_batch {
   exec:
     // Move the first set of sample file into the processing directory
     // so that we jumpstart the workflow.
-    sample_files = file("${workflow.workDir}/GEMmaker/stage/*.sample.csv");
+    sample_files = file("${workflow.workDir}/GEMmaker/stage/*.sample.csv")
     start_samples = sample_files.sort().take(params.execution.queue_size)
     if (sample_files.size() > 0 ) {
       for (sample in start_samples) {
@@ -469,9 +456,9 @@ process read_sample_file {
     stdout SAMPLE_FILE_CONTENTS
 
   script:
-    """
-      cat $sample_file
-    """
+  """
+  cat ${sample_file}
+  """
 }
 
 
@@ -526,9 +513,9 @@ process next_sample {
   exec:
 
     // Use a file lock to prevent a race condition for grabbing the next sample.
-    File lockfile = null;
-    FileChannel channel = null;
-    FileLock lock = null;
+    File lockfile = null
+    FileChannel channel = null
+    FileLock lock = null
     success = false
 
     try {
@@ -586,10 +573,10 @@ process next_sample {
     finally {
       // Release the lock file and close the file if they were opened.
       if (lock && lock.isValid()) {
-        lock.release();
+        lock.release()
       }
       if (channel) {
-        channel.close();
+        channel.close()
       }
       // Re-throw exception to terminate the workflow if there was no success.
       if (!success) {
@@ -616,8 +603,9 @@ process download_runs {
 
   script:
   """
-    ids=`echo $run_ids | perl -p -e 's/[\\[,\\]]//g' | perl -p -e 's/\\s*\$//' | perl -p -e 's/\\s+/,/g'`
-    retrieve_sra.py \$ids
+  echo "#TRACE n_remote_run_ids=${run_ids.tokenize(' ').size()}"
+
+  retrieve_sra.py ${run_ids}
   """
 }
 
@@ -632,7 +620,7 @@ process fastq_dump {
   label "sratoolkit"
 
   input:
-    set val(sample_id), val(sra_files) from SRA_TO_EXTRACT
+    set val(sample_id), file(sra_files) from SRA_TO_EXTRACT
 
   output:
     set val(sample_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_MERGING
@@ -641,8 +629,10 @@ process fastq_dump {
 
   script:
   """
-  files=`echo $sra_files | perl -p -e 's/[\\[,\\]]//g' | perl -p -e 's/\\s*\$//' | perl -p -e 's/\\s+/,/g'`
-  sra2fastq.py \$files
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE sra_bytes=`stat -Lc '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
+
+  sra2fastq.py ${sra_files}
   """
 }
 
@@ -655,7 +645,7 @@ process fastq_merge {
   tag { sample_id }
 
   input:
-    set val(sample_id), file(grouped) from DOWNLOADED_FASTQ_FOR_MERGING
+    set val(sample_id), file(fastq_files) from DOWNLOADED_FASTQ_FOR_MERGING
 
   output:
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_SAMPLES_FOR_COUNTING
@@ -663,13 +653,11 @@ process fastq_merge {
     set val(sample_id), file("${sample_id}_?.fastq") into MERGED_FASTQ_FOR_CLEANING
     set val(sample_id), val(1) into CLEAN_FASTQ_SIGNAL
 
-  /**
-   * This command tests to see if ls produces a 0 or not by checking
-   * its standard out. We do not use a "if [-e *foo]" becuase it gets
-   * confused if there are more than one things returned by the wildcard
-   */
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
+
   fastq_merge.sh ${sample_id}
   """
 }
@@ -691,15 +679,18 @@ process fastqc_1 {
   label "fastqc"
 
   input:
-    set val(sample_id), file(pass_files) from COMBINED_SAMPLES_FOR_FASTQC_1
+    set val(sample_id), file(fastq_files) from COMBINED_SAMPLES_FOR_FASTQC_1
 
   output:
-    set file("${sample_id}_?_fastqc.html") , file("${sample_id}_?_fastqc.zip") optional true into FASTQC_1_OUTPUT
+    set file("*_fastqc.html") , file("*_fastqc.zip") optional true into FASTQC_1_OUTPUT
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_FASTQC_SIGNAL
 
   script:
   """
-  fastqc $pass_files
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
+
+  fastqc ${fastq_files}
   """
 }
 
@@ -727,18 +718,25 @@ process kallisto {
   label "kallisto"
 
   input:
-    set val(sample_id), file(pass_files) from KALLISTO_CHANNEL
+    set val(sample_id), file(fastq_files) from KALLISTO_CHANNEL
     file kallisto_index from KALLISTO_INDEX
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Kallisto.ga") into KALLISTO_GA
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Kallisto.ga") into KALLISTO_GA_TO_CLEAN
+    set val(sample_id), file("*.ga") into KALLISTO_GA
+    set val(sample_id), file("*.ga") into KALLISTO_GA_TO_CLEAN
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL
-    file "*kallisto.log" into KALLISTO_LOG
+    file "*.kallisto.log" into KALLISTO_LOG
 
   script:
   """
-  kallisto.sh ${sample_id} ${kallisto_index} ${params.input.reference_name}
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
+  echo "#TRACE index_bytes=`stat -Lc '%s' ${kallisto_index}`"
+
+  kallisto.sh \
+    ${sample_id} \
+    ${kallisto_index} \
+    ${params.input.reference_name}
   """
 }
 
@@ -752,17 +750,24 @@ process kallisto_tpm {
   tag { sample_id }
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Kallisto.ga") from KALLISTO_GA
+    set val(sample_id), file(ga_File) from KALLISTO_GA
 
   output:
-    file "${sample_id}_vs_${params.input.reference_name}.Kallisto.tpm" optional true into KALLISTO_TPM
-    file "${sample_id}_vs_${params.input.reference_name}.Kallisto.raw" optional true into KALLISTO_RAW
+    file "*.tpm" optional true into KALLISTO_TPM
+    file "*.raw" optional true into KALLISTO_RAW
     set val(sample_id), val(1) into CLEAN_KALLISTO_GA_SIGNAL
-    val sample_id  into KALLISTO_SAMPLE_COMPLETE_SIGNAL
+    val sample_id into KALLISTO_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
-  kallisto_tpm.sh ${sample_id} ${params.output.publish_tpm} ${params.output.publish_raw} ${params.input.reference_name}
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE ga_lines=`cat *.ga | wc -l`"
+
+  kallisto_tpm.sh \
+    ${sample_id} \
+    ${params.output.publish_tpm} \
+    ${params.output.publish_raw} \
+    ${params.input.reference_name}
   """
 }
 
@@ -778,18 +783,25 @@ process salmon {
   label "salmon"
 
   input:
-    set val(sample_id), file(pass_files) from SALMON_CHANNEL
+    set val(sample_id), file(fastq_files) from SALMON_CHANNEL
     file salmon_index from SALMON_INDEXES
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Salmon.ga") into SALMON_GA
+    set val(sample_id), file("*.ga") into SALMON_GA
     set val(sample_id), file("*.ga/aux_info/meta_info.json"), file("*.ga/libParams/flenDist.txt") into SALMON_GA_LOG
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Salmon.ga/quant.sf") into SALMON_GA_TO_CLEAN
+    set val(sample_id), file("*.ga/quant.sf") into SALMON_GA_TO_CLEAN
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_SALMON_SIGNAL
 
   script:
   """
-  salmon.sh ${sample_id} ${task.cpus} ${params.input.reference_name}
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
+  echo "#TRACE index_bytes=`stat -Lc '%s' ${salmon_index} | awk '{sum += \$1} END {print sum}'`"
+
+  salmon.sh \
+    ${sample_id} \
+    ${task.cpus} \
+    ${params.input.reference_name}
   """
 }
 
@@ -803,17 +815,23 @@ process salmon_tpm {
   tag { sample_id }
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Salmon.ga") from SALMON_GA
+    set val(sample_id), file(ga_file) from SALMON_GA
 
   output:
-    file "${sample_id}_vs_${params.input.reference_name}.Salmon.tpm" optional true into SALMON_TPM
-    file "${sample_id}_vs_${params.input.reference_name}.Salmon.raw" optional true into SALMON_RAW
+    file "*.Salmon.tpm" optional true into SALMON_TPM
+    file "*.Salmon.raw" optional true into SALMON_RAW
     set val(sample_id), val(1) into CLEAN_SALMON_GA_SIGNAL
-    val sample_id  into SALMON_SAMPLE_COMPLETE_SIGNAL
+    val sample_id into SALMON_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
-  salmon_tpm.sh ${params.output.publish_tpm} ${sample_id} ${params.input.reference_name} ${params.output.publish_raw}
+  echo "#TRACE sample_id=${sample_id}"
+
+  salmon_tpm.sh \
+    ${params.output.publish_tpm} \
+    ${sample_id} \
+    ${params.input.reference_name} \
+    ${params.output.publish_raw}
   """
 }
 
@@ -841,16 +859,35 @@ process trimmomatic {
     file fasta_adapter from FASTA_ADAPTER
 
   output:
-    set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_FOR_FASTQC
-    set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_SAMPLES_FOR_HISAT2
-    set val(sample_id), file("${sample_id}_*trim.fastq") into TRIMMED_FASTQ_FOR_CLEANING
-    set val(sample_id), file("${sample_id}.trim.log") into TRIMMED_SAMPLE_LOG
+    set val(sample_id), file("*_trim.fastq") into TRIMMED_SAMPLES_FOR_FASTQC
+    set val(sample_id), file("*_trim.fastq") into TRIMMED_SAMPLES_FOR_HISAT2
+    set val(sample_id), file("*_trim.fastq") into TRIMMED_FASTQ_FOR_CLEANING
+    set val(sample_id), file("*.trim.log") into TRIMMED_SAMPLE_LOG
 
   script:
   """
-  trimmomatic.sh ${sample_id} ${params.software.trimmomatic.MINLEN} ${task.cpus} ${fasta_adapter} ${params.software.trimmomatic.LEADING} ${params.software.trimmomatic.TRAILING} ${params.software.trimmomatic.SLIDINGWINDOW} ${params.software.trimmomatic.quality}
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE n_cpus=${task.cpus}"
+  echo "#TRACE minlen=${params.software.trimmomatic.MINLEN}"
+  echo "#TRACE leading=${params.software.trimmomatic.LEADING}"
+  echo "#TRACE trailing=${params.software.trimmomatic.TRAILING}"
+  echo "#TRACE slidingwindow=${params.software.trimmomatic.SLIDINGWINDOW}"
+  echo "#TRACE fasta_lines=`cat ${fasta_adapter} | wc -l`"
+  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
+
+  trimmomatic.sh \
+    ${sample_id} \
+    ${params.software.trimmomatic.MINLEN} \
+    ${task.cpus} \
+    ${fasta_adapter} \
+    ${params.software.trimmomatic.LEADING} \
+    ${params.software.trimmomatic.TRAILING} \
+    ${params.software.trimmomatic.SLIDINGWINDOW} \
+    ${params.software.trimmomatic.quality}
   """
 }
+
+
 
 /**
  * Performs fastqc on fastq files post trimmomatic
@@ -862,15 +899,18 @@ process fastqc_2 {
   label "fastqc"
 
   input:
-    set val(sample_id), file(pass_files) from TRIMMED_SAMPLES_FOR_FASTQC
+    set val(sample_id), file(fastq_files) from TRIMMED_SAMPLES_FOR_FASTQC
 
   output:
-    set file("${sample_id}_??_trim_fastqc.html"), file("${sample_id}_??_trim_fastqc.zip") optional true into FASTQC_2_OUTPUT
+    set file("*_fastqc.html"), file("*_fastqc.zip") optional true into FASTQC_2_OUTPUT
     set val(sample_id), val(1) into CLEAN_TRIMMED_FASTQ_FASTQC_SIGNAL
 
   script:
   """
-  fastqc $pass_files
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
+
+  fastqc ${fastq_files}
   """
 }
 
@@ -888,19 +928,27 @@ process hisat2 {
   label "hisat2"
 
   input:
-    set val(sample_id), file(input_files) from TRIMMED_SAMPLES_FOR_HISAT2
+    set val(sample_id), file(fastq_files) from TRIMMED_SAMPLES_FOR_HISAT2
     file indexes from HISAT2_INDEXES
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.sam") into INDEXED_SAMPLES
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.sam.log") into INDEXED_SAMPLES_LOG
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.sam") into SAM_FOR_CLEANING
+    set val(sample_id), file("*.sam") into INDEXED_SAMPLES
+    set val(sample_id), file("*.sam.log") into INDEXED_SAMPLES_LOG
+    set val(sample_id), file("*.sam") into SAM_FOR_CLEANING
     set val(sample_id), val(1) into CLEAN_TRIMMED_FASTQ_HISAT_SIGNAL
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_HISAT_SIGNAL
 
   script:
   """
-  hisat2.sh ${sample_id} ${params.input.reference_name} ${task.cpus}
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE n_cpus=${task.cpus}"
+  echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
+  echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
+
+  hisat2.sh \
+    ${sample_id} \
+    ${params.input.reference_name} \
+    ${task.cpus}
   """
 }
 
@@ -917,21 +965,24 @@ process samtools_sort {
   label "samtools"
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.sam") from INDEXED_SAMPLES
+    set val(sample_id), file(sam_file) from INDEXED_SAMPLES
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.bam") into SORTED_FOR_INDEX
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.bam") into BAM_FOR_CLEANING
+    set val(sample_id), file("*.bam") into SORTED_FOR_INDEX
+    set val(sample_id), file("*.bam") into BAM_FOR_CLEANING
     set val(sample_id), val(1) into CLEAN_SAM_SIGNAL
 
   script:
-    """
-    samtools sort \
-      -o ${sample_id}_vs_${params.input.reference_name}.bam \
-      -O bam \
-      -T temp \
-      ${sample_id}_vs_${params.input.reference_name}.sam
-    """
+  """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE sam_lines=`cat *.sam | wc -l`"
+
+  samtools sort \
+    -o ${sample_id}_vs_${params.input.reference_name}.bam \
+    -O bam \
+    -T temp \
+    ${sam_file}
+  """
 }
 
 
@@ -947,18 +998,21 @@ process samtools_index {
   label "samtools"
 
   input:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.bam") from SORTED_FOR_INDEX
+    set val(sample_id), file(bam_file) from SORTED_FOR_INDEX
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.bam") into BAM_INDEXED_FOR_STRINGTIE
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.bam.bai") into BAI_INDEXED_FILE
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.bam.log") into BAM_INDEXED_LOG
+    set val(sample_id), file(bam_file) into BAM_INDEXED_FOR_STRINGTIE
+    set val(sample_id), file("*.bam.bai") into BAI_INDEXED_FILE
+    set val(sample_id), file("*.bam.log") into BAM_INDEXED_LOG
 
   script:
-    """
-    samtools index ${sample_id}_vs_${params.input.reference_name}.bam
-    samtools stats ${sample_id}_vs_${params.input.reference_name}.bam > ${sample_id}_vs_${params.input.reference_name}.bam.log
-    """
+  """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE bam_bytes=`stat -Lc '%s' *.bam`"
+
+  samtools index ${bam_file}
+  samtools stats ${bam_file} > ${sample_id}_vs_${params.input.reference_name}.bam.log
+  """
 }
 
 
@@ -975,29 +1029,32 @@ process stringtie {
   label "stringtie"
 
   input:
-    // We don't really need the .bam file, but we want to ensure
-    // this process runs after the samtools_index step so we
-    // require it as an input file.
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.bam") from BAM_INDEXED_FOR_STRINGTIE
+    set val(sample_id), file(bam_file) from BAM_INDEXED_FOR_STRINGTIE
     file gtf_file from GTF_FILE
 
   output:
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Hisat2.ga"), file("${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf") into STRINGTIE_GTF_FOR_FPKM
-    set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Hisat2.*") into STRINGTIE_GTF_FOR_CLEANING
+    set val(sample_id), file("*.Hisat2.ga"), file("*.Hisat2.gtf") into STRINGTIE_GTF_FOR_FPKM
+    set val(sample_id), file("*.Hisat2.*") into STRINGTIE_GTF_FOR_CLEANING
     set val(sample_id), val(1) into CLEAN_BAM_SIGNAL
 
   script:
-    """
-    stringtie \
-      -v \
-      -p ${task.cpus} \
-      -e \
-      -o ${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf \
-      -G ${gtf_file} \
-      -A ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga \
-      -l ${sample_id} ${sample_id}_vs_${params.input.reference_name}.bam
-    """
+  """
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE bam_bytes=`stat -Lc '%s' *.bam`"
+  echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
+
+  stringtie \
+    -v \
+    -p ${task.cpus} \
+    -e \
+    -o ${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf \
+    -G ${gtf_file} \
+    -A ${sample_id}_vs_${params.input.reference_name}.Hisat2.ga \
+    -l ${sample_id} \
+    ${bam_file}
+  """
 }
+
 
 
 /**
@@ -1009,19 +1066,30 @@ process hisat2_fpkm_tpm {
   label "stringtie"
 
   input:
-  set val(sample_id), file("${sample_id}_vs_${params.input.reference_name}.Hisat2.ga"), file("${sample_id}_vs_${params.input.reference_name}.Hisat2.gtf") from STRINGTIE_GTF_FOR_FPKM
-
+    set val(sample_id), file(ga_file), file(gtf_file) from STRINGTIE_GTF_FOR_FPKM
 
   output:
-    file "${sample_id}_vs_${params.input.reference_name}.Hisat2.fpkm" optional true into FPKMS
-    file "${sample_id}_vs_${params.input.reference_name}.Hisat2.tpm" optional true into TPM
-    file "${sample_id}_vs_${params.input.reference_name}.Hisat2.raw" optional true into RAW_COUNTS
+    file "*.Hisat2.fpkm" optional true into FPKMS
+    file "*.Hisat2.tpm" optional true into TPM
+    file "*.Hisat2.raw" optional true into RAW_COUNTS
     set val(sample_id), val(1) into CLEAN_STRINGTIE_SIGNAL
     val sample_id into HISAT2_SAMPLE_COMPLETE_SIGNAL
 
   script:
   """
-  hisat2_fpkm_tpm.sh ${params.output.publish_fpkm} ${sample_id} ${params.input.reference_name} ${params.output.publish_tpm} ${params.output.publish_raw}
+  echo "#TRACE sample_id=${sample_id}"
+  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}"
+  echo "#TRACE publish_tpm=${params.output.publish_tpm}"
+  echo "#TRACE publish_raw=${params.output.publish_raw}"
+  echo "#TRACE ga_lines=`cat *.ga | wc -l`"
+  echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
+
+  hisat2_fpkm_tpm.sh \
+    ${params.output.publish_fpkm} \
+    ${sample_id} \
+    ${params.input.reference_name} \
+    ${params.output.publish_tpm} \
+    ${params.output.publish_raw}
   """
 }
 
@@ -1052,18 +1120,18 @@ process multiqc {
     params.output.multiqc == true
 
   script:
-    """
-    multiqc \
-      --ignore ${workflow.launchDir}/${params.output.dir}/GEMs \
-      --ignore ${workflow.launchDir}/${params.output.dir}/reports \
-      ${workflow.launchDir}/${params.output.dir}
-    """
+  """
+  multiqc \
+    --ignore ${workflow.launchDir}/${params.output.dir}/GEMs \
+    --ignore ${workflow.launchDir}/${params.output.dir}/reports \
+    ${workflow.launchDir}/${params.output.dir}
+  """
 }
 
 
 
 /**
- * The createGEM process should run when all samples have
+ * The create_gem process should run when all samples have
  * completed or if on a resume when the bootstrap signal is
  * received.
  */
@@ -1087,7 +1155,22 @@ process create_gem {
 
   script:
   """
-  create_gem.sh ${params.output.publish_fpkm} ${params.input.hisat2.enable} ${workflow.launchDir} ${params.output.dir} ${params.project.machine_name} ${params.output.publish_raw} ${params.output.publish_tpm}
+  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}"
+  echo "#TRACE hisat2_enable=${params.input.hisat2.enable}"
+  echo "#TRACE publish_tpm=${params.output.publish_tpm}"
+  echo "#TRACE publish_raw=${params.output.publish_raw}"
+  echo "#TRACE fpkm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.fpkm 2> /dev/null  | wc -l`"
+  echo "#TRACE tpm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.tpm 2> /dev/null | wc -l`"
+  echo "#TRACE raw_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.raw 2> /dev/null | wc -l`"
+
+  create_gem.sh \
+    ${params.output.publish_fpkm} \
+    ${params.input.hisat2.enable} \
+    ${workflow.launchDir} \
+    ${params.output.dir} \
+    ${params.project.machine_name} \
+    ${params.output.publish_raw} \
+    ${params.output.publish_tpm}
   """
 }
 
@@ -1146,6 +1229,7 @@ process clean_fastq {
   clean_work_files.sh "${flist}"
   """
 }
+
 /**
  * The "signal" to clean up the merged FASTQ files consists of:
  *
@@ -1253,6 +1337,8 @@ process clean_sam {
 SSSTMIX = BAM_FOR_CLEANING.mix(CLEAN_BAM_SIGNAL)
 SSSTMIX.groupTuple(size: 2).set { BAM_CLEANUP_READY }
 
+
+
 /**
  * Clean up BAM files
  */
@@ -1270,6 +1356,8 @@ process clean_bam {
   clean_work_files.sh "${files_list[0]}"
   """
 }
+
+
 
 /**
  * Merge the Kallisto .ga file with the clean kallisto ga signal so that we can
