@@ -269,7 +269,7 @@ process retrieve_sra_metadata {
 
   output:
     stdout REMOTE_SAMPLES_LIST
-    file "missing_runs.txt" optional
+    file "missing_runs.txt" optional true
 
   script:
   """
