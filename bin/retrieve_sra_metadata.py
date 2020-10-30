@@ -92,7 +92,7 @@ def download_runs_meta(run_ids, meta_dir, page_size=100):
     experiments = {exp["EXPERIMENT"]["IDENTIFIERS"]["PRIMARY_ID"]: exp for exp in experiments}.values()
 
     # process the metadata from each experiment
-    num_runs_found = 0
+    n_runs_found = 0
     for experiment in experiments:
 
         # Get the experiment ID
@@ -111,7 +111,7 @@ def download_runs_meta(run_ids, meta_dir, page_size=100):
         for run in runs:
             run_id = run["@accession"]
             if run_id in run_ids:
-                num_runs_found = num_runs_found + 1
+                n_runs_found = n_runs_found + 1
                 found_runs.append(run_id)
 
                 # Write out the experiment details in JSON metadata files
@@ -120,12 +120,15 @@ def download_runs_meta(run_ids, meta_dir, page_size=100):
             else:
                 sys.stderr.write('Notice: the run, %s, is part of the experiment %s but not included in the input file of runs' % (run_id, exp_id))
 
-    if (num_runs_found != len(run_ids)):
-        # Found out which runs are missing metadata.
+    if n_runs_found != len(run_ids):
+        # save missing runs to file
         missing_runs = set(run_ids).difference(set(found_runs))
-        raise Exception ('Could not retrieve metadata for the all runs: %d != %d. Missing runs: %s' % (num_runs_found, len(run_ids), ' '.join(missing_runs)))
+        f = open('missing_runs.txt', 'w')
+        f.write('\n'.join(missing_runs))
 
-    sys.stderr.write("Metadata for %d runs retrieved\n" % (num_runs_found))
+        sys.stderr.write('Notice: could not retrieve metadata for the all runs: %d != %d' % (n_runs_found, len(run_ids)))
+
+    sys.stderr.write("Metadata for %d runs retrieved\n" % (n_runs_found))
 
 
 
@@ -205,6 +208,7 @@ def find_downloaded_runs(meta_dir, run_ids):
         run_path = "%s/%s.ncbi.meta.json" % (run_dir, run_id)
         if not os.path.exists(run_path):
             missing_runs.append(run_id)
+
     return missing_runs
 
 
@@ -245,7 +249,7 @@ if __name__ == "__main__":
     parser.add_argument("--run_id_file", help="A file containing the SRA run IDs.", required=True)
     parser.add_argument("--skip_file", help="A file containing the SRA run IDs to skip")
     parser.add_argument("--meta_dir", help="The directory were meta data should be stored", required=True)
-    parser.add_argument("--page-size", type=int, default=100, help="number of SRA run IDs to query at a time", dest="PAGE_SIZE")
+    parser.add_argument("--page-size", help="number of SRA run IDs to query at a time", type=int, default=100, dest="PAGE_SIZE")
 
     args = parser.parse_args()
 
@@ -270,8 +274,8 @@ if __name__ == "__main__":
     sra_pattern = re.compile("^[SED]RR\d+$")
 
     for run_id in run_ids:
-      if not sra_pattern.match(run_id):
-          raise ValueError("Improper SRA run ID: %s" % (run_id))
+        if not sra_pattern.match(run_id):
+            raise ValueError("Improper SRA run ID: %s" % (run_id))
 
     # Find runs whose metadata has already been retreived.
     missing_runs = find_downloaded_runs(meta_dir, run_ids)

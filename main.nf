@@ -261,7 +261,7 @@ publish_pattern_stringtie_gtf_and_ga = params.output.publish_stringtie_gtf_and_g
  * and maps SRA runs to SRA experiments.
  */
 process retrieve_sra_metadata {
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "missing_runs.txt"
   label "python3"
 
   input:
@@ -269,11 +269,17 @@ process retrieve_sra_metadata {
 
   output:
     stdout REMOTE_SAMPLES_LIST
+    file "missing_runs.txt" optional
 
   script:
-    """
-    retrieve_sra_metadata.py --run_id_file ${srr_file} --meta_dir ${workflow.launchDir}/${params.output.dir} --skip_file ${workflow.launchDir}/${params.input.input_data_dir}/${params.input.skip_list_path}
-    """
+  """
+  >&2 echo "#TRACE n_remote_run_ids=`cat ${srr_file} | wc -l`"
+
+  retrieve_sra_metadata.py \
+      --run_id_file ${srr_file} \
+      --meta_dir ${workflow.launchDir}/${params.output.dir} \
+      --skip_file ${workflow.launchDir}/${params.input.input_data_dir}/${params.input.skip_list_path}
+  """
 }
 
 
@@ -511,7 +517,6 @@ process next_sample {
     val sample_id from NEXT_SAMPLE_SIGNAL
 
   exec:
-
     // Use a file lock to prevent a race condition for grabbing the next sample.
     File lockfile = null
     FileChannel channel = null
@@ -1189,8 +1194,6 @@ process create_gem {
  * and access times.
  */
 
-
-
 /**
  * Cleans downloaded SRA files
  */
@@ -1272,8 +1275,6 @@ process clean_merged_fastq {
   """
 }
 
-
-
 /**
  * Merge the Trimmomatic samples with Hisat's signal and FastQC signal. Once
  * both tools send the signal that they are done with the trimmed file it can
@@ -1301,8 +1302,6 @@ process clean_trimmed_fastq {
   """
 }
 
-
-
 /**
  * Merge the HISAT sam file with samtools_sort signal that it is
  * done so that we can remove these files.
@@ -1328,16 +1327,12 @@ process clean_sam {
   """
 }
 
-
-
 /**
  * Merge the samtools_sort bam file with stringtie signal that it is
  * done so that we can remove these files.
  */
 SSSTMIX = BAM_FOR_CLEANING.mix(CLEAN_BAM_SIGNAL)
 SSSTMIX.groupTuple(size: 2).set { BAM_CLEANUP_READY }
-
-
 
 /**
  * Clean up BAM files
@@ -1356,8 +1351,6 @@ process clean_bam {
   clean_work_files.sh "${files_list[0]}"
   """
 }
-
-
 
 /**
  * Merge the Kallisto .ga file with the clean kallisto ga signal so that we can
@@ -1408,7 +1401,6 @@ process clean_salmon_ga {
   clean_work_files.sh "${files_list[0]}"
   """
 }
-
 
 /**
  * Merge the Salmon .ga file with the clean salmon ga signal so that we can
