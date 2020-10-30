@@ -296,7 +296,7 @@ REMOTE_SAMPLES_LIST
   .set{REMOTE_SAMPLES_FOR_STAGING}
 
 LOCAL_SAMPLE_FILES_FOR_STAGING
-  .map{ [it[0], it[1], 'local' ] }
+  .map{ [it[0], it[1], 'local'] }
   .set{LOCAL_SAMPLES_FOR_STAGING}
 
 ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
@@ -344,11 +344,11 @@ if (staged_files.size() == 0) {
  * stage directory.
  */
 process write_stage_files {
-  executor "local"
-  tag {sample[0]}
+  tag { sample_id }
+  label "local"
 
   input:
-    val sample from ALL_SAMPLES
+    set val(sample_id), val(run_files_or_ids), val(sample_type) from ALL_SAMPLES
 
   output:
     val (1) into SAMPLES_READY_SIGNAL
@@ -364,29 +364,17 @@ process write_stage_files {
     }
 
     // Only stage files that should not be skipped.
-    if (skip_samples.intersect([sample[0]]) == [])  {
-
+    if (skip_samples.intersect([sample_id]) == []) {
       // Create a file for each samples.
-      sample_file = file("${workflow.workDir}/GEMmaker/stage/" + sample[0] + '.sample.csv')
+      sample_file = file("${workflow.workDir}/GEMmaker/stage/" + sample_id + '.sample.csv')
       sample_file.withWriter {
-
-        // Get the sample type: local or remote.
-        type = sample[2]
-
         // If this is a local file.
-        if (type.equals('local')) {
-          if (sample[1].size() > 1) {
-            files = sample[1]
-            files_str = files.join('::')
-            it.writeLine '"' + sample[0] + '","' + files_str + '","' + type + '"'
-          }
-          else {
-            it.writeLine '"' + sample[0] + '","' + sample[1].first().toString() + '","' + type + '"'
-          }
+        if (sample_type.equals('local')) {
+          it.writeLine '"' + sample_id + '","' + run_files_or_ids.join('::') + '","' + sample_type + '"'
         }
         // If this is a remote file.
         else {
-          it.writeLine '"' + sample[0] + '","' + sample[1] + '","' + type + '"'
+          it.writeLine '"' + sample_id + '","' + run_files_or_ids + '","' + sample_type + '"'
         }
       }
     }
@@ -404,7 +392,7 @@ SAMPLES_READY_SIGNAL.collect().set { FIRST_SAMPLE_START_SIGNAL }
  * Moves the first set of sample files into the process directory.
  */
 process start_first_batch {
-  executor "local"
+  label "local"
   cache false
 
   input:
@@ -451,9 +439,9 @@ NEXT_SAMPLE = Channel
  * channel and start processing.
  */
 process read_sample_file {
-  executor "local"
-  cache false
   tag { sample_file }
+  label "local"
+  cache false
 
   input:
     file(sample_file) from NEXT_SAMPLE
@@ -511,7 +499,8 @@ SAMPLE_COMPLETE_SIGNAL
  * the NEXT_SAMPLE.watchPath channel.
  */
 process next_sample {
-  executor "local"
+  tag { sample_id }
+  label "local"
 
   input:
     val sample_id from NEXT_SAMPLE_SIGNAL
