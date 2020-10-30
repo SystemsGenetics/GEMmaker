@@ -261,7 +261,7 @@ publish_pattern_stringtie_gtf_and_ga = params.output.publish_stringtie_gtf_and_g
  * and maps SRA runs to SRA experiments.
  */
 process retrieve_sra_metadata {
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "*.GEMmaker.meta.*", saveAs: { "${it.tokenize(".")[0]}/${it}" }
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "missing_runs.txt"
   label "python3"
 
   input:
@@ -269,13 +269,16 @@ process retrieve_sra_metadata {
 
   output:
     stdout REMOTE_SAMPLES_LIST
-    file "*.GEMmaker.meta.*"
+    file "missing_runs.txt" optional
 
   script:
   """
   >&2 echo "#TRACE n_remote_run_ids=`cat ${srr_file} | wc -l`"
 
-  retrieve_sra_metadata.py ${srr_file}
+  retrieve_sra_metadata.py \
+      --run_id_file ${srr_file} \
+      --meta_dir ${workflow.launchDir}/${params.output.dir} \
+      --skip_file ${workflow.launchDir}/${params.input.input_data_dir}/${params.input.skip_list_path}
   """
 }
 

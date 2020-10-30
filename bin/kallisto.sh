@@ -4,7 +4,7 @@ sample_id="$1"
 kallisto_index="$2"
 params_input_reference_name="$3"
 
-if [ -e ${sample_id}_2.fastq ]; then
+if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
   kallisto quant \
     -i ${kallisto_index} \
     -o ${sample_id}_vs_${params_input_reference_name}.Kallisto.ga \
