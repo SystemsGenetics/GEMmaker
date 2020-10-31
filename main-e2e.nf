@@ -275,7 +275,7 @@ process process_sample {
   publishDir params.output.sample_dir, mode: params.output.publish_mode
 
   input:
-    set val(sample_id), val(sample_type), val(remote_ids), val(local_files) from ALL_SAMPLES
+    set val(sample_id), val(sample_type), val(remote_run_ids), val(local_fastq_files) from ALL_SAMPLES
     file fasta_adapter from FASTA_ADAPTER
     file indexes from INDEXES
     file gtf_file from GTF_FILE
@@ -315,9 +315,9 @@ process process_sample {
   # for remote samples, prepare FASTQ files from NCBI
   if [[ "${sample_type}" == "remote" ]]; then
     # download SRA files from NCBI
-    echo "#TRACE n_remote_run_ids=${remote_ids.size()}"
+    echo "#TRACE n_remote_run_ids=${remote_run_ids.size()}"
 
-    retrieve_sra.py ${remote_ids.join(' ')}
+    retrieve_sra.py ${remote_run_ids.join(' ')}
 
     # extract FASTQ files from SRA files
     echo "#TRACE sra_bytes=`stat -Lc '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
@@ -341,7 +341,7 @@ process process_sample {
 
   # for local samples, fetch FASTQ files from filesystem
   elif [[ "${sample_type}" == "local" ]]; then
-    cp ${local_files.join(' ')} .
+    cp ${local_fastq_files.join(' ')} .
   fi
 
   # perform fastqc on raw FASTQ files
