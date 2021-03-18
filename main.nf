@@ -610,6 +610,7 @@ process download_runs {
  */
 process fastq_dump {
   publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${sample_id}/${it}" }
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: 'failed_runs.txt', saveAs: { "${sample_id}/${it}" }
   tag { sample_id }
   label "sratoolkit"
 
@@ -620,6 +621,7 @@ process fastq_dump {
     set val(sample_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_MERGING
     set val(sample_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_CLEANING
     set val(sample_id), val(1) into CLEAN_SRA_SIGNAL
+    set val(sample_id), file('failed_runs.txt') into FAILED_RUNS
 
   script:
   """

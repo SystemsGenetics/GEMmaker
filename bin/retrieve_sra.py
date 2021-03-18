@@ -17,6 +17,7 @@ import subprocess
 import re
 import time
 import os
+import glob
 import random
 import requests
 import shutil
@@ -44,11 +45,11 @@ def process_wait(p):
         stderr = stderr.decode('utf-8')
     else:
         stderr = ''
-    
+
     # Send stdout and stderr out to proper streams
     print(stdout, file=sys.stdout)
     print(stderr, file=sys.stderr)
-   
+
     return { 'exit' : exit_code, 'stdout' : stdout, 'stderr' : stderr }
 
 def get_sample_url(run_id):
@@ -61,20 +62,22 @@ def get_sample_url(run_id):
     print("Getting download paths for sample: {}".format(run_id))
 
     # First try if there is an aspera path.
-    p = subprocess.Popen(["srapath", "--protocol", "fasp", "--json", run_id], stdout=subprocess.PIPE)
+    p = subprocess.Popen(["srapath", "--protocol", "fasp", "--json", run_id],
+                         stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     res = process_wait(p)
     res = json.loads(res['stdout'])
     fasp_path = res['responses'][0]['remote'][0]['path']
     sra_size = res['responses'][0]['size']
- 
-    # If an https path was returned for Aspera then use that. 
+
+    # If an https path was returned for Aspera then use that.
     https_path = ""
-    if (re.match('https://', fasp_path)): 
+    if (re.match('https://', fasp_path)):
        https_path = fasp_path
        fasp_path = ""
-    # If there is no aspera path then try HTTPs 
-    elif (not fasp_path): 
-       p = subprocess.Popen(["srapath", "--protocol", "https", "-P", run_id], stdout=subprocess.PIPE)
+    # If there is no aspera path then try HTTPs
+    elif (not fasp_path):
+       p = subprocess.Popen(["srapath", "--protocol", "https", "-P", run_id],
+                            stderr=subprocess.PIPE, stdout=subprocess.PIPE)
        res = process_wait(p)
        res = json.loads(res['stdout'])
        https_path = res['response'][0]['remote'][0]['path']
@@ -93,7 +96,8 @@ def download_aspera(run_id, urls):
 
     ec = 0
     print("Retrieving sample via aspera: {}".format(run_id))
-    p = subprocess.Popen(["ascp", "-i", "$ASPERA_KEY","-k", "1", "-T", "-l", "1000m", urls['fasp'].replace('fasp://',''), "{}.sra".format(run_id)], stdout=subprocess.PIPE)
+    p = subprocess.Popen(["ascp", "-i", "$ASPERA_KEY","-k", "1", "-T", "-l", "1000m", urls['fasp'].replace('fasp://',''), "{}.sra".format(run_id)],
+                         stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     res = process_wait(p)
     if (res['exit'] != 0):
         retry = False
@@ -112,15 +116,15 @@ def download_https(run_id, urls):
 
     ec = 0
     print("Retrieving sample via https: {}".format(run_id))
-    try: 
+    try:
         r = requests.get(urls['https'], verify=True, stream=True)
         r.raw.decode_content = True
         with open("{}.sra".format(run_id), 'wb') as sra_file:
-            shutil.copyfileobj(r.raw, sra_file) 
+            shutil.copyfileobj(r.raw, sra_file)
     except requests.exceptions.RequestException as e:
         print(str(e), file=sys.stderr)
         ec = 1
-    return ec 
+    return ec
 
 def download_samples(run_ids):
     """
@@ -144,7 +148,7 @@ def download_samples(run_ids):
         if (ec != 0):
             print("Download failed.", file=sys.stderr)
             break
-        
+
         if (sample_is_good(run_id, urls['size']) == False):
             print("Downloaded sample is missing or corrupted.", file=sys.stderr)
             ec = 1
@@ -154,7 +158,7 @@ def download_samples(run_ids):
 
 def sample_is_good(run_id, size):
     """
-    Checks if a sample is fully downloaded. 
+    Checks if a sample is fully downloaded.
 
     :param run_ids: the list of run IDs.
     """
@@ -164,7 +168,7 @@ def sample_is_good(run_id, size):
       if (statinfo.st_size == size):
         print("Size {} == {}".format(statinfo.st_size, size), file=sys.stdout)
         return True
-      else: 
+      else:
         print("Size {} != {}".format(statinfo.st_size, size), file=sys.stdout)
     return False
 
@@ -193,7 +197,9 @@ if __name__ == "__main__":
     # failed processes
     if (ec != 0):
         print("Cleaning after failed attempt.", file=sys.stderr)
-        p = subprocess.Popen(["rm", "-rf", "./*"])
+        sra_list = glob.glob('*.sra')
+        for sra in sra_list:
+          os.remove(sra)
 
     # Return the exit code.
     sys.exit(ec)
