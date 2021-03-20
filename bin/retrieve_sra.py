@@ -17,7 +17,6 @@ import subprocess
 import re
 import time
 import os
-import glob
 import random
 import requests
 import shutil
@@ -94,17 +93,16 @@ def download_aspera(run_id, urls):
     :param urls: a dictionary of urls for the run.
     """
 
-    ec = 0
     print("Retrieving sample via aspera: {}".format(run_id))
     p = subprocess.Popen(["ascp", "-i", "$ASPERA_KEY","-k", "1", "-T", "-l", "1000m", urls['fasp'].replace('fasp://',''), "{}.sra".format(run_id)],
                          stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     res = process_wait(p)
     if (res['exit'] != 0):
-        retry = False
-    else:
-        print("Aspera Failed. Exit code: {}. Trying https".format(exit_code), file=sys.stderr)
-        ec = download_https(urls)
-    return ec
+        print("Aspera Failed: ".format(res['stderr']), file=sys.stderr)
+        if 'https' in urls.keys():
+            print("Trying https", file=sys.stderr)
+            res = download_https(run_id, urls)
+    return res
 
 def download_https(run_id, urls):
     """
@@ -114,8 +112,8 @@ def download_https(run_id, urls):
     :param urls: a dictionary of urls for the run.
     """
 
-    ec = 0
     print("Retrieving sample via https: {}".format(run_id))
+    res = {'exit': 0}
     try:
         r = requests.get(urls['https'], verify=True, stream=True)
         r.raw.decode_content = True
@@ -123,8 +121,9 @@ def download_https(run_id, urls):
             shutil.copyfileobj(r.raw, sra_file)
     except requests.exceptions.RequestException as e:
         print(str(e), file=sys.stderr)
-        ec = 1
-    return ec
+        res['exit'] = 1
+        res['stderr'] = str(e)
+    return res
 
 def download_samples(run_ids):
     """
@@ -133,8 +132,7 @@ def download_samples(run_ids):
     :param run_ids: the list of run IDs.
     """
 
-    # Set an exit code
-    ec = 0
+    failed_runs = {}
 
     # Now download each SRR.
     for run_id in run_ids:
@@ -142,19 +140,21 @@ def download_samples(run_ids):
         # We will try Aspera first if we have a URL.
         urls = get_sample_url(run_id)
         if (urls['fasp']):
-            ec = download_aspera(run_id, urls)
+            res = download_aspera(run_id, urls)
         else:
-            ec = download_https(run_id, urls)
-        if (ec != 0):
-            print("Download failed.", file=sys.stderr)
+            res = download_https(run_id, urls)
+        if (res['exit'] != 0):
+            failed_run[run_id] = res['stderr']
+            print("Download failed for {}.".format(run_id), file=sys.stderr)
             break
 
         if (sample_is_good(run_id, urls['size']) == False):
-            print("Downloaded sample is missing or corrupted.", file=sys.stderr)
-            ec = 1
+            message = "Downloaded sample is missing or corrupted."
+            failed_run[run_id] = message;
+            print(message, file=sys.stderr)
             break
 
-    return(ec)
+    return(failed_runs)
 
 def sample_is_good(run_id, size):
     """
@@ -177,8 +177,10 @@ if __name__ == "__main__":
 
     # Parse command-line arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument("run_ids", help="list of SRA run IDs", nargs="+")
-
+    parser.add_argument("--run_ids", dest='run_ids', type=str, required=True,
+                        help="List of input SRA files", nargs="+")
+    parser.add_argument("--sample", dest='sample', type=str, required=True,
+                        help="The sample name to which the SRA files belong")
     args = parser.parse_args()
 
     # Use this RE to make sure that each SRA run ID is correct.
@@ -190,16 +192,25 @@ if __name__ == "__main__":
             raise ValueError("Improper SRA run ID: %s" % (run_id))
 
     # Download the samples:
-    ec = download_samples(args.run_ids)
+    failed_runs = download_samples(args.run_ids)
 
-    # If the exit code is not zero then clean up so that
-    # we don't waste space as Nextflow doesn't clean up
-    # failed processes
-    if (ec != 0):
-        print("Cleaning after failed attempt.", file=sys.stderr)
-        sra_list = glob.glob('*.sra')
-        for sra in sra_list:
-          os.remove(sra)
+    # Write any failed SRRs to a file
+    f = open('{}.failed_runs.download.txt'.format(args.sample), "w")
+    f.write(json.dumps(failed_runs, indent=4))
+    f.close()
+
+    # Clean up any failed runs.
+    if (len(failed_runs.keys()) > 0):
+        print("Cleaning failed runs.", file=sys.stderr)
+        for failed_run in failed_runs.keys():
+            sra_file = "{}.sra".format('failed_run')
+            if os.path.exists(sra_file):
+                os.remove(sra_file)
+
+        # Create the file 'sample_failed' to trigger the workflow to skip
+        # this sample.
+        f = open('sample_failed', "w")
+        f.close()
 
     # Return the exit code.
-    sys.exit(ec)
+    sys.exit(0)

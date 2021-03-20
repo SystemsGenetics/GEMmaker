@@ -14,6 +14,10 @@ import os
 import glob
 import json
 
+
+
+
+
 def process_wait(p):
     """
     A helper function for running a system command.
@@ -43,6 +47,10 @@ def process_wait(p):
 
     return { 'exit' : exit_code, 'stdout' : stdout, 'stderr' : stderr }
 
+
+
+
+
 def dump_samples(sras):
     """
     dumps a SRA files to FASTQ files
@@ -51,7 +59,7 @@ def dump_samples(sras):
     """
 
     # Store the list of failed SRA files.
-    failed = {}
+    failed_runs = {}
 
     # Now dump each SRA file
     for sra in sras:
@@ -62,45 +70,46 @@ def dump_samples(sras):
 
         # If the dump fails then lets mark this run as failed and move on.
         if (res['exit'] != 0):
-            failed[sra] = res['stderr']
-            print("Cleaning up after failed attempt.", file=sys.stderr)
+            failed_runs[sra.replace('.sra', '')] = res['stderr']
 
-            # Remove the FASTQ files
-            fastq_list = glob.glob('{}_*.fastq'.format(sra.replace('sra','')))
-            for fastq in fastq_list:
-                os.remove(fastq)
+    return(failed_runs)
 
-    return(failed)
 
-def redownload_srr(srr):
-  """Re-downloads an SRA file.
 
-  :param srr: The name of the SRR file to download
-  :type srr: string
 
-  This is needed in the event that an SRR file is corrupted and we want to try
-  again.  This will force the file to be downloaded into the current directory.
-  """
-  p = subprocess.Popen(["../../../bin/retrieve_sra.py", srr],
-                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  return process_wait(p)
 
 
 if __name__ == "__main__":
 
     # Parse command-line arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument("sra_files", help="list of input SRA files", nargs="+")
+    parser.add_argument("--sra_files", dest='sra_files', type=str, required=True,
+                        help="List of input SRA files", nargs="+")
+    parser.add_argument("--sample", dest='sample', type=str, required=True,
+                        help="The sample name to which the SRA files belong")
 
     args = parser.parse_args()
 
     # Dump the samples. The names of those that failed get returned.
-    failed = dump_samples(args.sra_files)
+    failed_runs = dump_samples(args.sra_files)
 
     # Write any failed SRRs to a file
-    f = open('failed_runs.txt', "w")
-    f.write(json.dumps(failed, indent=4))
+    f = open('{}.failed_runs.fastq-dump.txt'.format(args.sample), "w")
+    f.write(json.dumps(failed_runs, indent=4))
     f.close()
+
+    # Clean up any failed runs.
+    if (len(failed_runs.keys()) > 0):
+        print("Cleaning failed runs.", file=sys.stderr)
+        for failed_run in failed_runs.keys():
+            fastq_files = glob.glob('{}_*.fastq'.format(failed_run))
+            for fastq_file in fastq_files:
+                os.remove(fastq_file)
+                
+        # Create the file 'sample_failed' to trigger the workflow to skip
+        # this sample.
+        f = open('sample_failed', "w")
+        f.close()
 
     # Return the exit code.
     sys.exit(0)

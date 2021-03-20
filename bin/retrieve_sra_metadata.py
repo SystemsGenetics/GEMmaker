@@ -35,6 +35,7 @@ def download_runs_meta(run_ids, meta_dir, page_size=100):
     """
     experiments = []
     found_runs = []
+    failed_runs = {}
 
     # query the run IDs in "pages" because the NCBI endpoint is fragile
     page = 0
@@ -56,10 +57,13 @@ def download_runs_meta(run_ids, meta_dir, page_size=100):
         sys.stderr.write("Fetching IDs: %s.  " % (",".join(ids)))
 
         # parse the XML response
-        try: response_obj = urllib.request.urlopen(request)
+        try:
+            response_obj = urllib.request.urlopen(request)
         except urllib.error.URLError as e:
+            for id in ids:
+                failed_runs[id] = e.reason
             sys.stderr.write("ERROR Retrieving SRA Metadata: %s\n" % (e.reason))
-            sys.exit(1)
+            continue
 
         response_xml = response_obj.read().decode(response_obj.headers.get_content_charset())
         response = xmltodict.parse(response_xml)
@@ -118,17 +122,18 @@ def download_runs_meta(run_ids, meta_dir, page_size=100):
                 save_ncbi_meta(experiment, sample, run, meta_dir)
 
             else:
-                sys.stderr.write('Notice: the run, %s, is part of the experiment %s but not included in the input file of runs' % (run_id, exp_id))
+                message = 'Notice: the run, %s, is part of experiment %s but was not included in the input SRA_IDS.txt file. Do you want to include this run?' % (run_id, exp_id)
+                failed_runs[run_id] = message
+                sys.stderr.write(message)
 
     if n_runs_found != len(run_ids):
-        # save missing runs to file
-        missing_runs = set(run_ids).difference(set(found_runs))
-        f = open('missing_runs.txt', 'w')
-        f.write('\n'.join(missing_runs))
-
         sys.stderr.write('Notice: could not retrieve metadata for the all runs: %d != %d' % (n_runs_found, len(run_ids)))
+        bad_ids = set(run_ids).difference(set(found_runs))
+        for bad_id in bad_ids:
+            failed_runs[bad_id] = 'Metadata was not returned by NCBI for this run.'
 
     sys.stderr.write("Metadata for %d runs retrieved\n" % (n_runs_found))
+    return(failed_runs)
 
 
 
@@ -277,14 +282,22 @@ if __name__ == "__main__":
         if not sra_pattern.match(run_id):
             raise ValueError("Improper SRA run ID: %s" % (run_id))
 
-    # Find runs whose metadata has already been retreived.
+    # Find runs whose metadata has already been retrieved.
     missing_runs = find_downloaded_runs(meta_dir, run_ids)
 
     if len(run_ids) - len(missing_runs) > 0:
         sys.stderr.write("Found %d SRA run file(s) already retreived. Skipping retreival of these.\n" % (len(run_ids) - len(missing_runs)))
 
     # Download metadata for each SRA run ID that is not already present
-    download_runs_meta(missing_runs, meta_dir, args.PAGE_SIZE)
+    failed_runs = download_runs_meta(missing_runs, meta_dir, args.PAGE_SIZE)
+
+    # Saved failed runs into a file.
+    f = open('failed_runs.metadata.txt', 'w')
+    f.write(json.dumps(failed_runs, indent=4))
+    f.close()
 
     # Now iterate through the metadata and and map runs to experiments.
     map_run_to_exp(meta_dir, run_ids)
+
+    # Return the exit code.
+    sys.exit(0)
