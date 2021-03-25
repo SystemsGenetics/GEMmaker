@@ -100,11 +100,11 @@ if __name__ == "__main__":
 
     # Clean up any failed runs.
     if (len(failed_runs.keys()) > 0):
-        print("Cleaning failed runs.", file=sys.stderr)
+        print("Cleaning...", file=sys.stderr)
         fastq_files = glob.glob('*.fastq')
         for fastq_file in fastq_files:
             os.remove(fastq_file)
-                
+
         # Create the file 'sample_failed' to trigger the workflow to skip
         # this sample.
         f = open('sample_failed', "w")

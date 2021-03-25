@@ -201,11 +201,10 @@ if __name__ == "__main__":
 
     # Clean up any failed runs.
     if (len(failed_runs.keys()) > 0):
-        print("Cleaning failed runs.", file=sys.stderr)
-        for failed_run in failed_runs.keys():
-            sra_file = "{}.sra".format('failed_run')
-            if os.path.exists(sra_file):
-                os.remove(sra_file)
+        print("Cleaning....", file=sys.stderr)
+        sra_files = glob.glob('*.sra')
+        for sra_file in sra_files:
+            os.remove(sra_file)
 
         # Create the file 'sample_failed' to trigger the workflow to skip
         # this sample.
