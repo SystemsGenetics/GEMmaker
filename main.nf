@@ -534,7 +534,7 @@ process next_sample {
             // Do nothing, let's try a few more times....
           }
           if (!lock) {
-            println "Waiting on lock. attempt " + attempts + "..."
+            println "Waiting on lock. After sample, " + sample_id + ", attempt " + attempts + "..."
             sleep 1000
             attempts = attempts + 1
           }
@@ -577,9 +577,11 @@ process next_sample {
       if (lock && lock.isValid()) {
         lock.release()
       }
+      // Close the channel.
       if (channel) {
         channel.close()
       }
+      lock = null;
       // Re-throw exception to terminate the workflow if there was no success.
       if (!success) {
         throw new Exception("Could not move to the next sample.")
@@ -611,7 +613,7 @@ process download_runs {
   """
   echo "#TRACE n_remote_run_ids=${run_ids.tokenize(' ').size()}"
 
-  retrieve_sra.py --sample ${sample_id} --run_ids "${run_ids}"
+  retrieve_sra.py --sample ${sample_id} --run_ids ${run_ids}
   """
 }
 
@@ -641,7 +643,7 @@ process fastq_dump {
   echo "#TRACE sample_id=${sample_id}"
   echo "#TRACE sra_bytes=`stat -Lc '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
 
-  sra2fastq.py --sample ${sample_id} --sra_files "${sra_files}"
+  sra2fastq.py --sample ${sample_id} --sra_files ${sra_files}
   """
 }
 
@@ -770,7 +772,7 @@ process kallisto_tpm {
   script:
   """
   echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE ga_lines=`cat *.ga | wc -l`"
+  #echo "#TRACE ga_lines=`cat *.ga | wc -l`"
 
   kallisto_tpm.sh \
     ${sample_id} \
