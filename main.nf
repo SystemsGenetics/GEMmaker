@@ -38,35 +38,37 @@ Workflow Information:
 
 Input Parameters:
 -----------------
-  Remote fastq list path:     ${params.remote_sample_list}
-  Local sample glob:          ${params.local_sample_files}
+  Remote fastq list path:     ${params.samples.ncbi_sra_download.remote_sample_list}
+  Local sample glob:          ${params.samples.local_sample_files}
 
 
 Quantification Tool Input:
 --------------------------
-  Hisat2 Index Base Name:     ${params.hisat2.base_name}
-  Hisat2 GTF File:            ${params.hisat2.gtf_file}
-  Hisat2 Index Directory:     ${params.hisat2.index_dir}
+  Hisat2 Index Base Name:     ${params.quantification.hisat2.base_name}
+  Hisat2 GTF File:            ${params.quantification.hisat2.gtf_file}
+  Hisat2 Index Directory:     ${params.quantification.hisat2.index_dir}
 
-  Kallisto Index File:        ${params.kallisto.index_file}
+  Kallisto Index File:        ${params.quantification.kallisto.index_file}
 
-  Salmon Index Directory:     ${params.salmon.index_dir}
+  Salmon Index Directory:     ${params.quantification.salmon.index_dir}
 
 
 Output Parameters:
 ------------------
-  Output directory:           ${params.output.dir}
-  Publish SRA:                ${params.output.publish_sra}
-  Publish downloaded FASTQ:   ${params.output.publish_downloaded_fastq}
-  Publish trimmed FASTQ:      ${params.output.publish_trimmed_fastq}
-  Publish BAM:                ${params.output.publish_bam}
-  Publish Gene Abundance:     ${params.output.publish_gene_abundance}
-  Publish GTF_GA:             ${params.output.publish_stringtie_gtf_and_ga}
+  Output directory:           ${params.output.publish_dir}
+  Publish SRA:                ${params.samples.ncbi_sra_download.publish_sra}
+  Publish downloaded FASTQ:   ${params.samples.ncbi_sra_download.publish_downloaded_fastq}
+  Publish trimmed FASTQ:      ${params.quantification.hisat2.publish_trimmed_fastq}
+  Publish BAM:                ${params.quantification.hisat2.publish_bam}
+  Publish SAM:                ${params.quantification.hisat2.publish_sam}
+  Publish Gene Abundance:     ${params.quantification.kallisto.publish_gene_abundance}
+  Publish Gene Abundance:     ${params.quantification.salmon.publish_gene_abundance}
+  Publish GTF_GA:             ${params.quantification.hisat2.publish_stringtie_gtf_and_ga}
   Publish RAW:                ${params.output.publish_raw}
   Publish FPKM:               ${params.output.publish_fpkm}
   Publish TPM:                ${params.output.publish_tpm}
-  MultiQC:                    ${params.output.multiqc}
-  Create GEM:                 ${params.output.create_gem}
+  MultiQC:                    ${params.tools.create_multiqc_report}
+  Create GEM:                 ${params.tools.create_gem.publish_gem}
 
 
 Execution Parameters:
@@ -76,8 +78,8 @@ Execution Parameters:
 
 Custom Parameters:
 --------------------
-  Trimmomatic clip path:      ${params.custom.trimmomatic.clip_path}
-  Trimmomatic minimum ratio:  ${params.custom.trimmomatic.MINLEN}
+  Trimmomatic clip path:      ${params.tools.trimmomatic.clip_path}
+  Trimmomatic minimum ratio:  ${params.tools.trimmomatic.MINLEN}
 """
 
 
@@ -90,15 +92,15 @@ salmon_enable = false
 selected_tool = 0
 
 // Print out details per the selected tool.
-if (params.method.equals('hisat2')) {
+if (params.quantification.method.equals('hisat2')) {
   hisat2_enable = true
   selected_tool = 0
 }
-if (params.method.equals('kallisto')) {
+if (params.quantification.method.equals('kallisto')) {
   kallisto_enable = true
   selected_tool = 1
 }
-if (params.method.equals('salmon')) {
+if (params.quantification.method.equals('salmon')) {
   salmon_enable = true
   selected_tool = 2
 }
@@ -114,38 +116,38 @@ if (!(hisat2_enable || kallisto_enable || salmon_enable)) {
  */
 // If Hisat2 was selected:
 if (hisat2_enable) {
-  gtfFile = file("${params.hisat2.gtf_file}")
+  gtfFile = file("${params.quantification.hisat2.gtf_file}")
 
   if (gtfFile.isEmpty()) {
     error "Error: GTF reference file for Hisat2 does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-    \nGEMmaker is missing the following file: '${params.hisat2.gtf_file}' (where '*' is the name of your organism)"
+    \nGEMmaker is missing the following file: '${params.quantification.hisat2.gtf_file}' (where '*' is the name of your organism)"
   }
 
-  hisat2_index_dir = file("${params.hisat2.index_dir}")
+  hisat2_index_dir = file("${params.quantification.hisat2.index_dir}")
 
   if (!hisat2_index_dir.isDirectory()) {
     error "Error: hisat2 Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-    \nGEMmaker is missing the following file: '${params.hisat2.index_dir}' (where '*' is the name of your organism)"
+    \nGEMmaker is missing the following file: '${params.quantification.hisat2.index_dir}' (where '*' is the name of your organism)"
   }
 }
 
 // If Kallisto was selected
 if (kallisto_enable) {
-  kallisto_index_file = file("${params.kallisto.index_file}")
+  kallisto_index_file = file("${params.quantification.kallisto.index_file}")
 
   if (kallisto_index_file.isEmpty()) {
     error "Error: Kallisto Index File does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-    \nGEMmaker is missing the following file: '${params.kallisto.index_file}' (where '*' is the name of your organism)"
+    \nGEMmaker is missing the following file: '${params.quantification.kallisto.index_file}' (where '*' is the name of your organism)"
   }
 }
 
 // If Salmon was selected
 if (salmon_enable) {
-  salmon_index_dir = file("${params.salmon.index_dir}")
+  salmon_index_dir = file("${params.quantification.salmon.index_dir}")
 
   if (!salmon_index_dir.isDirectory()) {
     error "Error: Salmon Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-    \nGEMmaker is missing the following file: '${params.salmon.index_dir}' (where '*' is the name of your organism)"
+    \nGEMmaker is missing the following file: '${params.quantification.salmon.index_dir}' (where '*' is the name of your organism)"
   }
 }
 
@@ -154,12 +156,12 @@ if (salmon_enable) {
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.hisat2.index_dir}/*").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.kallisto.index_file}").collect()
-SALMON_INDEXES = Channel.fromPath("${params.salmon.index_dir}/*").collect()
-FASTA_ADAPTER = Channel.fromPath("${params.custom.trimmomatic.clip_path}").collect()
-FAILED_RUN_TEMPLATE = Channel.fromPath("${params.custom.failed_run_report.template_dir}").collect()
-GTF_FILE = Channel.fromPath("${params.hisat2.gtf_file}").collect()
+HISAT2_INDEXES = Channel.fromPath("${params.quantification.hisat2.index_dir}/*").collect()
+KALLISTO_INDEX = Channel.fromPath("${params.quantification.kallisto.index_file}").collect()
+SALMON_INDEXES = Channel.fromPath("${params.quantification.salmon.index_dir}/*").collect()
+FASTA_ADAPTER = Channel.fromPath("${params.tools.trimmomatic.clip_path}").collect()
+FAILED_RUN_TEMPLATE = Channel.fromPath("${params.tools.failed_run_report.template_dir}").collect()
+GTF_FILE = Channel.fromPath("${params.quantification.hisat2.gtf_file}").collect()
 
 
 
@@ -167,25 +169,25 @@ GTF_FILE = Channel.fromPath("${params.hisat2.gtf_file}").collect()
  * Local Sample Input.
  * This checks the folder that the user has given
  */
-if (params.local_sample_files == "none") {
+if (params.samples.local_sample_files == "none") {
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_STAGING }
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 else {
-  Channel.fromFilePairs( "${params.local_sample_files}", size: -1 )
+  Channel.fromFilePairs( "${params.samples.local_sample_files}", size: -1 )
     .set { LOCAL_SAMPLE_FILES_FOR_STAGING }
-  Channel.fromFilePairs( "${params.local_sample_files}", size: -1 )
+  Channel.fromFilePairs( "${params.samples.local_sample_files}", size: -1 )
     .set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 
 /**
  * Remote fastq_run_id Input.
  */
-if (params.remote_sample_list == "none") {
+if (params.samples.ncbi_sra_download.remote_sample_list == "none") {
   Channel.empty().set { SRR_FILE }
 }
 else {
-  Channel.fromPath("${params.remote_sample_list}").set { SRR_FILE }
+  Channel.fromPath("${params.samples.ncbi_sra_download.remote_sample_list}").set { SRR_FILE }
 }
 
 
@@ -193,45 +195,64 @@ else {
 /**
  * Make sure that at least one output format is enabled.
  */
-if ( hisat2_enable == true && params.output.publish_raw == false && params.output.publish_fpkm == false && params.output.publish_tpm == false ) {
+if (hisat2_enable == true && params.quantification.hisat2.publish_raw == false &&
+    params.quantification.hisat2.publish_fpkm == false && params.quantification.hisat2.publish_tpm == false) {
   error "Error: at least one output format (raw, fpkm, tpm) must be enabled for hisat2"
 }
 
-if ( hisat2_enable == false && params.output.publish_raw == false && params.output.publish_tpm == false ) {
+if (hisat2_enable == false && params.quantification.hisat2.publish_raw == false && params.quantification.hisat2.publish_tpm == false) {
   error "Error: at least one output format (raw, tpm) must be enabled for kallisto / salmon"
 }
 
+// For the create_gem process we need to know if the FKPM, TMP and raw counts
+// should be published.
+publish_fpkm = false
+publish_tpm = false
+publish_raw = false
+if (hisat2_enable && params.quantification.hisat2.publish_fpkm) {
+    publish_fpkm = true
+}
+if ((hisat2_enable && params.quantification.hisat2.publish_raw) ||
+    (salmon_enable && params.quantification.salmon.publish_raw) ||
+    (kallisto_enable && params.quantification.kallisto.publish_raw)) {
+    publish_raw = true
+}
+if ((hisat2_enable && params.quantification.hisat2.publish_tpm) ||
+    (salmon_enable && params.quantification.salmon.publish_tpm) ||
+    (kallisto_enable && params.quantification.kallisto.publish_tpm)) {
+    publish_tpm = true
+}
 
 
 /**
  * Set the pattern for publishing downloaded FASTQ files
  */
-publish_pattern_fastq_dump = params.output.publish_downloaded_fastq
+publish_pattern_fastq_dump = params.samples.ncbi_sra_download.publish_downloaded_fastq
   ? "{*.fastq}"
   : "{none}"
 
 /**
  * Set the pattern for publishing trimmed FASTQ files
  */
-publish_pattern_trimmomatic = params.output.publish_trimmed_fastq
+publish_pattern_trimmomatic = params.quantification.hisat2.publish_trimmed_fastq
   ? "{*.trim.log,*_trim.fastq}"
   : "{*.trim.log}"
 
 /**
  * Set the pattern for publishing BAM files
  */
-publish_pattern_samtools_sort = params.output.publish_bam
+publish_pattern_samtools_sort = params.quantification.hisat2.publish_bam
   ? "{*.log,*.bam}"
   : "{*.log}"
 
-publish_pattern_samtools_index = params.output.publish_bam
+publish_pattern_samtools_index = params.quantification.hisat2.publish_bam
   ? "{*.log,*.bam.bai}"
   : "{*.log}"
 
 /**
  * Set the pattern for publishing Kallisto GA files
  */
-publish_pattern_Kallisto_GA = params.output.publish_gene_abundance
+publish_pattern_Kallisto_GA = params.quantification.kallisto.publish_gene_abundance
   ? "{*.ga,*.log}"
   : "{*.log}"
 
@@ -239,14 +260,14 @@ publish_pattern_Kallisto_GA = params.output.publish_gene_abundance
  * Set the pattern for publishing Salmon GA files
  * Publishes only log file used by multiqc if false
  */
-publish_pattern_Salmon_GA = params.output.publish_gene_abundance
+publish_pattern_Salmon_GA = params.quantification.salmon.publish_gene_abundance
   ? "{*.ga}"
   : "{*.ga/aux_info/meta_info.json,*.ga/libParams/flenDist.txt}"
 
 /**
  * Set the pattern for publishing STRINGTIE GA and GTF files
  */
-publish_pattern_stringtie_gtf_and_ga = params.output.publish_stringtie_gtf_and_ga
+publish_pattern_stringtie_gtf_and_ga = params.quantification.hisat2.publish_stringtie_gtf_and_ga
   ? "{*.ga, *.gtf}"
   : "{none}"
 
@@ -257,7 +278,7 @@ publish_pattern_stringtie_gtf_and_ga = params.output.publish_stringtie_gtf_and_g
  * and maps SRA runs to SRA experiments.
  */
 process retrieve_sra_metadata {
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "failed_runs.metadata.txt"
+  publishDir params.output.publish_dir, mode: params.output.publish_mode, pattern: "failed_runs.metadata.txt"
   label "python3"
 
   input:
@@ -273,8 +294,8 @@ process retrieve_sra_metadata {
 
   retrieve_sra_metadata.py \
       --run_id_file ${srr_file} \
-      --meta_dir ${workflow.launchDir}/${params.output.dir} \
-      --skip_file ${params.skip_list_path}
+      --meta_dir ${workflow.launchDir}/${params.output.publish_dir} \
+      --skip_file ${params.samples.skip_list_path}
   """
 }
 
@@ -352,7 +373,7 @@ process write_stage_files {
   exec:
     // Get any samples to skip
     skip_samples = []
-    skip_file = file("${params.skip_list_path}")
+    skip_file = file("${params.samples.skip_list_path}")
     if (skip_file.exists()) {
       skip_file.eachLine { line ->
         skip_samples << line.trim()
@@ -590,7 +611,7 @@ process next_sample {
  * Downloads SRA files from NCBI using the SRA Toolkit.
  */
 process download_runs {
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: '*.failed_runs.download.txt', saveAs: { "${sample_id}/${it}" }
+  publishDir params.output.publish_dir, mode: params.output.publish_mode, pattern: '*.failed_runs.download.txt', saveAs: { "${sample_id}/${it}" }
 
   tag { sample_id }
   label "sratoolkit"
@@ -618,8 +639,8 @@ process download_runs {
  * Extracts FASTQ files from downloaded SRA files.
  */
 process fastq_dump {
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${sample_id}/${it}" }
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: '*.failed_runs.fastq-dump.txt', saveAs: { "${sample_id}/${it}" }
+  publishDir params.output.publish_dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${sample_id}/${it}" }
+  publishDir params.output.publish_dir, mode: params.output.publish_mode, pattern: '*.failed_runs.fastq-dump.txt', saveAs: { "${sample_id}/${it}" }
   tag { sample_id }
   label "sratoolkit"
 
@@ -770,8 +791,8 @@ process kallisto_tpm {
 
   kallisto_tpm.sh \
     ${sample_id} \
-    ${params.output.publish_tpm} \
-    ${params.output.publish_raw}
+    ${params.quantification.kallisto.publish_tpm} \
+    ${params.quantification.kallisto.publish_raw}
   """
 }
 
@@ -831,7 +852,7 @@ process salmon_tpm {
   echo "#TRACE sample_id=${sample_id}"
 
   salmon_tpm.sh \
-    ${params.output.publish_tpm} \
+    ${params.quantification.salmon.publish_tpm} \
     ${sample_id}
   """
 }
@@ -869,22 +890,22 @@ process trimmomatic {
   """
   echo "#TRACE sample_id=${sample_id}"
   echo "#TRACE n_cpus=${task.cpus}"
-  echo "#TRACE minlen=${params.custom.trimmomatic.MINLEN}"
-  echo "#TRACE leading=${params.custom.trimmomatic.LEADING}"
-  echo "#TRACE trailing=${params.custom.trimmomatic.TRAILING}"
-  echo "#TRACE slidingwindow=${params.custom.trimmomatic.SLIDINGWINDOW}"
+  echo "#TRACE minlen=${params.tools.trimmomatic.MINLEN}"
+  echo "#TRACE leading=${params.tools.trimmomatic.LEADING}"
+  echo "#TRACE trailing=${params.tools.trimmomatic.TRAILING}"
+  echo "#TRACE slidingwindow=${params.tools.trimmomatic.SLIDINGWINDOW}"
   echo "#TRACE fasta_lines=`cat ${fasta_adapter} | wc -l`"
   echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
 
   trimmomatic.sh \
     ${sample_id} \
-    ${params.custom.trimmomatic.MINLEN} \
+    ${params.tools.trimmomatic.MINLEN} \
     ${task.cpus} \
     ${fasta_adapter} \
-    ${params.custom.trimmomatic.LEADING} \
-    ${params.custom.trimmomatic.TRAILING} \
-    ${params.custom.trimmomatic.SLIDINGWINDOW} \
-    ${params.custom.trimmomatic.quality}
+    ${params.tools.trimmomatic.LEADING} \
+    ${params.tools.trimmomatic.TRAILING} \
+    ${params.tools.trimmomatic.SLIDINGWINDOW} \
+    ${params.tools.trimmomatic.quality}
   """
 }
 
@@ -948,7 +969,7 @@ process hisat2 {
 
   hisat2.sh \
     ${sample_id} \
-    ${params.hisat2.base_name} \
+    ${params.quantification.hisat2.base_name} \
     ${task.cpus}
   """
 }
@@ -1079,17 +1100,17 @@ process hisat2_fpkm_tpm {
   script:
   """
   echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}"
-  echo "#TRACE publish_tpm=${params.output.publish_tpm}"
-  echo "#TRACE publish_raw=${params.output.publish_raw}"
+  echo "#TRACE publish_fpkm=${params.quantification.hisat2.publish_fpkm}"
+  echo "#TRACE publish_tpm=${params.quantification.hisat2.publish_tpm}"
+  echo "#TRACE publish_raw=${params.quantification.hisat2.publish_raw}"
   echo "#TRACE ga_lines=`cat *.ga | wc -l`"
   echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
 
   hisat2_fpkm_tpm.sh \
-    ${params.output.publish_fpkm} \
+    ${params.quantification.hisat2.publish_fpkm} \
     ${sample_id} \
-    ${params.output.publish_tpm} \
-    ${params.output.publish_raw}
+    ${params.quantification.hisat2.publish_tpm} \
+    ${params.quantification.hisat2.publish_raw}
   """
 }
 
@@ -1107,7 +1128,7 @@ MULTIQC_RUN = MULTIQC_READY_SIGNAL.mix(MULTIQC_BOOTSTRAP)
  */
 process multiqc {
   label "multiqc"
-  publishDir "${params.output.dir}/reports", mode: params.output.publish_mode
+  publishDir "${params.output.publish_dir}/reports", mode: params.output.publish_mode
 
   input:
     val signal from MULTIQC_RUN.collect()
@@ -1117,14 +1138,14 @@ process multiqc {
     file "multiqc_report.html" into MULTIQC_REPORT
 
   when:
-    params.output.multiqc == true
+    params.tools.create_multiqc_report == true
 
   script:
   """
   multiqc \
-    --ignore ${workflow.launchDir}/${params.output.dir}/GEMs \
-    --ignore ${workflow.launchDir}/${params.output.dir}/reports \
-    ${workflow.launchDir}/${params.output.dir}
+    --ignore ${workflow.launchDir}/${params.output.publish_dir}/GEMs \
+    --ignore ${workflow.launchDir}/${params.output.publish_dir}/reports \
+    ${workflow.launchDir}/${params.output.publish_dir}
   """
 }
 
@@ -1142,7 +1163,7 @@ CREATE_GEM_RUN = CREATE_GEM_READY_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
  */
 process create_gem {
   label "python3"
-  publishDir "${params.output.dir}/GEMs", mode: params.output.publish_mode
+  publishDir "${params.output.publish_dir}/GEMs", mode: params.output.publish_mode
 
   input:
     val signal from CREATE_GEM_RUN.collect()
@@ -1151,26 +1172,26 @@ process create_gem {
     file "*.GEM.*.txt" into GEM_FILES
 
   when:
-    params.output.create_gem == true
+    params.tools.create_gem.publish_gem == true
 
   script:
   """
-  echo "#TRACE publish_fpkm=${params.output.publish_fpkm}"
+  echo "#TRACE publish_fpkm=${publish_fpkm}"
   echo "#TRACE hisat2_enable=${hisat2_enable}"
-  echo "#TRACE publish_tpm=${params.output.publish_tpm}"
-  echo "#TRACE publish_raw=${params.output.publish_raw}"
-  echo "#TRACE fpkm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.fpkm 2> /dev/null  | wc -l`"
-  echo "#TRACE tpm_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.tpm 2> /dev/null | wc -l`"
-  echo "#TRACE raw_lines=`cat ${workflow.launchDir}/${params.output.dir}/*.raw 2> /dev/null | wc -l`"
+  echo "#TRACE publish_tpm=${publish_tpm}"
+  echo "#TRACE publish_raw=${publish_raw}"
+  echo "#TRACE fpkm_lines=`cat ${workflow.launchDir}/${params.output.publish_dir}/*.fpkm 2> /dev/null  | wc -l`"
+  echo "#TRACE tpm_lines=`cat ${workflow.launchDir}/${params.output.publish_dir}/*.tpm 2> /dev/null | wc -l`"
+  echo "#TRACE raw_lines=`cat ${workflow.launchDir}/${params.output.publish_dir}/*.raw 2> /dev/null | wc -l`"
 
   create_gem.sh \
-    ${params.output.publish_fpkm} \
+    ${publish_fpkm} \
     ${hisat2_enable} \
     ${workflow.launchDir} \
-    ${params.output.dir} \
-    ${params.custom.create_gem.output_prefix} \
-    ${params.output.publish_raw} \
-    ${params.output.publish_tpm}
+    ${params.output.publish_dir} \
+    ${params.tools.create_gem.output_prefix} \
+    ${publish_raw} \
+    ${publish_tpm}
   """
 }
 
@@ -1179,7 +1200,7 @@ process create_gem {
  */
 process failed_run_report {
   label "python3"
-  publishDir "${params.output.dir}/reports", mode: params.output.publish_mode
+  publishDir "${params.output.publish_dir}/reports", mode: params.output.publish_mode
 
   input:
     file metadata_failed_runs from METADATA_FAILED_RUNS
@@ -1227,7 +1248,7 @@ process clean_sra {
     set val(sample_id), val(files_list) from CLEAN_SRA_READY
 
   when:
-    params.output.publish_sra == false
+    params.samples.ncbi_sra_download.publish_sra == false
 
   script:
   """
@@ -1284,7 +1305,7 @@ process clean_merged_fastq {
     set val(sample_id), val(files_list) from MERGED_FASTQ_CLEANUP_READY
 
   when:
-    params.output.publish_downloaded_fastq == false
+    params.samples.ncbi_sra_download.publish_downloaded_fastq == false
 
   script:
   flist = files_list[0].join(" ")
@@ -1311,7 +1332,7 @@ process clean_trimmed_fastq {
     set val(sample_id), val(files_list) from TRIMMED_FASTQ_CLEANUP_READY
 
   when:
-    params.output.publish_trimmed_fastq == false
+    params.quantification.hisat2.publish_trimmed_fastq == false
 
   script:
   flist = files_list[0].join(" ")
@@ -1337,7 +1358,7 @@ process clean_sam {
     set val(sample_id), val(files_list) from SAM_CLEANUP_READY
 
   when:
-    params.output.publish_sam == false
+    params.quantification.hisat2.publish_sam == false
 
   script:
   """
@@ -1362,7 +1383,7 @@ process clean_bam {
     set val(sample_id), val(files_list) from BAM_CLEANUP_READY
 
   when:
-    params.output.publish_bam == false
+    params.quantification.hisat2.publish_bam == false
 
   script:
   """
@@ -1387,7 +1408,7 @@ process clean_kallisto_ga {
     set val(sample_id), val(directory) from KALLISTO_GA_CLEANUP_READY
 
   when:
-    params.output.publish_gene_abundance == false
+    params.quantification.kallisto.publish_gene_abundance == false
 
   script:
   """
@@ -1412,7 +1433,7 @@ process clean_salmon_ga {
     set val(sample_id), val(files_list) from SALMON_GA_CLEANUP_READY
 
   when:
-    params.output.publish_gene_abundance == false
+    params.quantification.salmon.publish_gene_abundance == false
 
   script:
   """
@@ -1437,7 +1458,7 @@ process clean_stringtie_ga {
     set val(sample_id), val(files_list) from STRINGTIE_CLEANUP_READY
 
   when:
-    params.output.publish_stringtie_gtf_and_ga == false
+    params.quantification.hisat2.publish_stringtie_gtf_and_ga == false
 
   script:
   flist = files_list[0].join(" ")
