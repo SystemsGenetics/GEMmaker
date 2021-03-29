@@ -163,6 +163,7 @@ HISAT2_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.
 KALLISTO_INDEX = Channel.fromPath("${params.input.reference_dir}/${params.input.kallisto.index_file}").collect()
 SALMON_INDEXES = Channel.fromPath("${params.input.reference_dir}/${params.input.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.software.trimmomatic.clip_path}").collect()
+FAILED_RUN_TEMPLATE = Channel.fromPath("${params.software.failed_run_report.template_dir}").collect()
 GTF_FILE = Channel.fromPath("${params.input.reference_dir}/${params.input.hisat2.gtf_file}").collect()
 
 
@@ -261,7 +262,7 @@ publish_pattern_stringtie_gtf_and_ga = params.output.publish_stringtie_gtf_and_g
  * and maps SRA runs to SRA experiments.
  */
 process retrieve_sra_metadata {
-  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "missing_runs.txt"
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: "failed_runs.metadata.txt"
   label "python3"
 
   input:
@@ -269,7 +270,7 @@ process retrieve_sra_metadata {
 
   output:
     stdout REMOTE_SAMPLES_LIST
-    file "missing_runs.txt" optional true
+    file "failed_runs.metadata.txt" into METADATA_FAILED_RUNS
 
   script:
   """
@@ -419,6 +420,8 @@ process start_first_batch {
       SAMPLE_COMPLETE_SIGNAL.close()
       MULTIQC_BOOTSTRAP.close()
       CREATE_GEM_BOOTSTRAP.close()
+      SKIP_DUMP_SAMPLE.close()
+      SKIP_DOWNLOAD_SAMPLE.close()
       println "There are no staged samples.  Moving on to post-processing"
    }
 }
@@ -483,12 +486,15 @@ LOCAL_SAMPLES
 HISAT2_SAMPLE_COMPLETE_SIGNAL = Channel.create()
 KALLISTO_SAMPLE_COMPLETE_SIGNAL = Channel.create()
 SALMON_SAMPLE_COMPLETE_SIGNAL = Channel.create()
+SKIP_DOWNLOAD_SAMPLE = Channel.create()
+SKIP_DUMP_SAMPLE = Channel.create()
 
 // Create the channel that will collate all the signals
 // and release a signal when the sample is complete
 SAMPLE_COMPLETE_SIGNAL = Channel.create()
 SAMPLE_COMPLETE_SIGNAL
-  .mix(HISAT2_SAMPLE_COMPLETE_SIGNAL, KALLISTO_SAMPLE_COMPLETE_SIGNAL, SALMON_SAMPLE_COMPLETE_SIGNAL)
+  .mix(HISAT2_SAMPLE_COMPLETE_SIGNAL, KALLISTO_SAMPLE_COMPLETE_SIGNAL, SALMON_SAMPLE_COMPLETE_SIGNAL,
+      SKIP_DUMP_SAMPLE.map {it[0]}, SKIP_DOWNLOAD_SAMPLE.map {it[0]})
   .into { NEXT_SAMPLE_SIGNAL; MULTIQC_READY_SIGNAL; CREATE_GEM_READY_SIGNAL }
 
 
@@ -528,7 +534,7 @@ process next_sample {
             // Do nothing, let's try a few more times....
           }
           if (!lock) {
-            println "Waiting on lock. attempt " + attempts + "..."
+            println "Waiting on lock. After sample, " + sample_id + ", attempt " + attempts + "..."
             sleep 1000
             attempts = attempts + 1
           }
@@ -557,6 +563,8 @@ process next_sample {
           SAMPLE_COMPLETE_SIGNAL.close()
           MULTIQC_BOOTSTRAP.close()
           CREATE_GEM_BOOTSTRAP.close()
+          SKIP_DUMP_SAMPLE.close()
+          SKIP_DOWNLOAD_SAMPLE.close()
         }
       }
       success = true
@@ -569,9 +577,11 @@ process next_sample {
       if (lock && lock.isValid()) {
         lock.release()
       }
+      // Close the channel.
       if (channel) {
         channel.close()
       }
+      lock = null;
       // Re-throw exception to terminate the workflow if there was no success.
       if (!success) {
         throw new Exception("Could not move to the next sample.")
@@ -585,6 +595,8 @@ process next_sample {
  * Downloads SRA files from NCBI using the SRA Toolkit.
  */
 process download_runs {
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: '*.failed_runs.download.txt', saveAs: { "${sample_id}/${it}" }
+
   tag { sample_id }
   label "sratoolkit"
 
@@ -592,14 +604,16 @@ process download_runs {
     set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES
 
   output:
-    set val(sample_id), file("*.sra") into SRA_TO_EXTRACT
-    set val(sample_id), file("*.sra") into SRA_TO_CLEAN
+    set val(sample_id), file("*.sra") optional true into SRA_TO_EXTRACT
+    set val(sample_id), file("*.sra") optional true into SRA_TO_CLEAN
+    set val(sample_id), file("sample_failed") optional true into SKIP_DOWNLOAD_SAMPLE
+    set val(sample_id), file('*.failed_runs.download.txt') into DOWNLOAD_FAILED_RUNS
 
   script:
   """
   echo "#TRACE n_remote_run_ids=${run_ids.tokenize(' ').size()}"
 
-  retrieve_sra.py ${run_ids}
+  retrieve_sra.py --sample ${sample_id} --run_ids ${run_ids}
   """
 }
 
@@ -610,6 +624,7 @@ process download_runs {
  */
 process fastq_dump {
   publishDir params.output.dir, mode: params.output.publish_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${sample_id}/${it}" }
+  publishDir params.output.dir, mode: params.output.publish_mode, pattern: '*.failed_runs.fastq-dump.txt', saveAs: { "${sample_id}/${it}" }
   tag { sample_id }
   label "sratoolkit"
 
@@ -617,16 +632,18 @@ process fastq_dump {
     set val(sample_id), file(sra_files) from SRA_TO_EXTRACT
 
   output:
-    set val(sample_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_MERGING
-    set val(sample_id), file("*.fastq") into DOWNLOADED_FASTQ_FOR_CLEANING
+    set val(sample_id), file("*.fastq") optional true into DOWNLOADED_FASTQ_FOR_MERGING
+    set val(sample_id), file("*.fastq") optional true into DOWNLOADED_FASTQ_FOR_CLEANING
+    set val(sample_id), file("sample_failed") optional true into SKIP_DUMP_SAMPLE
     set val(sample_id), val(1) into CLEAN_SRA_SIGNAL
+    set val(sample_id), file('*.failed_runs.fastq-dump.txt') into FASTQ_DUMP_FAILED_RUNS
 
   script:
   """
   echo "#TRACE sample_id=${sample_id}"
   echo "#TRACE sra_bytes=`stat -Lc '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
 
-  sra2fastq.py ${sra_files}
+  sra2fastq.py --sample ${sample_id} --sra_files ${sra_files}
   """
 }
 
@@ -755,7 +772,7 @@ process kallisto_tpm {
   script:
   """
   echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE ga_lines=`cat *.ga | wc -l`"
+  #echo "#TRACE ga_lines=`cat *.ga | wc -l`"
 
   kallisto_tpm.sh \
     ${sample_id} \
@@ -1166,6 +1183,29 @@ process create_gem {
     ${params.output.publish_raw} \
     ${params.output.publish_tpm}
   """
+}
+
+/**
+ * Creates a report of any SRA run IDs that failed and why they failed.
+ */
+process failed_run_report {
+  label "python3"
+  publishDir "${params.output.dir}/reports", mode: params.output.publish_mode
+
+  input:
+    file metadata_failed_runs from METADATA_FAILED_RUNS
+    file download_failed_runs from DOWNLOAD_FAILED_RUNS.collect()
+    file fastq_dump_failed_runs from FASTQ_DUMP_FAILED_RUNS.collect()
+    file failed_run_template from FAILED_RUN_TEMPLATE
+
+  output:
+    file "failed_SRA_run_report.html" into FAILED_RUN_REPORT
+
+  script:
+  """
+  failed_runs_report.py --template ${failed_run_template}
+  """
+
 }
 
 
