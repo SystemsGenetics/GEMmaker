@@ -124,7 +124,30 @@ if (salmon_enable) {
   }
 }
 
+/**
+ * Check that other input files/directories exist
+ */
+ if (hisat2_enable) {
+     clip_path = file("${params.quantification.hisat2.trimmomatic.clip_path}")
+     if (!clip_path.exists()) {
+       error "Error: The Trimmomatic clip file cannot be found at '${params.quantification.hisat2.trimmomatic.clip_path}'."
+     }
+ }
 
+ sample_file = file("${params.samples.ncbi_sra_download.remote_sample_list}")
+ if (!sample_file.exists()) {
+    error "Error: The NCBI download sample file does not exists at '${params.samples.ncbi_sra_download.remote_sample_list}'. This file must be provided. If you are not downloading samples from NCBI SRA the file must exist but can be left empty."
+ }
+
+skip_file = file("${params.samples.skip_list_path}")
+if (!skip_file.exists()) {
+   error "Error: The file conatining samples to skip does not exists at '${params.samples.skip_list_path}'. This file must be provided. If you are not skipping samples the file must exist but can be left empty."
+}
+
+failed_report_template = file("${params.reports.failed_run_report_template}")
+if (!failed_report_template.exists()) {
+   error "Error: The failed run report template cannot be found at '${params.reports.failed_run_report_template}'. This file comes with GEMmaker and is required."
+}
 
 /**
  * Create value channels that can be reused
@@ -133,7 +156,7 @@ HISAT2_INDEXES = Channel.fromPath("${params.quantification.hisat2.index_dir}/*")
 KALLISTO_INDEX = Channel.fromPath("${params.quantification.kallisto.index_file}").collect()
 SALMON_INDEXES = Channel.fromPath("${params.quantification.salmon.index_dir}/*").collect()
 FASTA_ADAPTER = Channel.fromPath("${params.quantification.hisat2.trimmomatic.clip_path}").collect()
-FAILED_RUN_TEMPLATE = Channel.fromPath("${params.reports.failed_run_report.template_dir}").collect()
+FAILED_RUN_TEMPLATE = Channel.fromPath("${params.reports.failed_run_report_template}").collect()
 GTF_FILE = Channel.fromPath("${params.quantification.hisat2.gtf_file}").collect()
 
 
