@@ -2,7 +2,6 @@ GEMMAKER_VERSION="1.1"
 
 all:
 	docker build -t gemmaker/base:${GEMMAKER_VERSION}             base/${GEMMAKER_VERSION}/
-	docker build -t gemmaker/base:${GEMMAKER_VERSION}-e2e         base/${GEMMAKER_VERSION}-e2e/
 	docker build -t gemmaker/aspera:3.8.1-${GEMMAKER_VERSION}     aspera/3.8.1-${GEMMAKER_VERSION}/
 	docker build -t gemmaker/fastqc:0.11.7-${GEMMAKER_VERSION}    fastqc/0.11.7-${GEMMAKER_VERSION}/
 	docker build -t gemmaker/hisat2:2.1.0-${GEMMAKER_VERSION}     hisat2/2.1.0-${GEMMAKER_VERSION}/
@@ -18,7 +17,6 @@ all:
 
 push:
 	docker push gemmaker/base:${GEMMAKER_VERSION}
-	docker push gemmaker/base:${GEMMAKER_VERSION}-e2e
 	docker push gemmaker/aspera:3.8.1-${GEMMAKER_VERSION}
 	docker push gemmaker/fastqc:0.11.7-${GEMMAKER_VERSION}
 	docker push gemmaker/hisat2:2.1.0-${GEMMAKER_VERSION}
@@ -34,7 +32,6 @@ push:
 
 pull:
 	docker pull gemmaker/base:${GEMMAKER_VERSION}
-	docker pull gemmaker/base:${GEMMAKER_VERSION}-e2e
 	docker pull gemmaker/aspera:3.8.1-${GEMMAKER_VERSION}
 	docker pull gemmaker/fastqc:0.11.7-${GEMMAKER_VERSION}
 	docker pull gemmaker/hisat2:2.1.0-${GEMMAKER_VERSION}
@@ -50,7 +47,6 @@ pull:
 
 clean:
 	docker image rm -f gemmaker/base:${GEMMAKER_VERSION}
-	docker image rm -f gemmaker/base:${GEMMAKER_VERSION}-e2e
 	docker image rm -f gemmaker/aspera:3.8.1-${GEMMAKER_VERSION}
 	docker image rm -f gemmaker/fastqc:0.11.7-${GEMMAKER_VERSION}
 	docker image rm -f gemmaker/hisat2:2.1.0-${GEMMAKER_VERSION}
