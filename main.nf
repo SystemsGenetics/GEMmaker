@@ -922,8 +922,7 @@ process trimmomatic {
     ${fasta_adapter} \
     ${params.quantification.hisat2.trimmomatic.LEADING} \
     ${params.quantification.hisat2.trimmomatic.TRAILING} \
-    ${params.quantification.hisat2.trimmomatic.SLIDINGWINDOW} \
-    ${params.quantification.hisat2.trimmomatic.quality}
+    ${params.quantification.hisat2.trimmomatic.SLIDINGWINDOW}
   """
 }
 
