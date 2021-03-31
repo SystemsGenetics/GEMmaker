@@ -45,10 +45,6 @@ hisat2_enable = false
 kallisto_enable = false
 salmon_enable = false
 selected_tool = 0
-phred_version = ''
-if (params.quantification.hisat2.trimmomatic.phred33) {
-    phred_version = '-phred33'
-}
 
 // Print out details per the selected tool.
 if (params.quantification.method.equals('hisat2')) {
@@ -65,7 +61,6 @@ if (params.quantification.method.equals('hisat2')) {
      SLIDINGWINDOW:           ${params.quantification.hisat2.trimmomatic.SLIDINGWINDOW}
      LEADING:                 ${params.quantification.hisat2.trimmomatic.LEADING}
      TRAILING:                ${params.quantification.hisat2.trimmomatic.TRAILING}
-     phred33:                 ${params.quantification.hisat2.trimmomatic.phred33}
   """
 }
 if (params.quantification.method.equals('kallisto')) {
@@ -927,8 +922,7 @@ process trimmomatic {
     ${fasta_adapter} \
     ${params.quantification.hisat2.trimmomatic.LEADING} \
     ${params.quantification.hisat2.trimmomatic.TRAILING} \
-    ${params.quantification.hisat2.trimmomatic.SLIDINGWINDOW} \
-    ${phred_version}
+    ${params.quantification.hisat2.trimmomatic.SLIDINGWINDOW}
   """
 }
 
