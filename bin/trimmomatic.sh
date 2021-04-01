@@ -7,7 +7,6 @@ fasta_adapter="$4"
 params_software_trimmomatic_LEADING="$5"
 params_software_trimmomatic_TRAILING="$6"
 params_software_trimmomatic_SLIDINGWINDOW="$7"
-params_software_trimmomatic_quality=" "
 
 echo $params_software_trimmomatic_LEADING
 echo $params_software_trimmomatic_quality
@@ -36,7 +35,6 @@ if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
   java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
     PE \
     -threads ${task_cpus} \
-    ${params_software_trimmomatic_quality} \
     ${sample_id}_1.fastq \
     ${sample_id}_2.fastq \
     ${sample_id}_1p_trim.fastq \
@@ -58,7 +56,6 @@ else
   java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
     SE \
     -threads ${task_cpus} \
-    ${params_software_trimmomatic_quality} \
     ${sample_id}_1.fastq \
     ${sample_id}_1u_trim.fastq \
     ILLUMINACLIP:${fasta_adapter}:2:40:15 \
