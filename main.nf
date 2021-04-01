@@ -82,7 +82,27 @@ if (!(hisat2_enable || kallisto_enable || salmon_enable)) {
   error "Error: You must select a valid quantification tool in the 'nextflow.config' file."
 }
 
+// Create the directories we'll use for running
+// batches
+file("${workflow.workDir}/GEMmaker").mkdir()
+file("${workflow.workDir}/GEMmaker/stage").mkdir()
+file("${workflow.workDir}/GEMmaker/process").mkdir()
+file("${workflow.workDir}/GEMmaker/done").mkdir()
 
+// Make sure that once GEMmaker runs that the user doesn't try to change
+// quantification tools half way through.
+method_lock_file = file("${workflow.workDir}/GEMmaker/method")
+if (!method_lock_file.exists()) {
+    method_lock_file << "${params.quantification.method}"
+}
+else {
+  reader = method_lock_file.newReader()
+  active_method = reader.readLine()
+  reader.close()
+  if (!active_method.equals(params.quantification.method)) {
+    error "Error: previously, GEMmaker was set to run using the '${active_method}' tool, but it looks as though the configuration has changed to use the '${params.quantification.method}' tool. GEMmaker only supports use of one tool at a time. If you would like to change the quantification tool please re-run GEMmaker in a new directory or remove the `work` and `output` directories prior to restarting GEMmaker to clear out unwanted results."
+  }
+}
 
 /**
  * Check to make sure that required reference files exist
@@ -337,12 +357,6 @@ LOCAL_SAMPLE_FILES_FOR_STAGING
 ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
   .mix(LOCAL_SAMPLES_FOR_STAGING)
 
-// Create the directories we'll use for running
-// batches
-file("${workflow.workDir}/GEMmaker").mkdir()
-file("${workflow.workDir}/GEMmaker/stage").mkdir()
-file("${workflow.workDir}/GEMmaker/process").mkdir()
-file("${workflow.workDir}/GEMmaker/done").mkdir()
 
 // Channels to bootstrap post-processing of
 // sample results if a resume is performed when
@@ -371,7 +385,6 @@ if (staged_files.size() == 0) {
   MULTIQC_BOOTSTRAP.bind(1)
   CREATE_GEM_BOOTSTRAP.bind(1)
 }
-
 
 
 /**
