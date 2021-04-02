@@ -4,7 +4,7 @@ subtitle: "<a href='https://github.com/SystemsGenetics/GEMmaker'>GEMmaker</a> is
 
 intro_text: "Results from GEMmaker are useful for differential gene expression and gene co-expression network analyses. This report is the MultiQC summary of the GEMmaker workflow results."
 
-custom_logo: './images/GEMmaker-logo-sm.png'
+custom_logo: 'GEMmaker-logo-sm.png'
 
 fn_ignore_dirs:
     - '.git'

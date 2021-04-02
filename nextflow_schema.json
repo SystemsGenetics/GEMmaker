@@ -1,0 +1,252 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/systemsgenetics/gemmaker/master/nextflow_schema.json",
+    "title": "systemsgenetics/gemmaker pipeline parameters",
+    "description": "GEMmaker is a Nextflow workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression (DGE) and gene co-expression network (GCN) analyses. The GEMmaker workflow currently supports Illumina RNA-seq datasets.",
+    "type": "object",
+    "definitions": {
+        "samples": {
+            "title": "Samples",
+            "type": "object",
+            "description": "This section is for specifying which samples GEMmaker will process.",
+            "default": "",
+            "properties": {
+                "sra_list_file": {
+                    "type": "string",
+                    "description": "A text file containing NCBI SRA Run IDs, one per line, that GEMmaker should automatically retrieve. If no files are to be retrieved from SRA the file should be left emptly",
+                    "default": "${baseDir}/assets/demo/SRA_IDs.txt"
+                },
+                "keep_sra": {
+                    "type": "boolean",
+                    "description": "Indicates if SRA files downloaded from NCBI should be retained. If true, the files are kept, if false they are removed  to save storage space."
+                },
+                "keep_retrieved_fastq": {
+                    "type": "boolean",
+                    "description": "Indicates if the dumped FASTQ file from a downloaded SRA file should be kept. If true then the file is kept if false then the file is removed  to save storage space."
+                },
+                "local_fastq_files": {
+                    "type": "string",
+                    "description": "A GLOB pattern (https://en.wikipedia.org/wiki/Glob_(programming)) used to find FASTQ files on the local file system. It should contain the full path and the necessary wildcards. Set to an empty string if no local files are to be included.",
+                    "default": "${baseDir}/assets/demo/*_{1,2}.fastq"
+                },
+                "skip_samples_file": {
+                    "type": "string",
+                    "description": "A text file containing the names of SRA runs or local FASTQ samples that should be excluded.",
+                    "default": "${baseDir}/assets/demo/samples2skip.txt"
+                }
+            },
+            "required": [
+                "sra_list_file",
+                "keep_sra",
+                "keep_retrieved_fastq",
+                "local_fastq_files",
+                "skip_samples_file"
+            ]
+        },
+        "kallisto_pipeline": {
+            "title": "Kallisto Pipeline",
+            "type": "object",
+            "description": "Parameters for when the Kallisto pipeline is enabled",
+            "default": "",
+            "properties": {
+                "kallisto_index_path": {
+                    "type": "string",
+                    "description": "The directory containing the reference genome index files",
+                    "default": "${baseDir}/assets/demo/references/CORG.transcripts.Kallisto.indexed"
+                },
+                "kallisto_keep_data": {
+                    "type": "boolean",
+                    "description": "Indicates if the intermediate data files created by Kallisto should be kept. If true, the files are retrained, if false the files are removed to save storage space."
+                },
+                "kallisto_keep_counts": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the raw abundance counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "kallisto_keep_tpm": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the TPM normalized abundance counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "kallisto_keep_gem": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the final GEM files should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                }
+            },
+            "required": [
+                "kallisto_keep_data",
+                "kallisto_keep_counts",
+                "kallisto_keep_tpm",
+                "kallisto_keep_gem"
+            ]
+        },
+        "salmon_pipeline": {
+            "title": "Salmon Pipeline",
+            "type": "object",
+            "description": "Parameters for when Salmon is enabled",
+            "default": "",
+            "properties": {
+                "salmon_index_path": {
+                    "type": "string",
+                    "description": "The directory containing the reference genome index files",
+                    "default": "${baseDir}/assets/demo/references/CORG.transcripts.Salmon.indexed"
+                },
+                "salmon_keep_data": {
+                    "type": "boolean",
+                    "description": "Indicates if the intermediate data files created by Salmon should be kept. If true, the files are retrained, if false the files are removed to save storage space."
+                },
+                "salmon_keep_counts": {
+                    "type": "boolean",
+                    "description": "Indicates if the raw abundance counts should be retained. If true then the file is kept, if false the file is removed to save storage space.",
+                    "default": true
+                },
+                "salmon_keep_tpm": {
+                    "type": "boolean",
+                    "description": "Indicates if the TPM normalized abundance counts should be retained. If true then the file is kept, if false the file is removed to save storage space.",
+                    "default": true
+                },
+                "salmon_keep_gem": {
+                    "type": "boolean",
+                    "description": "Indicates if the final GEM files should be retained. If true then the file is kept, if false the file is removed to save storage space.",
+                    "default": true
+                }
+            },
+            "required": [
+                "salmon_keep_data",
+                "salmon_keep_counts",
+                "salmon_keep_tpm",
+                "salmon_keep_gem"
+            ]
+        },
+        "hisat_pipeline": {
+            "title": "Hisat Pipeline",
+            "type": "object",
+            "description": "Parameters for the Hisat2 pipeline which includes Trimmomatic.",
+            "default": "",
+            "properties": {
+                "hisat2_base_name": {
+                    "type": "string",
+                    "description": "The reference genome base name as required by Hiast2.",
+                    "default": "CORG"
+                },
+                "hisat2_index_dir": {
+                    "type": "string",
+                    "description": "The directory containing the hisat2 indexed files for the reference genome.",
+                    "default": "${baseDir}/assets/demo/references/CORG.genome.Hisat2.indexed"
+                },
+                "hisat2_gtf_file": {
+                    "type": "string",
+                    "description": "A GTF of the reference genome.",
+                    "default": "${baseDir}/assets/demo/references/CORG.transcripts.gtf"
+                },
+                "hisat2_keep_data": {
+                    "type": "boolean",
+                    "description": "Indicates if the intermediate data files created by Hisat2 should be kept. If true, the files are retrained, if false the files are removed to save storage space."
+                },
+                "hisat2_keep_sam": {
+                    "type": "boolean",
+                    "description": "Indicates if the SAM file created by Hisat2 should be retained. If true then the file is kept, if false the file is removed to save storage space. These files can be large and should not be kept if  they are not ultimately needed or if storage is limited."
+                },
+                "hisat2_keep_bam": {
+                    "type": "boolean",
+                    "description": "Indicates if the BAM file created by Hisat2 should be retained. If true then the file is kept, if false the file is removed to save storage space. These files can be large and should not be kept if  they are not ultimately needed or if storage is limited."
+                },
+                "hisat2_keep_counts": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the raw abundance counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "hisat2_keep_fpkm": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the FPKM normalized counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "hisat2_keep_tpm": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the TPM normalized counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "hisat2_keep_gem": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the GEM file should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "trimmomatic_clip_file": {
+                    "type": "string",
+                    "description": "This option is only used for the Hisat2 pipeline. The location of the clip file containing sequences of contaminants that should be removed from reads during trimming.",
+                    "default": "${baseDir}/assets/fasta_adapter.txt"
+                },
+                "trimmomatic_MINLEN": {
+                    "type": "number",
+                    "description": "This option is only used for the Hisat2 pipeline.  The MINLEN parameter for Trimmomatic.",
+                    "default": 0.7
+                },
+                "trimmomatic_SLIDINGWINDOW": {
+                    "type": "string",
+                    "description": "This option is only used for the Hisat2 pipeline.  The SLIDINGWINDOW parameter for Trimmomatic.",
+                    "default": "4:15"
+                },
+                "trimmomatic_LEADING": {
+                    "type": "integer",
+                    "description": "This option is only used for the Hisat2 pipeline. The LEADING parameter for Trimmomatic.",
+                    "default": 3
+                },
+                "trimmomatic_TRAILING": {
+                    "type": "integer",
+                    "description": "This option is only used for the Hisat2 pipeline. The TRAILING parameter for Trimmomatic.",
+                    "default": 6
+                },
+                "trimmomatic_keep_trimmed_fastq": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Indicates if the trimmed FASTQ file should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                }
+            },
+            "required": [
+                "hisat2_keep_data",
+                "hisat2_keep_sam",
+                "hisat2_keep_bam",
+                "hisat2_keep_counts",
+                "hisat2_keep_fpkm",
+                "hisat2_keep_tpm",
+                "hisat2_keep_gem",
+                "trimmomatic_clip_file",
+                "trimmomatic_MINLEN",
+                "trimmomatic_SLIDINGWINDOW",
+                "trimmomatic_LEADING",
+                "trimmomatic_TRAILING",
+                "trimmomatic_keep_trimmed_fastq"
+            ]
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "#/definitions/samples"
+        },
+        {
+            "$ref": "#/definitions/kallisto_pipeline"
+        },
+        {
+            "$ref": "#/definitions/salmon_pipeline"
+        },
+        {
+            "$ref": "#/definitions/hisat_pipeline"
+        }
+    ],
+    "properties": {
+        "pipeline": {
+            "type": "string",
+            "description": "The name of the quantification pipeline that should be used. This should be one of 'kallisto', 'salmon' or 'hisat2'",
+            "default": "kallisto",
+            "enum": [
+                "kallisto",
+                "salmon",
+                "hisat2"
+            ]
+        }
+    },
+    "required": [
+        "pipeline"
+    ]
+}
