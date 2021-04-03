@@ -66,7 +66,7 @@ Reports
 
 Execution Parameters:
 ---------------------
-  Queue size:                 ${params.execution.queue_size}
+  Queue size:                 ${max_cpus}
 
 
 Quantification:
@@ -485,7 +485,7 @@ process start_first_batch {
     // Move the first set of sample file into the processing directory
     // so that we jumpstart the workflow.
     sample_files = file("${workflow.workDir}/GEMmaker/stage/*.sample.csv")
-    start_samples = sample_files.sort().take(params.execution.queue_size)
+    start_samples = sample_files.sort().take(max_cpus)
     if (sample_files.size() > 0 ) {
       for (sample in start_samples) {
         sample.moveTo("${workflow.workDir}/GEMmaker/process")
