@@ -1,11 +1,11 @@
 ---
 name: Feature request
-about: Suggest an idea for the nf-core/gemmaker pipeline
+about: Suggest an idea for the nf-core/systemsgenetics-gemmaker pipeline
 labels: enhancement
 ---
 
 <!--
-# nf-core/gemmaker feature request
+# nf-core/systemsgenetics-gemmaker feature request
 
 Hi there!
 

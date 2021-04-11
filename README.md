@@ -1,17 +1,17 @@
-# ![systemsgenetics/gemmaker](docs/images/GEMmaker-logo-sm.png)
+# ![nf-core/gemmaker](docs/images/GEMmaker-logo-sm.png)
 
 **GEMmaker is a Nextflow workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression (DGE) and gene co-expression network (GCN) analyses. The GEMmaker workflow currently supports Illumina RNA-seq datasets.**.
 
-[![GitHub Actions CI Status](https://github.com/systemsgenetics/gemmaker/workflows/nf-core%20CI/badge.svg)](https://github.com/systemsgenetics/gemmaker/actions)
-[![GitHub Actions Linting Status](https://github.com/systemsgenetics/gemmaker/workflows/nf-core%20linting/badge.svg)](https://github.com/systemsgenetics/gemmaker/actions)
+[![GitHub Actions CI Status](https://github.com/nf-core/gemmaker/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/gemmaker/actions)
+[![GitHub Actions Linting Status](https://github.com/nf-core/gemmaker/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/gemmaker/actions)
 [![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A520.04.0-brightgreen.svg)](https://www.nextflow.io/)
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](https://bioconda.github.io/)
-[![Docker](https://img.shields.io/docker/automated/systemsgenetics/gemmaker.svg)](https://hub.docker.com/r/systemsgenetics/gemmaker)
+[![Docker](https://img.shields.io/docker/automated/nf-core/gemmaker.svg)](https://hub.docker.com/r/nf-core/gemmaker)
 
 ## Introduction
 
-**systemsgenetics/gemmaker** is a bioinformatics best-practise analysis pipeline for quantification of Illumina RNA-seq data. Users can choose from Hisat2, Kallisto or Salmon. GEMmaker is specifically designed to support huge numbers of FASTQ files by cleaining intermediate data files. It can process  locally stored FASTQ files or automatically retrieve them from NCBI's SRA.
+**nf-core/gemmaker** is a bioinformatics best-practise analysis pipeline for quantification of Illumina RNA-seq data. Users can choose from Hisat2, Kallisto or Salmon. GEMmaker is specifically designed to support huge numbers of FASTQ files by cleaining intermediate data files. It can process  locally stored FASTQ files or automatically retrieve them from NCBI's SRA.
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It comes with docker containers making installation trivial and results highly reproducible.
 
@@ -24,7 +24,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 3. Download the pipeline and test it on a minimal dataset with a single command:
 
     ```bash
-    nextflow run systemsgenetics/gemmaker -profile test,<docker/singularity/podman/shifter/charliecloud/conda/institute>
+    nextflow run nf-core/gemmaker -profile test,<docker/singularity/podman/shifter/charliecloud/conda/institute>
     ```
 
     > Please check [nf-core/configs](https://github.com/nf-core/configs#documentation) to see if a custom config file to run nf-core pipelines already exists for your Institute. If so, you can simply use `-profile <institute>` in your command. This will enable either `docker` or `singularity` and set the appropriate execution settings for your local compute environment.
@@ -50,13 +50,13 @@ By default, the pipeline currently performs the following:
 
 ## Documentation
 
-The nf-core/gemmaker pipeline comes with documentation about the pipeline: [usage](https://gemmaker.readthedocs.io/en/latest/).
+The gemmaker pipeline comes with documentation about the pipeline: [usage](https://gemmaker.readthedocs.io/en/latest/).
 
 <!-- TODO nf-core: Add a brief overview of what the pipeline does and how it works -->
 
 ## Credits
 
-systemsgenetics/gemmaker was originally written by John Hadish, Tyler Biggs, Ben Shealy, Connor Wytko, Sai Prudhvi Oruganti, F. Alex Feltus, & Stephen Ficklin.
+nf-core/gemmaker was originally written by John Hadish, Tyler Biggs, Ben Shealy, Connor Wytko, Sai Prudhvi Oruganti, F. Alex Feltus, & Stephen Ficklin.
 
 
 ## Contributions and Support

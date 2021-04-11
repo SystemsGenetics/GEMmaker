@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/systemsgenetics/gemmaker/master/nextflow_schema.json",
-    "title": "systemsgenetics/gemmaker pipeline parameters",
+    "$id": "https://raw.githubusercontent.com/nf-core/gemmaker/master/nextflow_schema.json",
+    "title": "nf-core/gemmaker pipeline parameters",
     "description": "GEMmaker is a Nextflow workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression (DGE) and gene co-expression network (GCN) analyses. The GEMmaker workflow currently supports Illumina RNA-seq datasets.",
     "type": "object",
     "definitions": {

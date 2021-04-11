@@ -1,11 +1,11 @@
 #!/usr/bin/env nextflow
 /*
 ========================================================================================
-                         systemsgenetics/gemmaker
+                         gemmaker
 ========================================================================================
- systemsgenetics/gemmaker Analysis Pipeline.
+ nf-core/gemmaker Analysis Pipeline.
  #### Homepage / Documentation
- https://github.com/SystemsGenetics/GEMmaker
+ https://github.com/SystemsGenetics/gemmaker
  https://gemmaker.readthedocs.io/en/latest/
 ----------------------------------------------------------------------------------------
 */
@@ -21,7 +21,7 @@ log.info Headers.nf_core(workflow, params.monochrome_logs)
 ////////////////////////////////////////////////////+
 def json_schema = "$projectDir/nextflow_schema.json"
 if (params.help) {
-    def command = "nextflow run nf-core/gemmaker --input '*_R{1,2}.fastq.gz' -profile docker"
+    def command = "nextflow run gemmaker --input '*_R{1,2}.fastq.gz' -profile docker"
     log.info NfcoreSchema.params_help(workflow, params, json_schema, command)
     exit 0
 }
