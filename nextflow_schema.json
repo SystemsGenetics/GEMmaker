@@ -13,7 +13,7 @@
             "required": [
                 "pipeline",
                 "sra_list_file",
-                "local_fastq_files",
+                "input",
                 "skip_samples_file"
             ],
             "properties": {

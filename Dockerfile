@@ -11,3 +11,7 @@ ENV PATH /opt/conda/envs/nf-core-gemmaker-2.0dev/bin:$PATH
 
 # Dump the details of the installed packages to a file for posterity
 RUN conda env export --name nf-core-gemmaker-2.0dev > nf-core-gemmaker-2.0dev.yml
+
+# Needed to prevent the vdb-config -i message from fastq-dump
+RUN apt-get update && apt-get install uuid-runtime
+RUN mkdir -p /.ncbi && printf '/LIBS/GUID = "%s"\n' `uuidgen` > /.ncbi/user-settings.mkfg

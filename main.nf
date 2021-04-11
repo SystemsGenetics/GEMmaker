@@ -55,7 +55,7 @@ Workflow Information:
 Samples:
 --------
   Remote fastq list path:     ${params.sra_list_file}
-  Local sample glob:          ${params.local_fastq_files}
+  Local sample glob:          ${params.input}
   Skip samples file:          ${params.skip_samples_file}
 
 
@@ -220,14 +220,14 @@ GTF_FILE = Channel.fromPath("${params.hisat2_gtf_file}").collect()
  * Local Sample Input.
  * This checks the folder that the user has given
  */
-if (params.local_fastq_files == "none") {
+if (params.input == "none") {
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_STAGING }
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 else {
-  Channel.fromFilePairs( "${params.local_fastq_files}", size: -1 )
+  Channel.fromFilePairs( "${params.input}", size: -1 )
     .set { LOCAL_SAMPLE_FILES_FOR_STAGING }
-  Channel.fromFilePairs( "${params.local_fastq_files}", size: -1 )
+  Channel.fromFilePairs( "${params.input}", size: -1 )
     .set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
 
