@@ -46,6 +46,7 @@ Workflow Information:
 ---------------------
   Project Directory:          ${workflow.projectDir}
   Work Directory:             ${workflow.workDir}
+  Launch Directory:           ${workflow.launchDir}
   Config Files:               ${workflow.configFiles}
   Container Engine:           ${workflow.containerEngine}
   Profile(s):                 ${workflow.profile}
@@ -391,7 +392,7 @@ process retrieve_sra_metadata {
 
   retrieve_sra_metadata.py \
       --run_id_file ${srr_file} \
-      --meta_dir ${params.outdir} \
+      --meta_dir ${workflow.workDir}/GEMmaker \
       ${skip_arg}
   """
 }
@@ -937,7 +938,7 @@ process salmon {
 
   output:
     set val(sample_id), file("*.ga") into SALMON_GA
-    set val(sample_id), file("*.ga/aux_info/meta_info.json"), file("*.ga/libParams/flenDist.txt") into SALMON_GA_LOG
+    set val(sample_id), file("${sample_id}-meta_info.json"), file("${sample_id}-flenDist.txt") into SALMON_GA_LOG
     set val(sample_id), file("*.ga/quant.sf") into SALMON_GA_TO_CLEAN
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_SALMON_SIGNAL
 
@@ -1077,8 +1078,8 @@ process hisat2 {
     file indexes from HISAT2_INDEXES
 
   output:
-    set val(sample_id), file("*.sam") into INDEXED_SAMPLES
-    set val(sample_id), file("*.sam.log") into INDEXED_SAMPLES_LOG
+    set val(sample_id), file("*.sam") into HISAT2_SAM_FILE
+    set val(sample_id), file("*.sam.log") into HISAT2_SAM_LOG
     set val(sample_id), file("*.sam") into SAM_FOR_CLEANING
     set val(sample_id), val(1) into CLEAN_TRIMMED_FASTQ_HISAT_SIGNAL
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_HISAT_SIGNAL
@@ -1110,7 +1111,7 @@ process samtools_sort {
   label "samtools"
 
   input:
-    set val(sample_id), file(sam_file) from INDEXED_SAMPLES
+    set val(sample_id), file(sam_file) from HISAT2_SAM_FILE
 
   output:
     set val(sample_id), file("*.bam") into SORTED_FOR_INDEX
@@ -1246,17 +1247,22 @@ process hisat2_fpkm_tpm {
  */
 MULTIQC_RUN = MULTIQC_READY_SIGNAL.mix(MULTIQC_BOOTSTRAP)
 
+FASTQC_1_OUTPUT
+  .concat(FASTQC_2_OUTPUT, KALLISTO_LOG, SALMON_GA_LOG, HISAT2_SAM_LOG, BAM_INDEXED_LOG, TRIMMED_SAMPLE_LOG).set {MULTIQC_FILES}
+
 /**
  * Process to generate the multiqc report once everything is completed
  */
 process multiqc {
   label "multiqc"
+  cache false
   publishDir "${params.outdir}/reports", mode: params.publish_dir_mode
 
   input:
     val signal from MULTIQC_RUN.collect()
     file multiqc_config from MULTIQC_CONFIG
     file gemmaker_logo from MULTIQC_CUSTOM_LOGO
+    file input_files from  MULTIQC_FILES.collect()
 
   output:
     file "multiqc_data" into MULTIQC_DATA
@@ -1267,9 +1273,7 @@ process multiqc {
 
   script:
   """
-  multiqc \
-    --config ${multiqc_config} \
-    ${params.outdir}/Samples
+  multiqc --config ${multiqc_config} ./
 
   """
 }

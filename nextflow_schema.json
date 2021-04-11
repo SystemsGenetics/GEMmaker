@@ -76,14 +76,6 @@
                     "type": "boolean",
                     "description": "If True, the MultiQC summary report will be generated.",
                     "default": true
-                },
-                "sample_organization": {
-                    "type": "string",
-                    "default": "flat",
-                    "enum": [
-                        "flat",
-                        "subdirs"
-                    ]
                 }
             }
         },
