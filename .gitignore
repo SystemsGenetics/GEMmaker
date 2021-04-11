@@ -7,3 +7,10 @@ tests/
 testing/
 testing*
 *.pyc
+build-docker.sh
+docs/_build/
+gemmaker.sh
+problematic_SRRs.txt
+push-docker.sh
+singularity
+
