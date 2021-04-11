@@ -7,3 +7,8 @@ work
 nextflow
 *.out
 *.srun
+build-docker.sh
+gemmaker.sh
+problematic_SRRs.txt
+push-docker.sh
+singularity
