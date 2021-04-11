@@ -11,7 +11,9 @@
 
 ## Introduction
 
-**nf-core/gemmaker** is a bioinformatics best-practise analysis pipeline for quantification of Illumina RNA-seq data. Users can choose from Hisat2, Kallisto or Salmon. GEMmaker is specifically designed to support huge numbers of FASTQ files by cleaining intermediate data files. It can process  locally stored FASTQ files or automatically retrieve them from NCBI's SRA.
+GEMmaker (i.e. **nf-core/gemmaker**) is a pipeline for quantification of Illumina RNA-seq data. Users can choose from Hisat2, Kallisto or Salmon. It can process locally stored FASTQ files or automatically retrieve them from NCBI's SRA.
+
+The [nf-core/rnaseq](https://nf-co.re/rnaseq) workflow provides similar functionality. However, GEMmaker is different in that it can scale to thousands of samples without exceeding local storage resources.
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It comes with docker containers making installation trivial and results highly reproducible.
 
@@ -34,7 +36,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
     <!-- TODO nf-core: Update the example "typical command" below used to run the pipeline -->
 
     ```bash
-    nextflow run systemsgeentics/gemmaker -profile <docker/singularity/podman/shifter/charliecloud/conda/institute> --input '*_R{1,2}.fastq.gz' --genome GRCh37
+    nextflow run nf-core/gemmaker -profile <docker/singularity/podman/shifter/charliecloud/conda/institute> --input '*_R{1,2}.fastq.gz' --pipeline kallisto --kallisto_index_path './reference_index'
     ```
 
 See [usage docs](https://gemmaker.readthedocs.io/en/latest/) for all of the available options when running the pipeline.

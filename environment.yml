@@ -25,3 +25,4 @@ dependencies:
   - bioconda::sra-tools=2.10.9
   - bioconda::stringtie=2.1.5
   - bioconda::trimmomatic=0.39
+  - bioconda::gffread=0.12.1

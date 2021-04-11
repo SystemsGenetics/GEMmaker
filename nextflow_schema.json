@@ -11,10 +11,7 @@
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
             "required": [
-                "pipeline",
-                "sra_list_file",
-                "input",
-                "skip_samples_file"
+                "pipeline"
             ],
             "properties": {
                 "input": {
@@ -32,7 +29,7 @@
                         "hisat2"
                     ]
                 },
-                "sra_list_file": {
+                "sras": {
                     "type": "string",
                     "description": "A text file containing NCBI SRA Run IDs, one per line, that GEMmaker should automatically retrieve. If no files are to be retrieved from SRA the file should be left emptly",
                     "default": "${baseDir}/assets/demo/SRA_IDs.txt"
@@ -45,7 +42,7 @@
                     "type": "boolean",
                     "description": "Indicates if the dumped FASTQ file from a downloaded SRA file should be kept. If true then the file is kept if false then the file is removed  to save storage space."
                 },
-                "skip_samples_file": {
+                "skip_samples": {
                     "type": "string",
                     "description": "A text file containing the names of SRA runs or local FASTQ samples that should be excluded.",
                     "default": "${baseDir}/assets/demo/samples2skip.txt"

@@ -45,7 +45,6 @@ println """\
 Workflow Information:
 ---------------------
   Project Directory:          ${workflow.projectDir}
-  Launch Directory:           ${workflow.launchDir}
   Work Directory:             ${workflow.workDir}
   Config Files:               ${workflow.configFiles}
   Container Engine:           ${workflow.containerEngine}
@@ -54,9 +53,9 @@ Workflow Information:
 
 Samples:
 --------
-  Remote fastq list path:     ${params.sra_list_file}
+  Remote fastq list path:     ${params.sras}
   Local sample glob:          ${params.input}
-  Skip samples file:          ${params.skip_samples_file}
+  Skip samples file:          ${params.skip_samples}
 
 
 Reports
@@ -187,14 +186,18 @@ if (salmon_enable) {
      }
  }
 
- sample_file = file("${params.sra_list_file}")
- if (!sample_file.exists()) {
-    error "Error: The NCBI download sample file does not exists at '${params.sra_list_file}'. This file must be provided. If you are not downloading samples from NCBI SRA the file must exist but can be left empty."
- }
+if (params.sras) {
+    sample_file = file("${params.sras}")
+    if (!sample_file.exists()) {
+        error "Error: The NCBI download sample file does not exists at '${params.sras}'. This file must be provided. If you are not downloading samples from NCBI SRA the file must exist but can be left empty."
+    }
+}
 
-skip_file = file("${params.skip_samples_file}")
-if (!skip_file.exists()) {
-   error "Error: The file conatining samples to skip does not exists at '${params.skip_samples_file}'. This file must be provided. If you are not skipping samples the file must exist but can be left empty."
+if (params.skip_samples) {
+    skip_file = file("${params.skip_samples}")
+    if (!skip_file.exists()) {
+       error "Error: The file conatining samples to skip does not exists at '${params.skip_samples}'."
+   }
 }
 
 failed_report_template = file("${params.failed_run_report_template}")
@@ -205,14 +208,31 @@ if (!failed_report_template.exists()) {
 /**
  * Create value channels that can be reused
  */
-HISAT2_INDEXES = Channel.fromPath("${params.hisat2_index_dir}/*").collect()
-KALLISTO_INDEX = Channel.fromPath("${params.kallisto_index_path}").collect()
-SALMON_INDEXES = Channel.fromPath("${params.salmon_index_path}/*").collect()
-FASTA_ADAPTER = Channel.fromPath("${params.trimmomatic_clip_file}").collect()
+if (hisat2_enable) {
+    HISAT2_INDEXES = Channel.fromPath("${params.hisat2_index_dir}/*").collect()
+    FASTA_ADAPTER = Channel.fromPath("${params.trimmomatic_clip_file}").collect()
+    GTF_FILE = Channel.fromPath("${params.hisat2_gtf_file}").collect()
+}
+else {
+    Channel.empty().set { HISAT2_INDEXES }
+    Channel.empty().set { FASTA_ADAPTER }
+    Channel.empty().set { GTF_FILE }
+}
+if (kallisto_enable) {
+    KALLISTO_INDEX = Channel.fromPath("${params.kallisto_index_path}").collect()
+}
+else {
+    Channel.empty().set { KALLISTO_INDEX }
+}
+if (salmon_enable) {
+    SALMON_INDEXES = Channel.fromPath("${params.salmon_index_path}/*").collect()
+}
+else {
+    Channel.empty().set { SALMON_INDEXES }
+}
 FAILED_RUN_TEMPLATE = Channel.fromPath("${params.failed_run_report_template}").collect()
 MULTIQC_CONFIG = Channel.fromPath("${params.multiqc_config_file}").collect()
 MULTIQC_CUSTOM_LOGO = Channel.fromPath("${params.multiqc_custom_logo}").collect()
-GTF_FILE = Channel.fromPath("${params.hisat2_gtf_file}").collect()
 
 
 
@@ -220,7 +240,7 @@ GTF_FILE = Channel.fromPath("${params.hisat2_gtf_file}").collect()
  * Local Sample Input.
  * This checks the folder that the user has given
  */
-if (params.input == "none") {
+if (!params.input) {
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_STAGING }
   Channel.empty().set { LOCAL_SAMPLE_FILES_FOR_JOIN }
 }
@@ -234,11 +254,11 @@ else {
 /**
  * Remote fastq_run_id Input.
  */
-if (params.sra_list_file == "none") {
+if (params.sras == "") {
   Channel.empty().set { SRR_FILE }
 }
 else {
-  Channel.fromPath("${params.sra_list_file}").set { SRR_FILE }
+  Channel.fromPath("${params.sras}").set { SRR_FILE }
 }
 
 
@@ -362,13 +382,17 @@ process retrieve_sra_metadata {
     file "failed_runs.metadata.txt" into METADATA_FAILED_RUNS
 
   script:
+  skip_arg = ""
+  if (params.skip_samples) {
+      skip_arg = "--skip_file ${params.skip_samples}"
+  }
   """
   >&2 echo "#TRACE n_remote_run_ids=`cat ${srr_file} | wc -l`"
 
   retrieve_sra_metadata.py \
       --run_id_file ${srr_file} \
-      --meta_dir ${workflow.launchDir}/${params.outdir} \
-      --skip_file ${params.skip_samples_file}
+      --meta_dir ${params.outdir} \
+      ${skip_arg}
   """
 }
 
@@ -439,11 +463,13 @@ process write_stage_files {
   exec:
     // Get any samples to skip
     skip_samples = []
-    skip_file = file("${params.skip_samples_file}")
-    if (skip_file.exists()) {
-      skip_file.eachLine { line ->
-        skip_samples << line.trim()
-      }
+    if (params.skip_samples) {
+        skip_file = file("${params.skip_samples}")
+        if (skip_file.exists()) {
+          skip_file.eachLine { line ->
+            skip_samples << line.trim()
+          }
+        }
     }
 
     // Only stage files that should not be skipped.
@@ -709,7 +735,7 @@ process next_sample {
  * Downloads SRA files from NCBI using the SRA Toolkit.
  */
 process download_runs {
-  publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.download.txt', saveAs: { "${sample_id}/${it}" }
+  publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.download.txt', saveAs: { "Samples/${sample_id}/${it}" }
 
   tag { sample_id }
   label "sratoolkit"
@@ -737,8 +763,8 @@ process download_runs {
  * Extracts FASTQ files from downloaded SRA files.
  */
 process fastq_dump {
-  publishDir params.outdir, mode: params.publish_dir_mode, pattern: publish_pattern_fastq_dump, saveAs: { "${sample_id}/${it}" }
-  publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.fastq-dump.txt', saveAs: { "${sample_id}/${it}" }
+  publishDir params.outdir, mode: params.publish_dir_mode, pattern: publish_pattern_fastq_dump, saveAs: { "Samples/${sample_id}/${it}" }
+  publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.fastq-dump.txt', saveAs: { "Samples/${sample_id}/${it}" }
   tag { sample_id }
   label "sratoolkit"
 
@@ -799,7 +825,7 @@ COMBINED_SAMPLES_FOR_COUNTING = LOCAL_SAMPLES_FOR_COUNTING.mix(MERGED_SAMPLES_FO
  * Performs fastqc on raw fastq files
  */
 process fastqc_1 {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -838,7 +864,7 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
  * Performs KALLISTO alignemnt of fastq files
  */
 process kallisto {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Kallisto_GA
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Kallisto_GA
   tag { sample_id }
   label "kallisto"
 
@@ -870,7 +896,7 @@ process kallisto {
  * Generates the final TPM and raw count files for Kallisto
  */
 process kallisto_tpm {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
   tag { sample_id }
 
   input:
@@ -900,7 +926,7 @@ process kallisto_tpm {
  * Performs SALMON alignemnt of fastq files
  */
 process salmon {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Salmon_GA
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Salmon_GA
   tag { sample_id }
   label "multithreaded"
   label "salmon"
@@ -933,7 +959,7 @@ process salmon {
  * Generates the final TPM file for Salmon
  */
 process salmon_tpm {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
   tag { sample_id }
 
   input:
@@ -969,7 +995,7 @@ process salmon_tpm {
  * "nextflow.config" file
  */
 process trimmomatic {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_trimmomatic
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_trimmomatic
   tag { sample_id }
   label "multithreaded"
   label "trimmomatic"
@@ -1013,7 +1039,7 @@ process trimmomatic {
  * Files are stored to an independent folder
  */
 process fastqc_2 {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -1041,7 +1067,7 @@ process fastqc_2 {
  * depends: trimmomatic
  */
 process hisat2 {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: "*.log"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*.log"
   tag { sample_id }
   label "multithreaded"
   label "hisat2"
@@ -1079,7 +1105,7 @@ process hisat2 {
  * depends: hisat2
  */
 process samtools_sort {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_sort
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_sort
   tag { sample_id }
   label "samtools"
 
@@ -1112,7 +1138,7 @@ process samtools_sort {
  * depends: samtools_index
  */
 process samtools_index {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_index
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_index
   tag { sample_id }
   label "samtools"
 
@@ -1142,7 +1168,7 @@ process samtools_index {
  * depends: samtools_index
  */
 process stringtie {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_stringtie_gtf_and_ga
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_stringtie_gtf_and_ga
   tag { sample_id }
   label "multithreaded"
   label "stringtie"
@@ -1180,7 +1206,7 @@ process stringtie {
  * Generates the final FPKM / TPM / raw files from Hisat2
  */
 process hisat2_fpkm_tpm {
-  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
   tag { sample_id }
   label "stringtie"
 
@@ -1242,13 +1268,8 @@ process multiqc {
   script:
   """
   multiqc \
-    --ignore ${workflow.launchDir}/${params.outdir}/GEMs \
-    --ignore ${workflow.launchDir}/${params.outdir}/reports \
-    --ignore ${workflow.launchDir}/${params.outdir}/failed_runs.metadata.txt \
-    --ignore ${workflow.launchDir}/${params.outdir}/pipeline_info \
-    --ignore ${workflow.launchDir}/${params.outdir}/SRA_META \
     --config ${multiqc_config} \
-    ${workflow.launchDir}/${params.outdir}
+    ${params.outdir}/Samples
 
   """
 }
@@ -1284,15 +1305,15 @@ process create_gem {
   echo "#TRACE hisat2_enable=${hisat2_enable}"
   echo "#TRACE publish_tpm=${publish_tpm}"
   echo "#TRACE publish_raw=${publish_raw}"
-  echo "#TRACE fpkm_lines=`cat ${workflow.launchDir}/${params.outdir}/*.fpkm 2> /dev/null  | wc -l`"
-  echo "#TRACE tpm_lines=`cat ${workflow.launchDir}/${params.outdir}/*.tpm 2> /dev/null | wc -l`"
-  echo "#TRACE raw_lines=`cat ${workflow.launchDir}/${params.outdir}/*.raw 2> /dev/null | wc -l`"
+  echo "#TRACE fpkm_lines=`cat ${params.outdir}/*.fpkm 2> /dev/null  | wc -l`"
+  echo "#TRACE tpm_lines=`cat ${params.outdir}/*.tpm 2> /dev/null | wc -l`"
+  echo "#TRACE raw_lines=`cat ${params.outdir}/*.raw 2> /dev/null | wc -l`"
 
   create_gem.sh \
     ${publish_fpkm} \
     ${hisat2_enable} \
-    ${workflow.launchDir} \
-    ${params.outdir} \
+    ./ \
+    ${params.outdir}/Samples \
     GEMmaker \
     ${publish_raw} \
     ${publish_tpm}
