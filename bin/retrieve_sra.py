@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 """
 A Python script for retrieving a set of NCBI SRA run.

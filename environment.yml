@@ -12,6 +12,10 @@ dependencies:
   - conda-forge::pymdown-extensions=6.0
   - conda-forge::pygments=2.5.2
   # Software dependencies here
+  - conda-forge::pandas=1.2.3
+  - conda-forge::numpy=1.20.2
+  - conda-forge::xmltodict=0.12.0
+  - conda-forge::tbb=2020.2
   - bioconda::fastqc=0.11.9
   - bioconda::hisat2=2.2.1
   - bioconda::kallisto=0.46.2
@@ -21,7 +25,3 @@ dependencies:
   - bioconda::sra-tools=2.10.9
   - bioconda::stringtie=2.1.5
   - bioconda::trimmomatic=0.39
-  - conda-forge::pandas=1.2.3
-  - conda-forge::numpy=1.20.2
-  - conda-forge::xmltodict=0.12.0
-  - conda-forge::tbb=2020.2

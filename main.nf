@@ -490,7 +490,14 @@ process get_software_versions {
     fastqc --version > v_fastqc.txt
     multiqc --version > v_multiqc.txt
     kallisto version > v_kallisto.txt
-    hisat2 --version > v_hisat2.txt
+    hisat2 --version | head -n 1 > v_hisat2.txt
+    salmon --version > v_salmon.txt
+    python --version > v_python.txt
+    samtools version | head -n 1 > v_samtools.txt
+    fastq-dump --version > v_fastq_dump.txt
+    stringtie --version > v_stringtie.txt
+    trimmomatic -version > v_trimmomatic.txt
+    pip freeze | grep pandas > v_pandas.txt
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
 }
@@ -792,7 +799,7 @@ COMBINED_SAMPLES_FOR_COUNTING = LOCAL_SAMPLES_FOR_COUNTING.mix(MERGED_SAMPLES_FO
  * Performs fastqc on raw fastq files
  */
 process fastqc_1 {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode, pattern: "*_fastqc.*"
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -831,7 +838,7 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
  * Performs KALLISTO alignemnt of fastq files
  */
 process kallisto {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode, pattern: publish_pattern_Kallisto_GA
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Kallisto_GA
   tag { sample_id }
   label "kallisto"
 
@@ -863,7 +870,7 @@ process kallisto {
  * Generates the final TPM and raw count files for Kallisto
  */
 process kallisto_tpm {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode
   tag { sample_id }
 
   input:
@@ -893,7 +900,7 @@ process kallisto_tpm {
  * Performs SALMON alignemnt of fastq files
  */
 process salmon {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode, pattern: publish_pattern_Salmon_GA
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Salmon_GA
   tag { sample_id }
   label "multithreaded"
   label "salmon"
@@ -926,7 +933,7 @@ process salmon {
  * Generates the final TPM file for Salmon
  */
 process salmon_tpm {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode
   tag { sample_id }
 
   input:
@@ -962,7 +969,7 @@ process salmon_tpm {
  * "nextflow.config" file
  */
 process trimmomatic {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode, pattern: publish_pattern_trimmomatic
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_trimmomatic
   tag { sample_id }
   label "multithreaded"
   label "trimmomatic"
@@ -1006,7 +1013,7 @@ process trimmomatic {
  * Files are stored to an independent folder
  */
 process fastqc_2 {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode, pattern: "*_fastqc.*"
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
   tag { sample_id }
   label "fastqc"
 
@@ -1034,7 +1041,7 @@ process fastqc_2 {
  * depends: trimmomatic
  */
 process hisat2 {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode, pattern: "*.log"
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: "*.log"
   tag { sample_id }
   label "multithreaded"
   label "hisat2"
@@ -1072,7 +1079,7 @@ process hisat2 {
  * depends: hisat2
  */
 process samtools_sort {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode, pattern: publish_pattern_samtools_sort
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_sort
   tag { sample_id }
   label "samtools"
 
@@ -1105,7 +1112,7 @@ process samtools_sort {
  * depends: samtools_index
  */
 process samtools_index {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode, pattern: publish_pattern_samtools_index
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_index
   tag { sample_id }
   label "samtools"
 
@@ -1135,7 +1142,7 @@ process samtools_index {
  * depends: samtools_index
  */
 process stringtie {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode, pattern: publish_pattern_stringtie_gtf_and_ga
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_stringtie_gtf_and_ga
   tag { sample_id }
   label "multithreaded"
   label "stringtie"
@@ -1173,7 +1180,7 @@ process stringtie {
  * Generates the final FPKM / TPM / raw files from Hisat2
  */
 process hisat2_fpkm_tpm {
-  publishDir params.publish_sample_dir, mode: params.publish_dir_mode
+  publishDir "${params.outdir}/${sample_id}", mode: params.publish_dir_mode
   tag { sample_id }
   label "stringtie"
 
@@ -1237,6 +1244,9 @@ process multiqc {
   multiqc \
     --ignore ${workflow.launchDir}/${params.outdir}/GEMs \
     --ignore ${workflow.launchDir}/${params.outdir}/reports \
+    --ignore ${workflow.launchDir}/${params.outdir}/failed_runs.metadata.txt \
+    --ignore ${workflow.launchDir}/${params.outdir}/pipeline_info \
+    --ignore ${workflow.launchDir}/${params.outdir}/SRA_META \
     --config ${multiqc_config} \
     ${workflow.launchDir}/${params.outdir}
 

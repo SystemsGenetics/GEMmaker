@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 """
 A Python script for retrieving metadata about NCBI SRA experiment runs.
