@@ -29,7 +29,7 @@
         </style>
     </head>
     <body>
-        <h1>{{title}}</h1>
+        <h1>${{title}}</h1>
         <p>If SRA runs files are listed in any of the tables below then these runs were excluded from the GEMmaker results.</p>
         <h2>SRA Runs with Metadata Failures</h2>
         <table>
@@ -44,8 +44,8 @@
             {% else %}
                 {% for item in failed_metadata %}
                 <tr>
-                    <td>{{item.run_id}}</td>
-                    <td>{{item.reason}}</td>
+                    <td>${{item.run_id}}</td>
+                    <td>${{item.reason}}</td>
                 </tr>
                 {% endfor %}
             {% endif %}
@@ -65,9 +65,9 @@
             {% else %}
                 {% for item in failed_downloads %}
                 <tr>
-                    <td>{{item.run_id}}</td>
-                    <td>{{item.sample_id}}</td>
-                    <td><pre>{{item.reason}}</pre></td>
+                    <td>${{item.run_id}}</td>
+                    <td>${{item.sample_id}}</td>
+                    <td><pre>${{item.reason}}</pre></td>
                 </tr>
                 {% endfor %}
             {% endif %}
@@ -87,9 +87,9 @@
             {% else %}
                 {% for item in failed_dumps %}
                 <tr>
-                    <td>{{item.run_id}}</td>
-                    <td>{{item.sample_id}}</td>
-                    <td><pre>{{item.reason}}</pre></td>
+                    <td>${{item.run_id}}</td>
+                    <td>${{item.sample_id}}</td>
+                    <td><pre>${{item.reason}}</pre></td>
                 </tr>
                 {% endfor %}
             {% endif %}

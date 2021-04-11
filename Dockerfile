@@ -7,7 +7,7 @@ COPY environment.yml /
 RUN conda env create --quiet -f /environment.yml && conda clean -a
 
 # Add conda installation dir to PATH (instead of doing 'conda activate')
-ENV PATH /opt/conda/envs/gemmaker-2.0dev/bin:$PATH
+ENV PATH /opt/conda/envs/nf-core-gemmaker-2.0dev/bin:$PATH
 
 # Dump the details of the installed packages to a file for posterity
-RUN conda env export --name gemmaker-2.0dev > gemmaker-2.0dev.yml
+RUN conda env export --name nf-core-gemmaker-2.0dev > nf-core-gemmaker-2.0dev.yml

@@ -17,6 +17,11 @@
                 "skip_samples_file"
             ],
             "properties": {
+                "input": {
+                    "type": "string",
+                    "fa_icon": "fas fa-dna",
+                    "help_text": "Use this to specify the location of your input FastQ files. For example:\n\n```bash\n--input 'path/to/data/sample_*_{1,2}.fastq'\n```\n\nPlease note the following requirements:\n\n1. The path must be enclosed in quotes\n2. The path must have at least one `*` wildcard character\n3. When using the pipeline with paired end data, the path must use `{1,2}` notation to specify read pairs.\n\nIf left unspecified, a default pattern is used: `data/*{1,2}.fastq.gz`"
+                },
                 "pipeline": {
                     "type": "string",
                     "description": "The name of the quantification pipeline that should be used. This should be one of 'kallisto', 'salmon' or 'hisat2'",
@@ -39,11 +44,6 @@
                 "keep_retrieved_fastq": {
                     "type": "boolean",
                     "description": "Indicates if the dumped FASTQ file from a downloaded SRA file should be kept. If true then the file is kept if false then the file is removed  to save storage space."
-                },
-                "local_fastq_files": {
-                    "type": "string",
-                    "description": "A GLOB pattern (https://en.wikipedia.org/wiki/Glob_(programming)) used to find FASTQ files on the local file system. It should contain the full path and the necessary wildcards. Set to an empty string if no local files are to be included.",
-                    "default": "${baseDir}/assets/demo/*_{1,2}.fastq"
                 },
                 "skip_samples_file": {
                     "type": "string",
