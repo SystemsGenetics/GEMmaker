@@ -22,7 +22,7 @@ env:
 jobs:
   run-awstest:
     name: Run AWS full tests
-    if: github.repository == 'nf-core/gemmaker'
+    if: github.repository == 'systemsgenetics/gemmaker'
     runs-on: ubuntu-latest
     steps:
       - name: Setup Miniconda
@@ -40,7 +40,7 @@ jobs:
         run: |
           aws batch submit-job \
             --region eu-west-1 \
-            --job-name nf-core-gemmaker \
+            --job-name systemsgenetics-gemmaker \
             --job-queue $AWS_JOB_QUEUE \
             --job-definition $AWS_JOB_DEFINITION \
-            --container-overrides '{"command": ["nf-core/gemmaker", "-r '"${GITHUB_SHA}"' -profile test --outdir s3://'"${AWS_S3_BUCKET}"'/gemmaker/results-'"${GITHUB_SHA}"' -w s3://'"${AWS_S3_BUCKET}"'/gemmaker/work-'"${GITHUB_SHA}"' -with-tower"], "environment": [{"name": "TOWER_ACCESS_TOKEN", "value": "'"$TOWER_ACCESS_TOKEN"'"}]}'
+            --container-overrides '{"command": ["systemsgenetics/gemmaker", "-r '"${GITHUB_SHA}"' -profile test --outdir s3://'"${AWS_S3_BUCKET}"'/gemmaker/results-'"${GITHUB_SHA}"' -w s3://'"${AWS_S3_BUCKET}"'/gemmaker/work-'"${GITHUB_SHA}"' -with-tower"], "environment": [{"name": "TOWER_ACCESS_TOKEN", "value": "'"$TOWER_ACCESS_TOKEN"'"}]}'

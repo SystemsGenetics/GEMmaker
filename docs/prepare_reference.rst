@@ -39,7 +39,7 @@ If you do not have Kallisto installed locally, but you have Singularity installe
 
 .. code-block:: bash
 
-  singularity exec -B ${PWD} docker://nfcore/gemmaker:2.0 kallisto index -i Arabidopsis_thaliana.TAIR10.kallisto.indexed Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz
+  singularity exec -B ${PWD} docker://systemsgenetics/gemmaker:2.0 kallisto index -i Arabidopsis_thaliana.TAIR10.kallisto.indexed Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz
 
 The command above uses the ``gemmaker/gemmaker:2.0`` image that was built for GEMmaker.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the Kallisto index command can be executed.
 
@@ -49,7 +49,7 @@ If you do not have Kallisto installed locally, but you have Docker installed, yo
 
 .. code-block:: bash
 
-  docker run -v ${PWD}:/reference -u $(id -u ${USER}):$(id -g ${USER}) nfcore/gemmaker:2.0 /bin/bash -c "cd reference; kallisto index -i Arabidopsis_thaliana.TAIR10.kallisto.indexed Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz"
+  docker run -v ${PWD}:/reference -u $(id -u ${USER}):$(id -g ${USER}) systemsgenetics/gemmaker:2.0 /bin/bash -c "cd reference; kallisto index -i Arabidopsis_thaliana.TAIR10.kallisto.indexed Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz"
 
 The command above uses the ``gemmaker/gemmaker:2.0`` image that was built for GEMmaker.  The image will be downloaded if it does not already exist on your machine.  The ``-v ${PWD}:/references`` argument instructs Docker to mount the current directory (i.e.: ``${PWD}``) onto a new directory in the image named ``/reference`` and gives the image access to the transcript file for indexing. From there the Kallisto index command can be executed.  The ``-c`` argument provides the Kallisto index command needed to index the files.  The ``-u $(id -u ${USER}):$(id -g ${USER})`` argument instructs Docker to run Kallisto as you rather than the system root user.
 
@@ -79,10 +79,10 @@ If you do not have Salmon installed locally, but you have Singularity installed,
 
 .. code-block:: bash
 
-   singularity exec -B ${PWD} docker://nfcore/gemmaker:2.0 salmon index index -t Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz -i Arabidopsis_thaliana.TAIR10.salmon.indexed
+   singularity exec -B ${PWD} docker://systemsgenetics/gemmaker:2.0 salmon index index -t Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz -i Arabidopsis_thaliana.TAIR10.salmon.indexed
 
 
-The command above uses the ``nfcore/gemmaker:2.0`` image to index the transcripts.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the Salmon index command can be executed.
+The command above uses the ``systemsgenetics/gemmaker:2.0`` image to index the transcripts.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the Salmon index command can be executed.
 
 Index Salmon using Docker
 .........................
@@ -90,9 +90,9 @@ If you do not have Salmon installed locally, but you have Docker installed, you 
 
 .. code-block:: bash
 
-  docker run -v ${PWD}:/reference -u $(id -u ${USER}):$(id -g ${USER}) nfcore/gemmaker:2.0 /bin/bash -c "cd /reference; salmon index index -t Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz -i Arabidopsis_thaliana.TAIR10.salmon.indexed"
+  docker run -v ${PWD}:/reference -u $(id -u ${USER}):$(id -g ${USER}) systemsgenetics/gemmaker:2.0 /bin/bash -c "cd /reference; salmon index index -t Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz -i Arabidopsis_thaliana.TAIR10.salmon.indexed"
 
-The command above uses the ``nfcore/gemmaker:2.0`` image that was built by the GEMmaker development team to index the transcripts.  The image will be downloaded if it does not already exist on your machine.   The ``-v ${PWD}:/references`` argument instructs Docker to mount the current directory (i.e.: ``${PWD}``) onto a new directory in the image named ``/reference`` and gives the image access to the transcript file for indexing.  The ``-c`` argument provides the Salmon index command needed to index the files.  The ``-u $(id -u ${USER}):$(id -g ${USER})`` argument instructs Docker to run Salmon as you rather than the system root user.
+The command above uses the ``systemsgenetics/gemmaker:2.0`` image that was built by the GEMmaker development team to index the transcripts.  The image will be downloaded if it does not already exist on your machine.   The ``-v ${PWD}:/references`` argument instructs Docker to mount the current directory (i.e.: ``${PWD}``) onto a new directory in the image named ``/reference`` and gives the image access to the transcript file for indexing.  The ``-c`` argument provides the Salmon index command needed to index the files.  The ``-u $(id -u ${USER}):$(id -g ${USER})`` argument instructs Docker to run Salmon as you rather than the system root user.
 
 Hisat2
 ''''''
@@ -142,17 +142,17 @@ To create the GTF file:
 
 .. code-block:: bash
 
-  singularity exec -B ${PWD} docker://nfcore/gemmaker:2.0  gffread Arabidopsis_thaliana.TAIR10.50.gff3.gz -T -o Arabidopsis_thaliana.TAIR10.gtf
+  singularity exec -B ${PWD} docker://systemsgenetics/gemmaker:2.0  gffread Arabidopsis_thaliana.TAIR10.50.gff3.gz -T -o Arabidopsis_thaliana.TAIR10.gtf
 
 To index the reference:
 
 .. code-block:: bash
 
-   singularity exec -B ${PWD} docker://nfcore/gemmaker:2.0 hisat2-build -f Arabidopsis_thaliana.TAIR10.dna.toplevel.fa Arabidopsis_thaliana.TAIR10
+   singularity exec -B ${PWD} docker://systemsgenetics/gemmaker:2.0 hisat2-build -f Arabidopsis_thaliana.TAIR10.dna.toplevel.fa Arabidopsis_thaliana.TAIR10
 
 The following describes the meaning of the arguments in the command-line above:
 
-The command above uses the ``nfcore/gemmaker:2.0`` image.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the Hisat2 index command can be executed.
+The command above uses the ``systemsgenetics/gemmaker:2.0`` image.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the Hisat2 index command can be executed.
 
 Index Hisat2 using Docker
 .........................
@@ -162,12 +162,12 @@ To create the GTF file:
 
 .. code-block:: bash
 
-  docker run -v ${PWD}:/reference -u $(id -u ${USER}):$(id -g ${USER}) nfcore/gemmaker:2.0 /bin/bash -c "cd /reference; gffread Arabidopsis_thaliana.TAIR10.50.gff3 -T -o Arabidopsis_thaliana.TAIR10.gtf"
+  docker run -v ${PWD}:/reference -u $(id -u ${USER}):$(id -g ${USER}) systemsgenetics/gemmaker:2.0 /bin/bash -c "cd /reference; gffread Arabidopsis_thaliana.TAIR10.50.gff3 -T -o Arabidopsis_thaliana.TAIR10.gtf"
 
 To index the reference:
 
 .. code-block:: bash
 
-  docker run -v ${PWD}:/reference -u $(id -u ${USER}):$(id -g ${USER}) nfcore/gemmaker:2.0  /bin/bash -c "cd /reference; hisat2-build -f Arabidopsis_thaliana.TAIR10.dna.toplevel.fa Arabidopsis_thaliana.TAIR10"
+  docker run -v ${PWD}:/reference -u $(id -u ${USER}):$(id -g ${USER}) systemsgenetics/gemmaker:2.0  /bin/bash -c "cd /reference; hisat2-build -f Arabidopsis_thaliana.TAIR10.dna.toplevel.fa Arabidopsis_thaliana.TAIR10"
 
-The command above uses the ``nfcore/gemmaker:2.0`` image.  The image will be downloaded if it does not already exist on your machine.   The ``-v ${PWD}:/reference`` argument instructs Docker to mount the current directory (i.e.: ``${PWD}``) onto a new directory in the image named ``/references`` and gives the image access to the transcript file for indexing.  The ``-c`` argument provides the Salmon index command needed to index the files.  The ``-u $(id -u ${USER}):$(id -g ${USER})`` argument instructs Docker to run ``hisat2-build`` as you rather than the system root user.
+The command above uses the ``systemsgenetics/gemmaker:2.0`` image.  The image will be downloaded if it does not already exist on your machine.   The ``-v ${PWD}:/reference`` argument instructs Docker to mount the current directory (i.e.: ``${PWD}``) onto a new directory in the image named ``/references`` and gives the image access to the transcript file for indexing.  The ``-c`` argument provides the Salmon index command needed to index the files.  The ``-u $(id -u ${USER}):$(id -g ${USER})`` argument instructs Docker to run ``hisat2-build`` as you rather than the system root user.

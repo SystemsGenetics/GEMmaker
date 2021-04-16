@@ -5,7 +5,7 @@ labels: bug
 ---
 
 <!--
-# nf-core/gemmaker bug report
+# GEMmaker bug report
 
 Hi there!
 
@@ -18,7 +18,7 @@ Please delete this text and anything that's not relevant from the template below
 I have checked the following places for your error:
 
 - [ ] [nf-core website: troubleshooting](https://nf-co.re/usage/troubleshooting)
-- [ ] [nf-core/gemmaker pipeline documentation](https://nf-co.re/nf-core/gemmaker/usage)
+- [ ] [GEMmaker pipeline documentation](https://gemmaker.readthedocs.io/en/latest/)
 
 ## Description of the bug
 
@@ -56,8 +56,8 @@ Have you provided the following extra information/files:
 ## Container engine
 
 - Engine: <!-- [e.g. Conda, Docker, Singularity, Podman, Shifter or Charliecloud] -->
-- version: <!-- [e.g. 1.0.0] -->
-- Image tag: <!-- [e.g. nfcore/gemmaker:1.0.0] -->
+- version: <!-- [e.g. 2.0.0] -->
+- Image tag: <!-- [e.g. systemsgenetics/gemmaker:2.0.0] -->
 
 ## Additional context
 

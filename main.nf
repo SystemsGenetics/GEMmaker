@@ -1,13 +1,13 @@
 #!/usr/bin/env nextflow
 /*
-========================================================================================
-                         gemmaker
-========================================================================================
- nf-core/gemmaker Analysis Pipeline.
+================================================================================
+                         GENmaker
+================================================================================
+ GEMmaker Analysis Pipeline.
  #### Homepage / Documentation
  https://github.com/SystemsGenetics/gemmaker
  https://gemmaker.readthedocs.io/en/latest/
-----------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 */
 
 import java.nio.channels.FileLock
@@ -21,7 +21,7 @@ log.info Headers.nf_core(workflow, params.monochrome_logs)
 ////////////////////////////////////////////////////+
 def json_schema = "$projectDir/nextflow_schema.json"
 if (params.help) {
-    def command = "nextflow run gemmaker --input '*_R{1,2}.fastq.gz' -profile docker"
+    def command = "nextflow run systemsgenetics/gemmaker -profile singularity --pipeline kallisto --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed --sras SRAs.txt"
     log.info NfcoreSchema.params_help(workflow, params, json_schema, command)
     exit 0
 }
@@ -38,10 +38,6 @@ if (params.validate_params) {
 ////////////////////////////////////////////////////
 
 println """\
-===================================
- G E M M A K E R   P I P E L I N E
-===================================
-
 Workflow Information:
 ---------------------
   Project Directory:          ${workflow.projectDir}

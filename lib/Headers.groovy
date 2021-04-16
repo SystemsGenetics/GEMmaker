@@ -35,6 +35,7 @@ class Headers {
             ${colors.blue}  |\\ | |__  __ /  ` /  \\ |__) |__         ${colors.yellow}}  {${colors.reset}
             ${colors.blue}  | \\| |       \\__, \\__/ |  \\ |___     ${colors.green}\\`-._,-`-,${colors.reset}
                                                     ${colors.green}`._,._,\'${colors.reset}
+            ${colors.purple}  Compatible Workflow ${colors.reset}
             ${colors.purple}  ${workflow.manifest.name} v${workflow.manifest.version}${colors.reset}
             ${dashed_line(monochrome_logs)}
             """.stripIndent()

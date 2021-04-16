@@ -29,7 +29,7 @@ For example:
 
 .. code:: bash
 
-  nextflow run nf-core/gemmaker -profile singularity \
+  nextflow run systemsgenetics/gemmaker -profile singularity \
     --pipeline kallisto \
     --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
     --sras SRAs.txt
@@ -45,7 +45,7 @@ To run Salmon you need to specify:
 
 .. code:: bash
 
-  nextflow run nf-core/gemmaker -profile singularity \
+  nextflow run systemsgenetics/gemmaker -profile singularity \
     --pipeline salmon \
     --salmon_index_path Arabidopsis_thaliana.TAIR10.salmon.indexed \
     --sras SRAs.txt
@@ -63,7 +63,7 @@ For example:
 
 .. code:: bash
 
-  nextflow run nf-core/gemmaker -profile singularity \
+  nextflow run systemsgenetics/gemmaker -profile singularity \
     --pipeline hisat2 \
     --sras SRAs.txt \
     --hisat2_base_name Arabidopsis_thaliana.TAIR10 \
@@ -84,7 +84,7 @@ GEMmaker was designed to limit the storage requirements in order to allow for pr
 
 .. code:: bash
 
-  nextflow run nf-core/gemmaker -profile singularity \
+  nextflow run systemsgenetics/gemmaker -profile singularity \
     --pipeline salmon \
     --salmon_index_path Arabidopsis_thaliana.TAIR10.salmon.indexed \
     --sras SRAs.txt \

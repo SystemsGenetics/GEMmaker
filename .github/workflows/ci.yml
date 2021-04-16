@@ -12,7 +12,7 @@ jobs:
   test:
     name: Run workflow tests
     # Only run on push if this is the nf-core dev branch (merged PRs)
-    if: ${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'nf-core/gemmaker') }}
+    if: ${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'systemsgenetics/gemmaker') }}
     runs-on: ubuntu-latest
     env:
       NXF_VER: ${{ matrix.nxf_ver }}
@@ -34,13 +34,13 @@ jobs:
 
       - name: Build new docker image
         if: env.MATCHED_FILES
-        run: docker build --no-cache . -t nfcore/gemmaker:dev
+        run: docker build --no-cache . -t systemsgenetics/gemmaker:dev
 
       - name: Pull docker image
         if: ${{ !env.MATCHED_FILES }}
         run: |
-          docker pull nfcore/gemmaker:dev
-          docker tag nfcore/gemmaker:dev nfcore/gemmaker:dev
+          docker pull systemsgenetics/gemmaker:dev
+          docker tag systemsgenetics/gemmaker:dev systemsgenetics/gemmaker:dev
 
       - name: Install Nextflow
         env:

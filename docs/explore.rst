@@ -9,14 +9,14 @@ You can run the example by executing the following command within the GEMmaker d
 
 .. code:: bash
 
-   nextflow run nf-core/gemmaker -profile test,<docker/singularity/podman/shifter/charliecloud/conda/institute>
+   nextflow run systemsgenetics/gemmaker -profile test,<docker/singularity/podman/shifter/charliecloud/conda/institute>
 
 
 Replace the text `<docker/singularity/podman/shifter/charliecloud/conda/institute>` with the execution profile of your choice. For example to test GEMmaker in a Singularity image the command would be.
 
 .. code:: bash
 
-   nextflow run nf-core/gemmaker -profile test,singularity
+   nextflow run systemsgenetics/gemmaker -profile test,singularity
 
 Results are stored in the ``results`` directory. You can find more information about the results in the **Use GEMmaker section**
 
