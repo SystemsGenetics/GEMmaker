@@ -22,13 +22,14 @@ import requests
 import shutil
 import json
 
+
+
 def process_wait(p):
     """
     A helper function for running a system command.
 
     :param p: A process that has already been opened.
     """
-
     print("{}".format(p.args), file=sys.stdout)
 
     # Wait for the process to finish to get the exit code,
@@ -36,14 +37,9 @@ def process_wait(p):
     # to a string.
     exit_code = p.wait()
     (stdout, stderr) = p.communicate()
-    if (stdout):
-        stdout = stdout.decode('utf-8')
-    else:
-        stdout = ''
-    if (stderr):
-        stderr = stderr.decode('utf-8')
-    else:
-        stderr = ''
+
+    stdout = stdout.decode('utf-8') if stdout else ''
+    stderr = stderr.decode('utf-8') if stderr else ''
 
     # Send stdout and stderr out to proper streams
     print(stdout, file=sys.stdout)
@@ -51,18 +47,22 @@ def process_wait(p):
 
     return { 'exit' : exit_code, 'stdout' : stdout, 'stderr' : stderr }
 
+
+
 def get_sample_url(run_id):
     """
     Uses the srapath tool to get the URL of an SRA ID.
 
     :param run_id: the run ID.
     """
-
     print("Getting download paths for sample: {}".format(run_id))
 
     # First try if there is an aspera path.
-    p = subprocess.Popen(["srapath", "--protocol", "fasp", "--json", run_id],
-                         stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    p = subprocess.Popen(
+        ["srapath", "--protocol", "fasp", "--json", run_id],
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE)
+
     res = process_wait(p)
     res = json.loads(res['stdout'])
     fasp_path = res['responses'][0]['remote'][0]['path']
@@ -70,20 +70,26 @@ def get_sample_url(run_id):
 
     # If an https path was returned for Aspera then use that.
     https_path = ""
+
     if (re.match('https://', fasp_path)):
-       https_path = fasp_path
-       fasp_path = ""
+        https_path = fasp_path
+        fasp_path = ""
+
     # If there is no aspera path then try HTTPs
     elif (not fasp_path):
-       p = subprocess.Popen(["srapath", "--protocol", "https", "-P", run_id],
-                            stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-       res = process_wait(p)
-       res = json.loads(res['stdout'])
-       https_path = res['response'][0]['remote'][0]['path']
-       sra_size = res['responses'][0]['size']
+        p = subprocess.Popen(
+            ["srapath", "--protocol", "https", "-P", run_id],
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE)
 
-    urls = { 'https' : https_path, 'fasp' : fasp_path, 'size' : sra_size }
-    return urls
+        res = process_wait(p)
+        res = json.loads(res['stdout'])
+        https_path = res['response'][0]['remote'][0]['path']
+        sra_size = res['responses'][0]['size']
+
+    return { 'https' : https_path, 'fasp' : fasp_path, 'size' : sra_size }
+
+
 
 def download_aspera(run_id, urls):
     """
@@ -92,17 +98,24 @@ def download_aspera(run_id, urls):
     :param run_id:  the run ID.
     :param urls: a dictionary of urls for the run.
     """
-
     print("Retrieving sample via aspera: {}".format(run_id))
-    p = subprocess.Popen(["ascp", "-i", "$ASPERA_KEY","-k", "1", "-T", "-l", "1000m", urls['fasp'].replace('fasp://',''), "{}.sra".format(run_id)],
-                         stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+
+    p = subprocess.Popen(
+        ["ascp", "-i", "$ASPERA_KEY","-k", "1", "-T", "-l", "1000m", urls['fasp'].replace('fasp://',''), "{}.sra".format(run_id)],
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE)
+
     res = process_wait(p)
+
     if (res['exit'] != 0):
         print("Aspera Failed: ".format(res['stderr']), file=sys.stderr)
         if 'https' in urls.keys():
             print("Trying https", file=sys.stderr)
             res = download_https(run_id, urls)
+
     return res
+
+
 
 def download_https(run_id, urls):
     """
@@ -111,19 +124,25 @@ def download_https(run_id, urls):
     :param run_id:  the run ID.
     :param urls: a dictionary of urls for the run.
     """
-
     print("Retrieving sample via https: {}".format(run_id))
+
     res = {'exit': 0}
+
     try:
         r = requests.get(urls['https'], verify=True, stream=True)
         r.raw.decode_content = True
+
         with open("{}.sra".format(run_id), 'wb') as sra_file:
             shutil.copyfileobj(r.raw, sra_file)
+
     except requests.exceptions.RequestException as e:
         print(str(e), file=sys.stderr)
         res['exit'] = 1
         res['stderr'] = str(e)
+
     return res
+
+
 
 def download_samples(run_ids):
     """
@@ -131,7 +150,6 @@ def download_samples(run_ids):
 
     :param run_ids: the list of run IDs.
     """
-
     failed_runs = {}
 
     # Now download each SRR.
@@ -139,10 +157,12 @@ def download_samples(run_ids):
         # Get the Aspera (fasp)and https URLs.
         # We will try Aspera first if we have a URL.
         urls = get_sample_url(run_id)
+
         if (urls['fasp']):
             res = download_aspera(run_id, urls)
         else:
             res = download_https(run_id, urls)
+
         if (res['exit'] != 0):
             failed_run[run_id] = res['stderr']
             print("Download failed for {}.".format(run_id), file=sys.stderr)
@@ -154,7 +174,9 @@ def download_samples(run_ids):
             print(message, file=sys.stderr)
             break
 
-    return(failed_runs)
+    return failed_runs
+
+
 
 def sample_is_good(run_id, size):
     """
@@ -163,14 +185,17 @@ def sample_is_good(run_id, size):
     :param run_ids: the list of run IDs.
     """
     sra_file = "{}.sra".format(run_id)
+
     if (os.path.exists(sra_file)):
-      statinfo = os.stat(sra_file)
-      if (statinfo.st_size == size):
-        print("Size {} == {}".format(statinfo.st_size, size), file=sys.stdout)
-        return True
-      else:
-        print("Size {} != {}".format(statinfo.st_size, size), file=sys.stdout)
+        statinfo = os.stat(sra_file)
+        if (statinfo.st_size == size):
+            print("Size {} == {}".format(statinfo.st_size, size), file=sys.stdout)
+            return True
+        else:
+            print("Size {} != {}".format(statinfo.st_size, size), file=sys.stdout)
+
     return False
+
 
 
 if __name__ == "__main__":
