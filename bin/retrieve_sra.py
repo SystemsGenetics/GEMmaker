@@ -57,6 +57,10 @@ def get_sample_url(run_id):
     """
     print("Getting download paths for sample: {}".format(run_id))
 
+    # Initialize paths.
+    fasp_path = ""
+    https_path = ""
+
     # First try if there is an aspera path.
     p = subprocess.Popen(
         ["srapath", "--protocol", "fasp", "--json", run_id],
@@ -64,13 +68,15 @@ def get_sample_url(run_id):
         stdout=subprocess.PIPE)
 
     res = process_wait(p)
-    res = json.loads(res['stdout'])
-    fasp_path = res['responses'][0]['remote'][0]['path']
-    sra_size = res['responses'][0]['size']
+
+    if res['exit'] == 0:
+        res = json.loads(res['stdout'])
+        fasp_path = res['responses'][0]['remote'][0]['path']
+        sra_size = res['responses'][0]['size']
+    else:
+        print('Failed to fetch sample url via fasp, trying with http...', file=sys.stderr)
 
     # If an https path was returned for Aspera then use that.
-    https_path = ""
-
     if (re.match('https://', fasp_path)):
         https_path = fasp_path
         fasp_path = ""
@@ -78,16 +84,20 @@ def get_sample_url(run_id):
     # If there is no aspera path then try HTTPs
     elif (not fasp_path):
         p = subprocess.Popen(
-            ["srapath", "--protocol", "https", "-P", run_id],
+            ["srapath", "--protocol", "https", "--json", run_id],
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE)
 
         res = process_wait(p)
-        res = json.loads(res['stdout'])
-        https_path = res['response'][0]['remote'][0]['path']
-        sra_size = res['responses'][0]['size']
 
-    return { 'https' : https_path, 'fasp' : fasp_path, 'size' : sra_size }
+        if res['exit'] == 0:
+            res = json.loads(res['stdout'])
+            https_path = res['responses'][0]['remote'][0]['path']
+            sra_size = res['responses'][0]['size']
+        else:
+            print('Failed to fetch sample url via https.', file=sys.stderr)
+
+    return { 'fasp' : fasp_path, 'https' : https_path, 'size' : sra_size }
 
 
 
@@ -160,17 +170,23 @@ def download_samples(run_ids):
 
         if (urls['fasp']):
             res = download_aspera(run_id, urls)
-        else:
+        elif (urls['https']):
             res = download_https(run_id, urls)
+        else:
+            message = "Failed to fetch sample url."
+            failed_run[run_id] = message
+            print(message, file=sys.stderr)
+            break
 
         if (res['exit'] != 0):
-            failed_run[run_id] = res['stderr']
-            print("Download failed for {}.".format(run_id), file=sys.stderr)
+            message = "Download failed: {}".format(res['stderr'])
+            failed_run[run_id] = message
+            print(message, file=sys.stderr)
             break
 
         if (sample_is_good(run_id, urls['size']) == False):
             message = "Downloaded sample is missing or corrupted."
-            failed_run[run_id] = message;
+            failed_run[run_id] = message
             print(message, file=sys.stderr)
             break
 
