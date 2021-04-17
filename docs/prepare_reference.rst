@@ -3,7 +3,9 @@ Step 1: Prepare Genome Data
 
 GEMmaker supports use of `Hisat2 <https://ccb.jhu.edu/software/hisat2/index.shtml>`_, `Kallisto <https://pachterlab.github.io/kallisto/>`_ and `Salmon <https://combine-lab.github.io/salmon/>`_, and allows you to select one of these tools to use for quantification of gene expression.  Each tool requires that transcript sequences of the genome are indexed prior to usage.
 
-First, you must obtain the appropriate genome reference files and have them available on your local machine for indexing. Once you have obtained the files and placed them in a directory, you can index the genome by following the instructions in the sections below. **You only need to index the files for the tool you would like GEMmaker to use.**
+First, you must obtain the appropriate genome reference files and have them available on your local machine for indexing. Once you have obtained the files and placed them in a directory, you can index the genome by following the instructions in the sections below.
+
+**You only need to index the files for the tool (i.e. kallisto, salmon or hisat2) that you would like GEMmaker to use.**
 
 
 .. note::

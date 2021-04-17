@@ -10,7 +10,7 @@ For most instances you probably won't need to make customizations to the workflo
 
 Quick Start
 '''''''''''
-The following examples for running GEMmaker use the Arabidopsis thaliana reference genome available from `Ensembl Plants <https://plants.ensembl.org/Arabidopsis_thaliana/Info/Index>`_. The reference sequences in the examples are prepared the same as described in Step 2.  As an example, we will indicate 3 SRA files for automatic retrieval and processing by listing them in a file named ``SRAs.txt``:
+The example shown below is for running GEMmaker with the Arabidopsis thaliana reference genome available from `Ensembl Plants <https://plants.ensembl.org/Arabidopsis_thaliana/Info/Index>`_. The reference sequences in the examples are prepared the same as described in Step 2.  As an example, we will indicate 3 SRA files for automatic retrieval and processing by listing them in a file named ``SRAs.txt``:
 
 .. code:: bash
 
@@ -18,8 +18,10 @@ The following examples for running GEMmaker use the Arabidopsis thaliana referen
     SRR1058271
     SRR1058272
 
-Kallisto
-........
+If you followed the example in the previous step you should have the reference genome already indexed.
+
+Use Kallisto
+............
 To run Kallisto you need to specify:
 
 - The path to the genome reference indexed file
@@ -34,8 +36,8 @@ For example:
     --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
     --sras SRAs.txt
 
-Salmon
-......
+Use Salmon
+..........
 To run Salmon you need to specify:
 
  - The path to the directory containing the genome reference index files.
@@ -50,8 +52,8 @@ To run Salmon you need to specify:
     --salmon_index_path Arabidopsis_thaliana.TAIR10.salmon.indexed \
     --sras SRAs.txt
 
-Hisat2
-......
+Use Hisat2
+..........
 To run Hiast2 you need to specify:
 
 - The path to directory containing the Hisat2 genome reference indexed files
@@ -77,6 +79,55 @@ Additionally, you can control the Trimmomatic trimming step by adding any of the
 - ``--trimmomatic_SLIDINGWINDOW``: corresponds to the ``SLIDINGWINDOW`` argument of Trimmomatic. Defaults to "4:15"
 - ``--trimmomatic_LEADING``: corresponds to the ``LEADING`` argument of Trimmomatic. Defults to 3.
 - ``--trimmomatic_TRAILING``: correponds to teh ``TRAILING`` argument of Trimmomatic. Defaults to 6.
+
+Running on a Cluster
+''''''''''''''''''''
+If you want to run GEMmaker on a local High Performance Computing Cluster (HPC) that uses a scheduler such as SLURM or PBS, you must first create a configuration file to help GEMmaker know how to submit jobs.  The file should be named `nextflow.config` and be placed in the same directory where you are running GEMmaker.
+
+Below is an example `nextflow.config` file for executing GEMmaker on a cluster that uses the SLURM scheduler.
+
+.. code::
+
+   profiles {
+      my_cluster {
+         process {
+            executor = "slurm"
+            queue = "<queue name>"
+            clusterOptions = ""
+         }
+         executor {
+            queueSize = "${params.max_cpus}"
+        }
+      }
+   }
+
+In the example above we created a new profile named `my_cluster`. Within the stanza, the placeholder text `<queue name>` would be replaced with the name of the queue on which you are allowed to submit jobs. If you need to provide specific options that you would normally provide in a SLURM submission script (such as an account or other node targetting settings) you can use the `clusterOptions` setting.
+
+Next, is an example SLURM submission script for submitting the job to run GEMmaker. Please note, this is just an example and your specific cluster may require slightly different configuration/usage. The script assumes your cluster using the lmod system for specifying software.
+
+.. code:: bash
+
+    #!/bin/sh
+    #SBATCH --partition=<queue_name>
+    #SBATCH --nodes=1
+    #SBATCH --ntasks-per-node=1
+    #SBATCH --time=10:00:00
+    #SBATCH --job-name=GEMmaker
+    #SBATCH --output=%x-%j.out
+    #SBATCH --error=%x-%j.err
+
+    module add java nextflow singularity
+
+    nextflow run systemsgenetics/gemmaker -r nf-core \
+      -profile my_cluster,singularity \
+      -resume \
+      --pipeline kallisto \
+      --kallisto_index_path Araport11_genes.201606.cdna.indexed \
+      --sras  SRA_IDs.txt \
+      --max_cpus 120 \
+
+Notice in the call the nextflow, the profile `my_cluster` has been added along with `singularity`.  The `--max_cpus` is then used to specify how many concurrent jobs are being requested for GEMmaker.
+
 
 Intermediate Files
 ''''''''''''''''''
