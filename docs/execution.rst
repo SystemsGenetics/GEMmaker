@@ -96,7 +96,7 @@ Below is an example `nextflow.config` file for executing GEMmaker on a cluster t
             clusterOptions = ""
          }
          executor {
-            queueSize = "${params.max_cpus}"
+            queueSize = 120
         }
       }
    }
@@ -123,10 +123,9 @@ Next, is an example SLURM submission script for submitting the job to run GEMmak
       -resume \
       --pipeline kallisto \
       --kallisto_index_path Araport11_genes.201606.cdna.indexed \
-      --sras  SRA_IDs.txt \
-      --max_cpus 120 \
+      --sras  SRA_IDs.txt
 
-Notice in the call the nextflow, the profile `my_cluster` has been added along with `singularity`.  The `--max_cpus` is then used to specify how many concurrent jobs are being requested for GEMmaker.
+Notice in the call the nextflow, the profile `my_cluster` has been added along with `singularity`.
 
 
 Intermediate Files
