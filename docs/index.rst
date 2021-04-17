@@ -20,6 +20,9 @@ GEMmaker is an `nf-core <https://nf-co.re/>`_ compatible workflow, however, GEMm
 
    installation
    explore
-   usage
+   prepare_reference
+   prepare_samples
+   execution
+   results
    whats_next
    troubleshooting

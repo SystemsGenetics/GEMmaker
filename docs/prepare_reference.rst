@@ -26,7 +26,7 @@ For example, to retrieve the Arabidopsis cDNA file:
 
 
 Index Kallisto using Singularity
-.............................
+................................
 If you do not have Kallisto indexes already prepared for your reference genome, you can use the GEMmaker docker image to perform the indexing. For example, you can use Singularity in the following way:
 
 .. code-block:: bash

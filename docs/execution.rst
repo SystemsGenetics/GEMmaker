@@ -1,7 +1,7 @@
 .. _execution:
 
-Step 3: How to Run GEMmaker
----------------------------
+Step 3: Run GEMmaker
+--------------------
 
 Configuration
 '''''''''''''
@@ -79,6 +79,19 @@ Additionally, you can control the Trimmomatic trimming step by adding any of the
 - ``--trimmomatic_SLIDINGWINDOW``: corresponds to the ``SLIDINGWINDOW`` argument of Trimmomatic. Defaults to "4:15"
 - ``--trimmomatic_LEADING``: corresponds to the ``LEADING`` argument of Trimmomatic. Defults to 3.
 - ``--trimmomatic_TRAILING``: correponds to teh ``TRAILING`` argument of Trimmomatic. Defaults to 6.
+
+Resuming After Failure
+''''''''''''''''''''''
+If for some reason GEMmaker fails to fully complete and Nextflow reports some form of error. You can resume execution of the workflow by passing the ``-resume`` flag to GEMmaker. For example to resume a failed Kallisto run:
+
+.. code:: bash
+
+  nextflow run systemsgenetics/gemmaker -profile singularity \
+    -resume \
+    --pipeline kallisto \
+    --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
+    --sras SRAs.txt
+
 
 Running on a Cluster
 ''''''''''''''''''''

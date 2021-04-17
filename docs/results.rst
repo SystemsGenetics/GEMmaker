@@ -1,5 +1,5 @@
-Step 4: Output and Results
---------------------------
+Step 4: View Output and Results
+-------------------------------
 
 The Gene Expression Matrix (GEM)
 ````````````````````````````````
