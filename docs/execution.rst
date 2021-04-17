@@ -82,7 +82,7 @@ Additionally, you can control the Trimmomatic trimming step by adding any of the
 
 Resuming After Failure
 ''''''''''''''''''''''
-If for some reason GEMmaker fails to fully complete and Nextflow reports some form of error. You can resume execution of the workflow by passing the ``-resume`` flag to GEMmaker. For example to resume a failed Kallisto run:
+If for some reason GEMmaker fails to fully complete and Nextflow reports some form of error. You can resume execution of the workflow, afer correcting any problems, by passing the ``-resume`` flag to GEMmaker. For example to resume a failed Kallisto run:
 
 .. code:: bash
 
@@ -92,6 +92,7 @@ If for some reason GEMmaker fails to fully complete and Nextflow reports some fo
     --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
     --sras SRAs.txt
 
+GEMmaker should resume processing of samples without starting over.
 
 Running on a Cluster
 ''''''''''''''''''''
@@ -114,9 +115,9 @@ Below is an example `nextflow.config` file for executing GEMmaker on a cluster t
       }
    }
 
-In the example above we created a new profile named `my_cluster`. Within the stanza, the placeholder text `<queue name>` would be replaced with the name of the queue on which you are allowed to submit jobs. If you need to provide specific options that you would normally provide in a SLURM submission script (such as an account or other node targetting settings) you can use the `clusterOptions` setting.
+In the example above we created a new profile named `my_cluster`. Within the stanza, the placeholder text `<queue name>` should be replaced with the name of the queue on which you are allowed to submit jobs. If you need to provide specific options that you would normally provide in a SLURM submission script (such as an account or other node targetting settings) you can use the `clusterOptions` setting.
 
-Next, is an example SLURM submission script for submitting the job to run GEMmaker. Please note, this is just an example and your specific cluster may require slightly different configuration/usage. The script assumes your cluster using the lmod system for specifying software.
+Next, is an example SLURM submission script for submitting a job to run GEMmaker. Please note, this is just an example and your specific cluster may require slightly different configuration/usage. The script assumes your cluster uses the lmod system for specifying software.
 
 .. code:: bash
 
@@ -139,7 +140,7 @@ Next, is an example SLURM submission script for submitting the job to run GEMmak
       --sras  SRA_IDs.txt \
       --max_cpus 120 \
 
-Notice in the call the nextflow, the profile `my_cluster` has been added along with `singularity`.  The `--max_cpus` is then used to specify the maxiumum number of  concurrent jobs are being requested for GEMmaker.  This must be set to the size of the number of CPUs requested in the submission script.
+Notice in the call to nextflow, the profile `my_cluster` has been added along with `singularity`.  The `--max_cpus` is then used to specify the maximum number of concurrent jobs requested for GEMmaker.  This must be set to the size of the number of CPUs requested in the submission script.
 
 
 Intermediate Files
