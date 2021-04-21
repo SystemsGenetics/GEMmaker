@@ -12,15 +12,16 @@ proper errors. It requires Aspera and the SRAToolkit.
     :synopsis: This script receives a single input argument: a comma separated list of NCBI SRA run (SRR) IDs.
 """
 import argparse
-import sys
-import subprocess
-import re
-import time
+import glob
+import json
 import os
 import random
+import re
 import requests
 import shutil
-import json
+import subprocess
+import sys
+import time
 
 
 
