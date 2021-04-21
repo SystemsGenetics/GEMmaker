@@ -174,19 +174,19 @@ def download_samples(run_ids):
             res = download_https(run_id, urls)
         else:
             message = "Failed to fetch sample url."
-            failed_run[run_id] = message
+            failed_runs[run_id] = message
             print(message, file=sys.stderr)
             break
 
         if (res['exit'] != 0):
             message = "Download failed: {}".format(res['stderr'])
-            failed_run[run_id] = message
+            failed_runs[run_id] = message
             print(message, file=sys.stderr)
             break
 
         if (sample_is_good(run_id, urls['size']) == False):
             message = "Downloaded sample is missing or corrupted."
-            failed_run[run_id] = message
+            failed_runs[run_id] = message
             print(message, file=sys.stderr)
             break
 
