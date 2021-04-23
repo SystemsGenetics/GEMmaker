@@ -750,7 +750,7 @@ process download_runs {
   """
   echo "#TRACE n_remote_run_ids=${run_ids.tokenize(' ').size()}"
 
-  retrieve_sra.py --sample ${sample_id} --run_ids ${run_ids}
+  retrieve_sra.py --sample ${sample_id} --run_ids ${run_ids} --akey \$ASPERA_KEY
   """
 }
 
