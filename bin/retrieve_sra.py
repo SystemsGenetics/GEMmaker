@@ -21,7 +21,6 @@ import random
 import requests
 import shutil
 import json
-import glob
 
 
 
@@ -110,9 +109,6 @@ def download_aspera(run_id, urls, akey):
     :param urls: a dictionary of urls for the run.
     """
     print("Retrieving sample via aspera: {}".format(run_id))
-
-    p = subprocess.Popen(
-        ["echo", "$ASPERA_KEY"])
 
     p = subprocess.Popen(
         ["ascp", "-i", akey,"-k", "1", "-T", "-l", "1000m", urls['fasp'].replace('fasp://',''), "{}.sra".format(run_id)],
