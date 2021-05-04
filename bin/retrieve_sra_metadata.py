@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 """
 A Python script for retrieving metadata about NCBI SRA experiment runs.
@@ -252,7 +252,7 @@ if __name__ == "__main__":
     # Parse command-line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--run_id_file", help="A file containing the SRA run IDs.", required=True)
-    parser.add_argument("--skip_file", help="A file containing the SRA run IDs to skip")
+    parser.add_argument("--skip_file", help="A file containing the SRA run IDs to skip", required=False)
     parser.add_argument("--meta_dir", help="The directory were meta data should be stored", required=True)
     parser.add_argument("--page-size", help="number of SRA run IDs to query at a time", type=int, default=100, dest="PAGE_SIZE")
 

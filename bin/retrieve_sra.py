@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 """
 A Python script for retrieving a set of NCBI SRA run.
@@ -12,16 +12,15 @@ proper errors. It requires Aspera and the SRAToolkit.
     :synopsis: This script receives a single input argument: a comma separated list of NCBI SRA run (SRR) IDs.
 """
 import argparse
-import glob
-import json
+import sys
+import subprocess
+import re
+import time
 import os
 import random
-import re
 import requests
 import shutil
-import subprocess
-import sys
-import time
+import json
 
 
 
@@ -102,7 +101,7 @@ def get_sample_url(run_id):
 
 
 
-def download_aspera(run_id, urls):
+def download_aspera(run_id, urls, akey):
     """
     Downloads a SRA Run using Aspera.
 
@@ -112,7 +111,7 @@ def download_aspera(run_id, urls):
     print("Retrieving sample via aspera: {}".format(run_id))
 
     p = subprocess.Popen(
-        ["ascp", "-i", "$ASPERA_KEY","-k", "1", "-T", "-l", "1000m", urls['fasp'].replace('fasp://',''), "{}.sra".format(run_id)],
+        ["ascp", "-i", akey,"-k", "1", "-T", "-l", "1000m", urls['fasp'].replace('fasp://',''), "{}.sra".format(run_id)],
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE)
 
@@ -120,7 +119,7 @@ def download_aspera(run_id, urls):
 
     if (res['exit'] != 0):
         print("Aspera Failed: ".format(res['stderr']), file=sys.stderr)
-        if 'https' in urls.keys():
+        if ('https' in urls.keys()) and (urls['https']):
             print("Trying https", file=sys.stderr)
             res = download_https(run_id, urls)
 
@@ -155,7 +154,7 @@ def download_https(run_id, urls):
 
 
 
-def download_samples(run_ids):
+def download_samples(run_ids, akey):
     """
     Downloads a set of SRA Runs.
 
@@ -170,7 +169,7 @@ def download_samples(run_ids):
         urls = get_sample_url(run_id)
 
         if (urls['fasp']):
-            res = download_aspera(run_id, urls)
+            res = download_aspera(run_id, urls, akey)
         elif (urls['https']):
             res = download_https(run_id, urls)
         else:
@@ -223,6 +222,8 @@ if __name__ == "__main__":
                         help="List of input SRA files", nargs="+")
     parser.add_argument("--sample", dest='sample', type=str, required=True,
                         help="The sample name to which the SRA files belong")
+    parser.add_argument("--akey", dest='akey', type=str, required=True,
+                        help="The path to the Aspera key.")
     args = parser.parse_args()
 
     # Use this RE to make sure that each SRA run ID is correct.
@@ -234,7 +235,7 @@ if __name__ == "__main__":
             raise ValueError("Improper SRA run ID: %s" % (run_id))
 
     # Download the samples:
-    failed_runs = download_samples(args.run_ids)
+    failed_runs = download_samples(args.run_ids, args.akey)
 
     # Write any failed SRRs to a file
     f = open('{}.failed_runs.download.txt'.format(args.sample), "w")

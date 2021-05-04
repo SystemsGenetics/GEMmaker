@@ -1,77 +1,48 @@
-[![DOI](https://zenodo.org/badge/114067776.svg)](https://zenodo.org/badge/latestdoi/114067776)
-[![Build Status](https://travis-ci.org/SystemsGenetics/GEMmaker.svg?branch=master)](https://travis-ci.org/SystemsGenetics/GEMmaker)
+# ![GEMmaker](docs/images/GEMmaker-logo-sm.png)
 
-[![GEMmaker Logo](images/GEMmaker-logo-sm.png)](https://gemmaker.readthedocs.io/en/latest/)
+**GEMmaker is a Nextflow workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression (DGE) and gene co-expression network (GCN) analyses. The GEMmaker workflow currently supports Illumina RNA-seq datasets.**.
 
-**For Complete Instructions on useage, visit: [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/)**
+[![GitHub Actions CI Status](https://github.com/systemsgenetics/gemmaker/workflows/nf-core%20CI/badge.svg)](https://github.com/systemsgenetics/gemmaker/actions)
+[![GitHub Actions Linting Status](https://github.com/systemsgenetics/gemmaker/workflows/nf-core%20linting/badge.svg)](https://github.com/systemsgenetics/gemmaker/actions)
+[![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A520.04.0-brightgreen.svg)](https://www.nextflow.io/)
 
-GEMmaker is a [Nextflow](https://www.nextflow.io/) workflow for large-scale gene expression sample processing, expression-level quantification and Gene Expression Matrix (GEM) construction. Results from GEMmaker are useful for differential gene expression (DGE) and gene co-expression network (GCN) analyses. The GEMmaker workflow currently supports Illumina RNA-seq datasets.
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](https://bioconda.github.io/)
+[![Docker](https://img.shields.io/docker/automated/systemsgenetics/gemmaker.svg)](https://hub.docker.com/r/systemsgenetics/gemmaker)
 
-## GEMmaker is:
+## Introduction
 
-### Easy to Use
-![Ease of Use](images/ease_of_use.png)
-- No bioinformatics software installation required
-- Runs on a stand-alone computer or High Performance Compute (HPC) cluster
-- Simple configuration file setup
-- Resulting data is ready for Differential Gene Expression (DGE) or Gene Co-Expression Network (GCN) analysis
-- Full online documentation
+GEMmaker (i.e. **systemsgenetics/gemmaker**) is a pipeline for quantification of Illumina RNA-seq data. Users can choose from Hisat2, Kallisto or Salmon. It can process locally stored FASTQ files or automatically retrieve them from NCBI's SRA.  The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It comes with docker containers making installation trivial and results highly reproducible.
 
-### Reproducible
-![Reproducible](images/reproducible.png)
-- Software versions and computing environment are the same every time an experiment is repeated
-- Sharing input data and config files ensures anyone can reproduce exact results
+## nf-core Compatibility
+GEMmaker is an [nf-core](https://nf-co.re/) compatible workflow, however, GEMmaker is not an official nf-core workflow.  This is because nf-core offers the [nf-core/rnaseq](https://nf-co.re/rnaseq) workflow which is an excellent workflow for RNA-seq analysis that provides similar functionality to GEMmaker.  However, GEMmaker is different in that it can scale to thousands of samples without exceeding local storage resources by running samples in batches and removing intermediate files.  It can do the same for smaller sample sets on machines with less computational resources.  This ability to scale is a unique adaption that is currently not provided by Nextflow.   When Nextflow does provide support for batching and scaling, the [nf-core/rnaseq](https://nf-co.re/rnaseq) will be updated and GEMmaker will probably be retired in favor of the nf-core workflow. Until then, if you are limited by storage GEMmaker can help!
+v
 
-### Interoperable  
-![Interoperable](images/interoperable.png)
-- Uses a variety of bioinformatics tools
-- Integrates with iRODs for easy data movement
-- Easily retrieves samples from NCBI’s Sequence Read Archive (SRA)
-- Can combine local samples with those from SRA
-- Runs on many modern HPC systems
+## How to Use
 
-### Discoverable
-![Findable](images/findable_data.png)
-- Sample metadata is retrieved from NCBI SRA
-- Controlled vocabularies are used to automatically remap SRA annotations
-- JSON-format metadata files are created for each sample
-- Metadata files can be integrated with data in iRODs for querying
+Please see the [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/) for in-depth instructions for running GEMmaker.
 
-### Scalable
-![Scalable](images/scalable.png)
-- Useful for small DGE projects with 100s of samples as well as large GCN projects with 1000s of samples
-- Cleans up intermediate files once they are no longer needed
-- Keeps storage requirements to a minimum
 
-## Tools
+## Credits
 
-GEMmaker uses the following tools:
+GEMmaker was originally written by John Hadish, Tyler Biggs, Ben Shealy, Connor Wytko, Sai Prudhvi Oruganti, F. Alex Feltus, & Stephen Ficklin.
 
-- [python3](https://www.python.org) v3.5.1
-- [nextflow](https://www.nextflow.io/) v0.32
-- [sratoolkit](https://www.ncbi.nlm.nih.gov/books/NBK158900/) v2.9.2
-- [aspera](https://asperasoft.com/) v3.8.1
-- [fastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) v0.11.7
-- [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) v0.38
-- [hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml) v2.1.0
-- [kallisto](https://pachterlab.github.io/kallisto/) v0.45.0
-- [salmon](https://combine-lab.github.io/salmon/) v0.12.0
-- [samtools](http://www.htslib.org/) v1.3.1
-- [stringTie](http://www.ccb.jhu.edu/software/stringtie/) v1.3.4d
-- [MultiQC](http://multiqc.info/) v1.5
 
-## Usage
+## Contributions and Support
 
-For Complete Instructions on useage, visit: [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/)
+If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
 
-## Acknowledgments
+## Citations
 
-GEMmaker is a collaborative project of the [Ficklin](http://ficklinlab.cahnrs.wsu.edu/) and [Feltus](https://www.clemson.edu/science/departments/genetics-biochemistry/people/profiles/ffeltus) programs at [Washington State University](http://www.wsu.edu) and [Clemson University](http://www.clemson.edu) respectively with guidance from [RENCI](https://renci.org/).
+If you use GEMmaker for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX)
 
-GEMmaker is funded by the [NSF SciDAS](http://scidas.org/) project, [award #1659300](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1659300)
+You can cite the `nf-core` publication as follows:
 
-!["WSU"](images/WSU.png)&nbsp;&nbsp;
-!["Clemson"](images/clemson.png)&nbsp;&nbsp;
-!["RENCI"](images/renci.png)&nbsp;&nbsp;
-!["NSF"](images/NSF.png)&nbsp;&nbsp;
-!["SciDAS"](images/SciDAS.png)
+> **The nf-core framework for community-curated bioinformatics pipelines.**
+>
+> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
+>
+> _Nat Biotechnol._ 2020 Feb 13. doi: [10.5281/zenodo.3620945](http://doi.org/10.5281/zenodo.3620945).
+
+In addition, references of tools and data used in this pipeline are as follows:
+
+<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->

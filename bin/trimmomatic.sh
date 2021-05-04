@@ -32,7 +32,7 @@ elif [ -e ${sample_id}_1.fastq ]; then
     | awk -v var="$params_software_trimmomatic_MINLEN" '{ SUM += $3 } { SUM2 += $2 } END { printf("%.0f", SUM / SUM2 * var)} '`
 fi
 if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
-  java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
+  trimmomatic \
     PE \
     -threads ${task_cpus} \
     ${sample_id}_1.fastq \
@@ -53,7 +53,7 @@ else
     mv ${sample_id}_2.fastq ${sample_id}_1.fastq
   fi
   # Now run trimmomatic
-  java -Xmx512m org.usadellab.trimmomatic.Trimmomatic \
+  trimmomatic \
     SE \
     -threads ${task_cpus} \
     ${sample_id}_1.fastq \
