@@ -14,6 +14,7 @@
 GEMmaker (i.e. **systemsgenetics/gemmaker**) is a pipeline for quantification of Illumina RNA-seq data. Users can choose from Hisat2, Kallisto or Salmon. It can process locally stored FASTQ files or automatically retrieve them from NCBI's SRA.  The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It comes with docker containers making installation trivial and results highly reproducible.
 
 ## nf-core Compatibility
+
 GEMmaker is an [nf-core](https://nf-co.re/) compatible workflow, however, GEMmaker is not an official nf-core workflow.  This is because nf-core offers the [nf-core/rnaseq](https://nf-co.re/rnaseq) workflow which is an excellent workflow for RNA-seq analysis that provides similar functionality to GEMmaker.  However, GEMmaker is different in that it can scale to thousands of samples without exceeding local storage resources by running samples in batches and removing intermediate files.  It can do the same for smaller sample sets on machines with less computational resources.  This ability to scale is a unique adaption that is currently not provided by Nextflow.   When Nextflow does provide support for batching and scaling, the [nf-core/rnaseq](https://nf-co.re/rnaseq) will be updated and GEMmaker will probably be retired in favor of the nf-core workflow. Until then, if you are limited by storage GEMmaker can help!
 v
 
@@ -26,7 +27,6 @@ Please see the [GEMmaker documentation](https://gemmaker.readthedocs.io/en/lates
 
 GEMmaker was originally written by John Hadish, Tyler Biggs, Ben Shealy, Connor Wytko, Sai Prudhvi Oruganti, F. Alex Feltus, & Stephen Ficklin.
 
-
 ## Contributions and Support
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
@@ -34,12 +34,14 @@ If you would like to contribute to this pipeline, please see the [contributing g
 ## Citations
 
 ### GEMmaker
+
 If you use GEMmaker for your analysis, please cite it using the following:
 
 > John Hadish, Tyler Biggs, Ben Shealy, Connor Wytko, Sai Prudhvi Oruganti, F. Alex Feltus, & Stephen Ficklin. (2020, January 22). SystemsGenetics/GEMmaker: Release v1.1 (Version v1.1). Zenodo. [10.5281/zenodo.3620945](http://doi.org/10.5281/zenodo.3620945)
 
 
 ### nf-core
+
 To cite the nf-core framework for community-curated bioinformatics pipelines:
 >
 > Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
@@ -47,37 +49,17 @@ To cite the nf-core framework for community-curated bioinformatics pipelines:
 > _Nat Biotechnol._ 2020 Feb 13. doi: [10.5281/zenodo.3620945](http://doi.org/10.5281/zenodo.3620945).
 
 ### Tools used by GEMmaker
-In addition, references or URLs for tools used in this pipeline are as follows:
 
-#### Nextflow
-> Di Tommaso, P., Chatzou, M., Floden, E. W., Barja, P. P., Palumbo, E., & Notredame, C. (2017). Nextflow enables reproducible computational workflows. Nature Biotechnology, 35(4), 316–319. [10.1038/nbt.3820](https://doi.org/10.1038/nbt.3820)
-
-#### SRAtoolkit
-[https://github.com/ncbi/sra-tools](https://github.com/ncbi/sra-tools)
-
-#### Aspera
-[https://www.ibm.com/products/aspera](https://www.ibm.com/products/aspera)
-
-#### FastQC
-[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
-
-#### Trimmomatic
-> Bolger, A. M., Lohse, M., & Usadel, B. (2014). Trimmomatic: A flexible trimmer for Illumina sequence data. Bioinformatics, 30(15), 2114–2120. [10.1093/bioinformatics/btu170](https://doi.org/10.1093/bioinformatics/btu170)
-
-#### Hisat2
-> Kim, D., Paggi, J. M., Park, C., Bennett, C., & Salzberg, S. L. (2019). Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. Nature Biotechnology, 37(8), 907–915. [10.1038/s41587-019-0201-4](https://doi.org/10.1038/s41587-019-0201-4)
-
-#### Kallisto
-> Bray, N. L., Pimentel, H., Melsted, P., & Pachter, L. (2016). Near-optimal probabilistic RNA-seq quantification. Nature Biotechnology. [10.1038/nbt.3519](https://doi.org/10.1038/nbt.3519)
-
-#### Salmon
-> Patro, R., Duggal, G., Love, M. I., Irizarry, R. A., & Kingsford, C. (2017). Salmon provides fast and bias-aware quantification of transcript expression. Nature Methods, 14(4), 417–419. [10.1038/nmeth.4197](https://doi.org/10.1038/nmeth.4197)
-
-#### SAMtools
-> Li, H., Handsaker, B., Wysoker, A., Fennell, T., Ruan, J., Homer, N., Marth, G., Abecasis, G., & Durbin, R. (2009). The Sequence Alignment/Map format and SAMtools. Bioinformatics, 25(16), 2078–2079. [10.1093/bioinformatics/btp352](https://doi.org/10.1093/bioinformatics/btp352)
-
-#### StringTie
-> Pertea, M., Kim, D., Pertea, G. M., Leek, J. T., & Salzberg, S. L. (2016). Transcript-level expression analysis of RNA-seq experiments with HISAT, StringTie and Ballgown. Nature Protocols, 11(9), 1650–1667. [10.1038/nprot.2016.095](https://doi.org/10.1038/nprot.2016.095)
-
-#### MultiQC
-> Pertea, M., Kim, D., Pertea, G. M., Leek, J. T., & Salzberg, S. L. (2016). Transcript-level expression analysis of RNA-seq experiments with HISAT, StringTie and Ballgown. Nature Protocols, 11(9), 1650–1667. [10.1038/nprot.2016.095](https://doi.org/10.1038/nprot.2016.095)
+| Tool  | Citation or URL |
+| ----- | ------------ |
+| Nextflow |  Di Tommaso, P., Chatzou, M., Floden, E. W., Barja, P. P., Palumbo, E., & Notredame, C. (2017). Nextflow enables reproducible computational workflows. Nature Biotechnology, 35(4), 316–319. [10.1038/nbt.3820](https://doi.org/10.1038/nbt.3820) |
+| SRAtoolkit | [https://github.com/ncbi/sra-tools](https://github.com/ncbi/sra-tools) |
+| Aspera | [https://www.ibm.com/products/aspera](https://www.ibm.com/products/aspera) |
+| FastQC | [https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) |
+| Trimmomatic | Bolger, A. M., Lohse, M., & Usadel, B. (2014). Trimmomatic: A flexible trimmer for Illumina sequence data. Bioinformatics, 30(15), 2114–2120. [10.1093/bioinformatics/btu170](https://doi.org/10.1093/bioinformatics/btu170) |
+| Hisat2 | Kim, D., Paggi, J. M., Park, C., Bennett, C., & Salzberg, S. L. (2019). Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. Nature Biotechnology, 37(8), 907–915. [10.1038/s41587-019-0201-4](https://doi.org/10.1038/s41587-019-0201-4) |
+| Kallisto | Bray, N. L., Pimentel, H., Melsted, P., & Pachter, L. (2016). Near-optimal probabilistic RNA-seq quantification. Nature Biotechnology. [10.1038/nbt.3519](https://doi.org/10.1038/nbt.3519) |
+| Salmon | Patro, R., Duggal, G., Love, M. I., Irizarry, R. A., & Kingsford, C. (2017). Salmon provides fast and bias-aware quantification of transcript expression. Nature Methods, 14(4), 417–419. [10.1038/nmeth.4197](https://doi.org/10.1038/nmeth.4197) |
+| SAMtools | Li, H., Handsaker, B., Wysoker, A., Fennell, T., Ruan, J., Homer, N., Marth, G., Abecasis, G., & Durbin, R. (2009). The Sequence Alignment/Map format and SAMtools. Bioinformatics, 25(16), 2078–2079. [10.1093/bioinformatics/btp352](https://doi.org/10.1093/bioinformatics/btp352) |
+| StringTie | Pertea, M., Kim, D., Pertea, G. M., Leek, J. T., & Salzberg, S. L. (2016). Transcript-level expression analysis of RNA-seq experiments with HISAT, StringTie and Ballgown. Nature Protocols, 11(9), 1650–1667. [10.1038/nprot.2016.095](https://doi.org/10.1038/nprot.2016.095) |
+| MultiQC | Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: Summarize analysis results for multiple tools and samples in a single report. Bioinformatics. [10.1093/bioinformatics/btw354](https://doi.org/10.1093/bioinformatics/btw354) |
