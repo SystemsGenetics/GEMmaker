@@ -12,10 +12,10 @@ dependencies:
   - conda-forge::pymdown-extensions=8.1.1
   - conda-forge::pygments=2.8.1
   # Software dependencies here
-  - conda-forge::pandas=1.2.4
+  - conda-forge::pandas=1.2.3
   - conda-forge::numpy=1.20.2
   - conda-forge::xmltodict=0.12.0
-  - conda-forge::tbb=2021.2.0
+  - conda-forge::tbb=2020.2
   - bioconda::fastqc=0.11.9
   - bioconda::hisat2=2.2.1
   - bioconda::kallisto=0.46.2

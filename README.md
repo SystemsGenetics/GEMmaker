@@ -22,7 +22,6 @@ v
 
 Please see the [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/) for in-depth instructions for running GEMmaker.
 
-
 ## Credits
 
 GEMmaker was originally written by John Hadish, Tyler Biggs, Ben Shealy, Connor Wytko, Sai Prudhvi Oruganti, F. Alex Feltus, & Stephen Ficklin.
@@ -38,7 +37,6 @@ If you would like to contribute to this pipeline, please see the [contributing g
 If you use GEMmaker for your analysis, please cite it using the following:
 
 > John Hadish, Tyler Biggs, Ben Shealy, Connor Wytko, Sai Prudhvi Oruganti, F. Alex Feltus, & Stephen Ficklin. (2020, January 22). SystemsGenetics/GEMmaker: Release v1.1 (Version v1.1). Zenodo. [10.5281/zenodo.3620945](http://doi.org/10.5281/zenodo.3620945)
-
 
 ### nf-core
 
