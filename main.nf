@@ -934,7 +934,7 @@ process salmon {
 
   output:
     set val(sample_id), file("*.ga") into SALMON_GA
-    set val(sample_id), file("${sample_id}-meta_info.json"), file("${sample_id}-flenDist.txt") into SALMON_GA_LOG
+    set val(sample_id), path("${sample_id}.Salmon.ga", type: 'dir') into SALMON_GA_LOG
     set val(sample_id), file("*.ga/quant.sf") into SALMON_GA_TO_CLEAN
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_SALMON_SIGNAL
 
