@@ -364,7 +364,7 @@ publish_pattern_stringtie_gtf_and_ga = params.hisat2_keep_data
  */
 process retrieve_sra_metadata {
   publishDir params.outdir, mode: params.publish_dir_mode, pattern: "failed_runs.metadata.txt"
-  label "python3"
+  label "retrieve_sra_metadata"
 
   input:
     file srr_file from SRR_FILE
@@ -730,7 +730,7 @@ process download_runs {
   publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.download.txt', saveAs: { "Samples/${sample_id}/${it}" }
 
   tag { sample_id }
-  label "sratoolkit"
+  label "download_runs"
 
   input:
     set val(sample_id), val(run_ids), val(type) from REMOTE_SAMPLES
@@ -758,7 +758,7 @@ process fastq_dump {
   publishDir params.outdir, mode: params.publish_dir_mode, pattern: publish_pattern_fastq_dump, saveAs: { "Samples/${sample_id}/${it}" }
   publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.fastq-dump.txt', saveAs: { "Samples/${sample_id}/${it}" }
   tag { sample_id }
-  label "sratoolkit"
+  label "fastq_dump"
 
   input:
     set val(sample_id), file(sra_files) from SRA_TO_EXTRACT
@@ -1282,7 +1282,7 @@ CREATE_GEM_RUN = CREATE_GEM_READY_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
  * Creates the GEM file from all the FPKM/TPM outputs
  */
 process create_gem {
-  label "python3"
+  label "create_gem"
   publishDir "${params.outdir}/GEMs", mode: params.publish_dir_mode
 
   input:
@@ -1319,7 +1319,7 @@ process create_gem {
  * Creates a report of any SRA run IDs that failed and why they failed.
  */
 process failed_run_report {
-  label "python3"
+  label "reports"
   publishDir "${params.outdir}/reports", mode: params.publish_dir_mode
 
   input:

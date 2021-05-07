@@ -3,11 +3,6 @@
 Step 3: Run GEMmaker
 --------------------
 
-Configuration
-'''''''''''''
-The instructions here provide details for running GEMmaker using Singularity.
-For most instances you probably won't need to make customizations to the workflow configuration. However, should you need to, GEMmaker is a `nf-core <https://nf-co.re/>`_ compatible workflow.  Therefore, it follows the general approach for workflow configuration which is described at the `nf-core Pipeline Configuration page <https://nf-co.re/usage/configuration>`_.  Please see those instructions for the various platforms and settings you can configure.  You will find GEMmaker specific configuration options here.
-
 Quick Start
 '''''''''''
 The example shown below is for running GEMmaker with the Arabidopsis thaliana reference genome available from `Ensembl Plants <https://plants.ensembl.org/Arabidopsis_thaliana/Info/Index>`_. The reference sequences in the examples are prepared the same as described in Step 2.  As an example, we will indicate 3 SRA files for automatic retrieval and processing by listing them in a file named ``SRAs.txt``:
@@ -96,9 +91,9 @@ GEMmaker should resume processing of samples without starting over.
 
 Running on a Cluster
 ''''''''''''''''''''
-If you want to run GEMmaker on a local High Performance Computing Cluster (HPC) that uses a scheduler such as SLURM or PBS, you must first create a configuration file to help GEMmaker know how to submit jobs.  The file should be named `nextflow.config` and be placed in the same directory where you are running GEMmaker.
+If you want to run GEMmaker on a local High Performance Computing Cluster (HPC) that uses a scheduler such as SLURM or PBS, you must first create a configuration file to help GEMmaker know how to submit jobs.  The file should be named ``nextflow.config`` and be placed in the same directory where you are running GEMmaker.
 
-Below is an example `nextflow.config` file for executing GEMmaker on a cluster that uses the SLURM scheduler.
+Below is an example ``nextflow.config`` file for executing GEMmaker on a cluster that uses the SLURM scheduler.
 
 .. code::
 
@@ -115,7 +110,7 @@ Below is an example `nextflow.config` file for executing GEMmaker on a cluster t
       }
    }
 
-In the example above we created a new profile named `my_cluster`. Within the stanza, the placeholder text `<queue name>` should be replaced with the name of the queue on which you are allowed to submit jobs. If you need to provide specific options that you would normally provide in a SLURM submission script (such as an account or other node targetting settings) you can use the `clusterOptions` setting.
+In the example above we created a new profile named ``my_cluster``. Within the stanza, the placeholder text ``<queue name>`` should be replaced with the name of the queue on which you are allowed to submit jobs. If you need to provide specific options that you would normally provide in a SLURM submission script (such as an account or other node targetting settings) you can use the ``clusterOptions`` setting.
 
 Next, is an example SLURM submission script for submitting a job to run GEMmaker. Please note, this is just an example and your specific cluster may require slightly different configuration/usage. The script assumes your cluster uses the lmod system for specifying software.
 
@@ -139,12 +134,12 @@ Next, is an example SLURM submission script for submitting a job to run GEMmaker
       --kallisto_index_path Araport11_genes.201606.cdna.indexed \
       --sras  SRA_IDs.txt
 
-Notice in the call to nextflow, the profile ``my_cluster`` has been added along with ``singularity``. 
+Notice in the call to nextflow, the profile ``my_cluster`` has been added along with ``singularity``.
 
 
 Intermediate Files
 ''''''''''''''''''
-GEMmaker was designed to limit the storage requirements in order to allow for processing of large numbers of FASTQ files without overrunning storage requirement.  By default it will remove all large intermediate files to keep space usage to a minimum. However, you can indicate what intermediate files you would like to keep by providing any of the following arguments and setting them to ``true``.  For example, to keep the downloaded SRA files the ``keep_sra``` argument would be provided and set to true:
+GEMmaker was designed to limit the storage requirements in order to allow for processing of large numbers of FASTQ files without overrunning storage requirement.  By default it will remove all large intermediate files to keep space usage to a minimum. However, you can indicate what intermediate files you would like to keep by providing any of the following arguments and setting them to ``true``.  For example, to keep the downloaded SRA files the ``keep_sra`` argument would be provided and set to true:
 
 .. code:: bash
 
@@ -183,3 +178,64 @@ The following arguments can be used if the ``--pipeline hisat2`` option is used.
 - ``--hisat2_keep_sam``: Set to true to keep the SAM files created by Hisat2.
 - ``--hisat2_keep_bam``: Set to true to keep the BAM files created by Hisat2.
 - ``--trimmomatic_keep_trimmed_fastq``: Set to true to keep the trimmed FASTQ files after trimmomatic is run.
+
+
+Configuration
+'''''''''''''
+The instructions above provide details for running GEMmaker using Singularity. For most instances you probably won't need to make customizations to the workflow configuration. However, should you need to, GEMmaker is a `nf-core <https://nf-co.re/>`_ compatible workflow.  Therefore, it follows the general approach for workflow configuration which is described at the `nf-core Pipeline Configuration page <https://nf-co.re/usage/configuration>`_.  Please see those instructions for the various platforms and settings you can configure.  However, below are some quick tips for tweaking GEMmaker.
+
+In all cases, if you need to set some customizations you must first create a configuration file.  The file should be named ``nextflow.config`` and be placed in the same directory where you are running GEMmaker.
+
+Configuration for a Cluster
+...........................
+To run GEMmaker on a computational cluster you will need to to create a custom configuration.  Instructions and examples are provided in the `Running on a Cluster`_ section.
+
+Increasing Resources
+.....................
+You may find that default resources are not adequate for the size of your data set.  You can alter resources requested for each step of the GEMmaker workflow by using the ``withLabel`` scope selector in a custom ``nextflow.config`` file.
+
+For example, if you have thousands of SRA data sets to process, you may need more memory allocated to the ``retrieve_sra_metadata`` step of the workflow. All steps in the workflow have a "label" that you can use to indicate which step resources should be changed. Below is an example ``nextflow.config`` file where a new profile named ``custom`` is provided where the memory has been increased for the ``retrieve_sra_metadata``.
+
+.. code::
+
+    profiles {
+        custom {
+            process {
+                withLabel:retrieve_sra_metadata {
+                    memory = "10.GB"
+         	    }
+            }
+        }
+    }
+
+This new ``custom`` profile can be used when calling GEMmaker. The following is an example Kallisto run of GEMmaker using the custom and singularity profiles:
+
+.. code:: bash
+
+  nextflow run systemsgenetics/gemmaker -profile custom,singularity \
+    --pipeline kallisto \
+    --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
+    --sras SRAs.txt
+
+Nextflow provides many "directives", such as ``memory`` that you can use to alter or customize the resources of any step (or process) in the workflow.  You can find more about these in the `Nextflow documentation. <https://www.nextflow.io/docs/latest/process.html#directives>`_ Some useful directives are:
+
+- `memory <https://www.nextflow.io/docs/latest/process.html#memory>`_: change the amount of memory allocated to the step.
+- `time <https://www.nextflow.io/docs/latest/process.html#time>`_: change the amount of time allocated to the step.
+- `disk <https://www.nextflow.io/docs/latest/process.html#disk>`_: defines how much local storage is required.
+- `cpus <https://www.nextflow.io/docs/latest/process.html#cpus>`_: defines how many threads (or CPUs) the task can use.
+
+The "labels" that GEMmaker provides and which you can set custom directives include:
+
+- ``retrieve_sra_metadata``:  For the step that retrieves metadata from the NCBI web services for the SRR run IDs that were provided. This step can require more memory than the defaults if there are huge numbers of samples.
+- ``download_runs``: For the step is used for downloading SRA files from NCBI.
+- ``fastq_dump``: For the step that is used after downloading SRA files and converting them to FASTQ files.
+- ``fastqc``: For the step where the FastQC program is used which generates quality reports on FASTQ files.
+- ``kallisto``: For the step the runs the Kallisto tool.
+- ``salmon``: For the step that runs the Salmon tool.
+- ``trimmomatic``: For the step that runs the Trimmomatic step which only runs when hisat2 is the desired pipeline.
+- ``hisat2``: For the step that runs the hisat2 tool.
+- ``samtools``: For the step that runs when the samtools tool is used after Hisat2 runs. This step only runs when the hisat2 pipeline is used.
+- ``stringtie``: For the step that runs the stringtie tool and which only runs when the hisat2 pipeline is used.
+- ``multiqc``: For the step that runs the MultiQC results summary report.
+- ``create_gem``: For the step that creates the final GEM files.
+- ``multithreaded``:  For all of the tools that support multithreading you can use this label to set a default number of CPUs using the ``cpus`` directive.  These tools include Salmon, Trimmomatic, Hisat2 and Stringtie.  By using this label you set set the same number of ``cpus`` for all multithreaded steps at once.
