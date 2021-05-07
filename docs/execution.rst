@@ -3,9 +3,9 @@
 Step 3: Run GEMmaker
 --------------------
 
-Quick Start
-'''''''''''
-The example shown below is for running GEMmaker with the Arabidopsis thaliana reference genome available from `Ensembl Plants <https://plants.ensembl.org/Arabidopsis_thaliana/Info/Index>`_. The reference sequences in the examples are prepared the same as described in Step 2.  As an example, we will indicate 3 SRA files for automatic retrieval and processing by listing them in a file named ``SRAs.txt``:
+How to Launch GEMmaker
+''''''''''''''''''''''
+The demonstrate how to to use GEMmaker the `Arabidopsis thaliana` reference genome available from `Ensembl Plants <https://plants.ensembl.org/Arabidopsis_thaliana/Info/Index>`_ was prepared in Step 2.  As an example, we will indicate 3 SRA files for automatic retrieval and processing by listing them in a file named ``SRAs.txt``:
 
 .. code:: bash
 
@@ -74,6 +74,23 @@ Additionally, you can control the Trimmomatic trimming step by adding any of the
 - ``--trimmomatic_SLIDINGWINDOW``: corresponds to the ``SLIDINGWINDOW`` argument of Trimmomatic. Defaults to "4:15"
 - ``--trimmomatic_LEADING``: corresponds to the ``LEADING`` argument of Trimmomatic. Defults to 3.
 - ``--trimmomatic_TRAILING``: correponds to teh ``TRAILING`` argument of Trimmomatic. Defaults to 6.
+
+Use Local FASTQ Files
+......................
+If your FASTQ files are local to your computational device you must provide the ``--input`` argument when launching nextflow and indicate the `GLOB patter <https://en.wikipedia.org/wiki/Glob_(programming)>`_ than is needed to find the files:
+
+.. code:: bash
+
+  nextflow run systemsgenetics/gemmaker -profile singularity \
+    --pipeline kallisto \
+    --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
+    --input "../../01-input_data/RNA-seq/fastq/*_R{1,2}.fastq"
+
+In the example above the ``--input`` argument indicates that FASTQ files are found in the ``../../01-input_data/RNA-seq/fastq/`` directory and GEMmaker should use all files that match the GLOB pattern ``*_R{1,2}.fastq``.
+
+.. note ::
+
+  GEMmaker currently expects that all fASTQ files have a `_1` or `_2` suffix. For paired files two files with the same name but each suffix respectively.
 
 Resuming After Failure
 ''''''''''''''''''''''
