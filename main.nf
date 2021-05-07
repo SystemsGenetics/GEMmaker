@@ -60,11 +60,6 @@ Reports
   Report directory:           ${params.outdir}/reports
 
 
-Execution Parameters:
----------------------
-  Queue size:                 ${params.max_cpus}
-
-
 Quantification:
 ---------------
   Tool:                       ${params.pipeline}"""
