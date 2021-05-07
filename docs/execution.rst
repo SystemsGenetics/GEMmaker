@@ -76,7 +76,7 @@ Additionally, you can control the Trimmomatic trimming step by adding any of the
 - ``--trimmomatic_TRAILING``: correponds to teh ``TRAILING`` argument of Trimmomatic. Defaults to 6.
 
 Use Local FASTQ Files
-......................
+.....................
 If your FASTQ files are local to your computational device you must provide the ``--input`` argument when launching nextflow and indicate the `GLOB patter <https://en.wikipedia.org/wiki/Glob_(programming)>`_ than is needed to find the files:
 
 .. code:: bash
@@ -91,6 +91,19 @@ In the example above the ``--input`` argument indicates that FASTQ files are fou
 .. note ::
 
   GEMmaker currently expects that all fASTQ files have a `_1` or `_2` suffix. For paired files two files with the same name but each suffix respectively.
+
+Use Both Local and SRA Files
+............................
+You can combine data from the NCBI SRA with local files in a single run of GEMmaker by providing both the ``--sras`` and ``--input`` arguments.
+
+.. code:: bash
+
+  nextflow run systemsgenetics/gemmaker -profile singularity \
+    --pipeline kallisto \
+    --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
+    --input "../../01-input_data/RNA-seq/fastq/*_R{1,2}.fastq" \
+    --sras SRAs.txt
+
 
 Resuming After Failure
 ''''''''''''''''''''''
