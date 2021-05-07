@@ -25,9 +25,8 @@ If you encounter the following error message:
 
 Then this can be caused by any of the following problems:
 
--  Nextflow requires Singularity version 2. Using Singularity verion 3, for instance, will cause this problem.
 -  Nextflow will automatically download and build the singularity images for you.  If your `umask` is not set to create files that are readable and executable then you can get this error.  Setting a umask such as, ``umask u=rwx,g=rx,o=rx``, prior to running Nextflow will ensure the images are readable and executable.
--  The ``singularity.cacheDir`` setting in the ``nextflow.config`` file indicates where Nextflow will store the downloaded singularity images.  If you have a typo, an incorrect path, or say a space at the end of the path, then this will result in the image not being found and cause this error.
+
 
 ERROR  : Failed to set loop flags on loop device: Resource temporarily unavailable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

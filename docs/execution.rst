@@ -137,10 +137,9 @@ Next, is an example SLURM submission script for submitting a job to run GEMmaker
       -resume \
       --pipeline kallisto \
       --kallisto_index_path Araport11_genes.201606.cdna.indexed \
-      --sras  SRA_IDs.txt \
-      --max_cpus 120 \
+      --sras  SRA_IDs.txt
 
-Notice in the call to nextflow, the profile ``my_cluster`` has been added along with ``singularity``.  The ``--max_cpus`` is then used to specify the maximum number of concurrent jobs requested for GEMmaker.  This must be set to the ``queueSize`` setting in the ``nextflow.config`` file.
+Notice in the call to nextflow, the profile ``my_cluster`` has been added along with ``singularity``. 
 
 
 Intermediate Files
