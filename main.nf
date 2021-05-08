@@ -217,7 +217,7 @@ else {
     Channel.empty().set { KALLISTO_INDEX }
 }
 if (salmon_enable) {
-    SALMON_INDEXES = Channel.fromPath("${params.salmon_index_path}/*").collect()
+    SALMON_INDEXES = Channel.fromPath("${params.salmon_index_path}").collect()
 }
 else {
     Channel.empty().set { SALMON_INDEXES }
@@ -945,6 +945,7 @@ process salmon {
   salmon.sh \
     ${sample_id} \
     ${task.cpus} \
+    ${salmon_index} \
     "${fastq_files}" \
   """
 }
@@ -973,6 +974,7 @@ process salmon_tpm {
 
   salmon_tpm.sh \
     ${params.salmon_keep_tpm} \
+    ${params.salmon_keep_counts} \
     ${sample_id}
   """
 }
@@ -1313,7 +1315,6 @@ process create_gem {
   create_gem.sh \
     ${publish_fpkm} \
     ${hisat2_enable} \
-    ./ \
     ${params.outdir}/Samples \
     GEMmaker \
     ${publish_raw} \
@@ -1390,6 +1391,9 @@ process clean_fastq {
 
   input:
     set val(sample_id), val(files_list) from FASTQ_CLEANUP_READY
+
+  when:
+    params.keep_retrieved_fastq == false
 
   script:
   flist = files_list[0].join(" ")
