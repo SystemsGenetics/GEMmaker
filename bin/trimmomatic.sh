@@ -21,7 +21,11 @@ total=0
 # This script returns 1 number, which can be used for the minlen in trimmomatic
 if [ ${#fastq_files[@]} == 2 ]; then
   for fastq in "${fastq_files[@]}"; do
-    a=`awk 'NR%4 == 2 {lengths[length($0)]++} END {for (l in lengths) {print l, lengths[l]}}' $fastq \
+    cat="cat $fastq"
+    if [[ $fastq =~ .gz$ ]]; then
+      cat="zcat $fastq"
+    fi
+    a=`$cat | awk 'NR%4 == 2 {lengths[length($0)]++} END {for (l in lengths) {print l, lengths[l]}}' \
     | sort \
     | awk '{ print $0, $1*$2}' \
     | awk -v var="$params_software_trimmomatic_MINLEN" '{ SUM += $3 } { SUM2 += $2 } END { printf("%.0f", SUM / SUM2 * var)} '`
@@ -30,7 +34,11 @@ if [ ${#fastq_files[@]} == 2 ]; then
   total=( $total / 2 )
   minlen=$total
 else
-  minlen=`awk 'NR%4 == 2 {lengths[length($0)]++} END {for (l in lengths) {print l, lengths[l]}}' ${fastq_files[0]} \
+  cat="cat ${fastq_files[0]}"
+  if [[ ${fastq_files[0]} =~ .gz$ ]]; then
+    cat="zcat ${fastq_files[0]}"
+  fi
+  minlen=`$cat | awk 'NR%4 == 2 {lengths[length($0)]++} END {for (l in lengths) {print l, lengths[l]}}'  \
     | sort \
     | awk '{ print $0, $1*$2}' \
     | awk -v var="$params_software_trimmomatic_MINLEN" '{ SUM += $3 } { SUM2 += $2 } END { printf("%.0f", SUM / SUM2 * var)} '`
