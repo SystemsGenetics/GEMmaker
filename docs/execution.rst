@@ -77,20 +77,20 @@ Additionally, you can control the Trimmomatic trimming step by adding any of the
 
 Use Local FASTQ Files
 .....................
-If your FASTQ files are local to your computational device you must provide the ``--input`` argument when launching nextflow and indicate the `GLOB patter <https://en.wikipedia.org/wiki/Glob_(programming)>`_ than is needed to find the files:
+If your FASTQ files are local to your computer you must provide the ``--input`` argument when launching Nextflow and indicate the `GLOB pattern <https://en.wikipedia.org/wiki/Glob_(programming)>`_ than is needed to find the files:
 
 .. code:: bash
 
   nextflow run systemsgenetics/gemmaker -profile singularity \
     --pipeline kallisto \
     --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
-    --input "../../01-input_data/RNA-seq/fastq/*_R{1,2}.fastq"
+    --input "../../01-input_data/RNA-seq/fastq/*{1,2}.fastq"
 
-In the example above the ``--input`` argument indicates that FASTQ files are found in the ``../../01-input_data/RNA-seq/fastq/`` directory and GEMmaker should use all files that match the GLOB pattern ``*_R{1,2}.fastq``.
+In the example above the ``--input`` argument indicates that FASTQ files are found in the ``../../01-input_data/RNA-seq/fastq/`` directory and GEMmaker should use all files that match the GLOB pattern ``*{1,2}.fastq``.
 
 .. note ::
 
-  GEMmaker currently expects that all fASTQ files have a `_1` or `_2` suffix. For paired files two files with the same name but each suffix respectively.
+  GEMmaker currently expects that all fASTQ files have a `1` or `2` suffix. For paired files two files with the same name but each suffix respectively.
 
 Use Both Local and SRA Files
 ............................
@@ -101,9 +101,24 @@ You can combine data from the NCBI SRA with local files in a single run of GEMma
   nextflow run systemsgenetics/gemmaker -profile singularity \
     --pipeline kallisto \
     --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
-    --input "../../01-input_data/RNA-seq/fastq/*_R{1,2}.fastq" \
+    --input "../../01-input_data/RNA-seq/fastq/*{1,2}.fastq" \
     --sras SRAs.txt
 
+Using Paired-End Local Data
+...........................
+If your data is paired-end you must provide a `GLOB <https://en.wikipedia.org/wiki/Glob_(programming)>`_ pattern for the ``--input`` argument that can distinguish between the sample name and the suffix that indicates the pair.  Usually, paired-files have a ``1.fastq`` or ``2.fastq`` suffix on all file names.  Therefore, the GLOB given example given above is appropriate: ``*{1,2}.fastq``. The ``{1,2}`` indicates where the ``1`` and ``2`` are at in file name. However, if your files are named differently, be sure to use a GLOB pattern that can differentiate the pairs.
+
+.. warning ::
+
+    If the GLOB you provide cannot distinguish between pairs then GEMmaker will treat them as non-paired.
+
+Using Non Paired-End Local Data
+...............................
+If your data is not paired-end then the `GLOB <https://en.wikipedia.org/wiki/Glob_(programming)>`_ pattern for the ``--input`` argument simply needs to find all of the FASTQ files.  For example, if your FASTQ files have a ``.fastq`` suffix the following GLOB would be appropriate:  ``*.fastq"``.
+
+Using Both Paired-End and Non Paired Local Data
+...............................................
+GEMmaker can work with both paired and non-paired data in the same data set. The only stipulation is that the non-paired data must follow the same naming convention as the paired data. See the section `Using Paired-End Local data`_. For example, if your paired files have a ``1.fastq`` and ``2.fastq`` extension, then the non-paired files should have a ``1.fastq`` suffix as well.
 
 Resuming After Failure
 ''''''''''''''''''''''
@@ -268,4 +283,4 @@ The "labels" that GEMmaker provides and which you can set custom directives incl
 - ``stringtie``: For the step that runs the stringtie tool and which only runs when the hisat2 pipeline is used.
 - ``multiqc``: For the step that runs the MultiQC results summary report.
 - ``create_gem``: For the step that creates the final GEM files.
-- ``multithreaded``:  For all of the tools that support multithreading you can use this label to set a default number of CPUs using the ``cpus`` directive.  These tools include Salmon, Trimmomatic, Hisat2 and Stringtie.  By using this label you set set the same number of ``cpus`` for all multithreaded steps at once.
+- ``multithreaded``:  For all of the tools that support multithreading you can use this label to set a default number of CPUs using the ``cpus`` directive.  These tools include Salmon, Kallisto, Trimmomatic, Hisat2 and Stringtie.  By using this label you set set the same number of ``cpus`` for all multithreaded steps at once.

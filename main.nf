@@ -825,7 +825,7 @@ process fastqc_1 {
     set val(sample_id), file(fastq_files) from COMBINED_SAMPLES_FOR_FASTQC_1
 
   output:
-    set file("*_fastqc.html") , file("*_fastqc.zip") optional true into FASTQC_1_OUTPUT
+    set file("*_fastqc.html") , file("*_fastqc.zip") into FASTQC_1_OUTPUT
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_FASTQC_SIGNAL
 
   script:
@@ -858,6 +858,7 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
 process kallisto {
   publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Kallisto_GA
   tag { sample_id }
+  label "multithreaded"
   label "kallisto"
 
   input:
@@ -878,7 +879,9 @@ process kallisto {
 
   kallisto.sh \
     ${sample_id} \
-    ${kallisto_index}
+    ${kallisto_index} \
+    ${task.cpus} \
+    "${fastq_files}"
   """
 }
 
@@ -941,7 +944,8 @@ process salmon {
 
   salmon.sh \
     ${sample_id} \
-    ${task.cpus}
+    ${task.cpus} \
+    "${fastq_files}" \
   """
 }
 
@@ -993,7 +997,7 @@ process trimmomatic {
   label "trimmomatic"
 
   input:
-    set val(sample_id), file("${sample_id}_?.fastq") from HISAT2_CHANNEL
+    set val(sample_id), file(fastq_files) from HISAT2_CHANNEL
     file fasta_adapter from FASTA_ADAPTER
 
   output:
@@ -1020,7 +1024,8 @@ process trimmomatic {
     ${fasta_adapter} \
     ${params.trimmomatic_LEADING} \
     ${params.trimmomatic_TRAILING} \
-    ${params.trimmomatic_SLIDINGWINDOW}
+    ${params.trimmomatic_SLIDINGWINDOW} \
+    "${fastq_files}"
   """
 }
 
@@ -1039,7 +1044,7 @@ process fastqc_2 {
     set val(sample_id), file(fastq_files) from TRIMMED_SAMPLES_FOR_FASTQC
 
   output:
-    set file("*_fastqc.html"), file("*_fastqc.zip") optional true into FASTQC_2_OUTPUT
+    set file("*_fastqc.html"), file("*_fastqc.zip") into FASTQC_2_OUTPUT
     set val(sample_id), val(1) into CLEAN_TRIMMED_FASTQ_FASTQC_SIGNAL
 
   script:
@@ -1085,7 +1090,8 @@ process hisat2 {
   hisat2.sh \
     ${sample_id} \
     ${params.hisat2_base_name} \
-    ${task.cpus}
+    ${task.cpus} \
+    "${fastq_files}" \
   """
 }
 
@@ -1238,8 +1244,8 @@ process hisat2_fpkm_tpm {
  */
 MULTIQC_RUN = MULTIQC_READY_SIGNAL.mix(MULTIQC_BOOTSTRAP)
 
-FASTQC_1_OUTPUT
-  .concat(FASTQC_2_OUTPUT, KALLISTO_LOG, SALMON_GA_LOG, HISAT2_SAM_LOG, BAM_INDEXED_LOG, TRIMMED_SAMPLE_LOG).set {MULTIQC_FILES}
+FASTQC_1_OUTPUT.flatten()
+  .concat(FASTQC_2_OUTPUT.flatten(), KALLISTO_LOG, SALMON_GA_LOG, HISAT2_SAM_LOG, BAM_INDEXED_LOG, TRIMMED_SAMPLE_LOG).set {MULTIQC_FILES}
 
 /**
  * Process to generate the multiqc report once everything is completed
