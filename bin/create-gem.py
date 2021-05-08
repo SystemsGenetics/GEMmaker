@@ -42,7 +42,7 @@ for source_dir in args.path:
   source_dir = re.sub(r'/$', '', source_dir)
 
   # Check for files matching the pattern.
-  for filename in glob.iglob(source_dir + '/*/*' + str.lower(args.type), recursive=True):
+  for filename in glob.iglob(source_dir + '/*' + str.lower(args.type), recursive=True):
     print(filename + "\n")
     result_files.append(filename)
 

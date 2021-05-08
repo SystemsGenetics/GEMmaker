@@ -1214,9 +1214,9 @@ process hisat2_fpkm_tpm {
     set val(sample_id), file(ga_file), file(gtf_file) from STRINGTIE_GTF_FOR_FPKM
 
   output:
-    file "*.Hisat2.fpkm" optional true into FPKMS
-    file "*.Hisat2.tpm" optional true into TPM
-    file "*.Hisat2.raw" optional true into RAW_COUNTS
+    file "*.Hisat2.fpkm" optional true into HISAT2_FPKM
+    file "*.Hisat2.tpm" optional true into HISAT2_TPM
+    file "*.Hisat2.raw" optional true into HISAT2_RAW
     set val(sample_id), val(1) into CLEAN_STRINGTIE_SIGNAL
     val sample_id into HISAT2_SAMPLE_COMPLETE_SIGNAL
 
@@ -1285,6 +1285,8 @@ process multiqc {
  * received.
  */
 CREATE_GEM_RUN = CREATE_GEM_READY_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
+SALMON_RAW
+  .concat(SALMON_TPM, KALLISTO_RAW, KALLISTO_TPM, HISAT2_RAW, HISAT2_TPM, HISAT2_FPKM).set {QUANT_FILES}
 
 /**
  * Creates the GEM file from all the FPKM/TPM outputs
@@ -1295,6 +1297,7 @@ process create_gem {
 
   input:
     val signal from CREATE_GEM_RUN.collect()
+    file input_files from QUANT_FILES.collect()
 
   output:
     file "*.GEM.*.txt" into GEM_FILES
@@ -1315,7 +1318,7 @@ process create_gem {
   create_gem.sh \
     ${publish_fpkm} \
     ${hisat2_enable} \
-    ${params.outdir}/Samples \
+    . \
     GEMmaker \
     ${publish_raw} \
     ${publish_tpm}
