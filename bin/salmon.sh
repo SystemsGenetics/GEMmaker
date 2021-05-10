@@ -2,29 +2,26 @@
 
 sample_id="$1"
 task_cpus="$2"
+salmon_index="$3"
+fastq_files="$4"
 
-if [ -e ${sample_id}_1.fastq ] && [ -e ${sample_id}_2.fastq ]; then
+# convert the incoming FASTQ file list to an array
+read -a fastq_files <<< $fastq_files
+
+if [ ${#fastq_files[@]} == 2 ]; then
   salmon quant \
-    -i . \
+    -i ${salmon_index} \
     -l A \
-    -1 ${sample_id}_1.fastq \
-    -2 ${sample_id}_2.fastq \
-    -p ${task_cpus} \
-    -o ${sample_id}.Salmon.ga \
-    --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
-elif [ -e ${sample_id}_1.fastq ]; then
-  salmon quant \
-    -i . \
-    -l A \
-    -r ${sample_id}_1.fastq \
+    -1 ${fastq_files[0]} \
+    -2 ${fastq_files[1]} \
     -p ${task_cpus} \
     -o ${sample_id}.Salmon.ga \
     --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
 else
   salmon quant \
-    -i . \
+    -i ${salmon_index} \
     -l A \
-    -r ${sample_id}_2.fastq \
+    -r ${fastq_files[0]} \
     -p ${task_cpus} \
     -o ${sample_id}.Salmon.ga \
     --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1

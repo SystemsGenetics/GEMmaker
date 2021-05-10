@@ -217,7 +217,7 @@ else {
     Channel.empty().set { KALLISTO_INDEX }
 }
 if (salmon_enable) {
-    SALMON_INDEXES = Channel.fromPath("${params.salmon_index_path}/*").collect()
+    SALMON_INDEXES = Channel.fromPath("${params.salmon_index_path}").collect()
 }
 else {
     Channel.empty().set { SALMON_INDEXES }
@@ -825,7 +825,7 @@ process fastqc_1 {
     set val(sample_id), file(fastq_files) from COMBINED_SAMPLES_FOR_FASTQC_1
 
   output:
-    set file("*_fastqc.html") , file("*_fastqc.zip") optional true into FASTQC_1_OUTPUT
+    set file("*_fastqc.html") , file("*_fastqc.zip") into FASTQC_1_OUTPUT
     set val(sample_id), val(1) into CLEAN_MERGED_FASTQ_FASTQC_SIGNAL
 
   script:
@@ -858,6 +858,7 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
 process kallisto {
   publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Kallisto_GA
   tag { sample_id }
+  label "multithreaded"
   label "kallisto"
 
   input:
@@ -878,7 +879,9 @@ process kallisto {
 
   kallisto.sh \
     ${sample_id} \
-    ${kallisto_index}
+    ${kallisto_index} \
+    ${task.cpus} \
+    "${fastq_files}"
   """
 }
 
@@ -941,7 +944,9 @@ process salmon {
 
   salmon.sh \
     ${sample_id} \
-    ${task.cpus}
+    ${task.cpus} \
+    ${salmon_index} \
+    "${fastq_files}" \
   """
 }
 
@@ -969,6 +974,7 @@ process salmon_tpm {
 
   salmon_tpm.sh \
     ${params.salmon_keep_tpm} \
+    ${params.salmon_keep_counts} \
     ${sample_id}
   """
 }
@@ -993,7 +999,7 @@ process trimmomatic {
   label "trimmomatic"
 
   input:
-    set val(sample_id), file("${sample_id}_?.fastq") from HISAT2_CHANNEL
+    set val(sample_id), file(fastq_files) from HISAT2_CHANNEL
     file fasta_adapter from FASTA_ADAPTER
 
   output:
@@ -1020,7 +1026,8 @@ process trimmomatic {
     ${fasta_adapter} \
     ${params.trimmomatic_LEADING} \
     ${params.trimmomatic_TRAILING} \
-    ${params.trimmomatic_SLIDINGWINDOW}
+    ${params.trimmomatic_SLIDINGWINDOW} \
+    "${fastq_files}"
   """
 }
 
@@ -1039,7 +1046,7 @@ process fastqc_2 {
     set val(sample_id), file(fastq_files) from TRIMMED_SAMPLES_FOR_FASTQC
 
   output:
-    set file("*_fastqc.html"), file("*_fastqc.zip") optional true into FASTQC_2_OUTPUT
+    set file("*_fastqc.html"), file("*_fastqc.zip") into FASTQC_2_OUTPUT
     set val(sample_id), val(1) into CLEAN_TRIMMED_FASTQ_FASTQC_SIGNAL
 
   script:
@@ -1085,7 +1092,8 @@ process hisat2 {
   hisat2.sh \
     ${sample_id} \
     ${params.hisat2_base_name} \
-    ${task.cpus}
+    ${task.cpus} \
+    "${fastq_files}" \
   """
 }
 
@@ -1206,9 +1214,9 @@ process hisat2_fpkm_tpm {
     set val(sample_id), file(ga_file), file(gtf_file) from STRINGTIE_GTF_FOR_FPKM
 
   output:
-    file "*.Hisat2.fpkm" optional true into FPKMS
-    file "*.Hisat2.tpm" optional true into TPM
-    file "*.Hisat2.raw" optional true into RAW_COUNTS
+    file "*.Hisat2.fpkm" optional true into HISAT2_FPKM
+    file "*.Hisat2.tpm" optional true into HISAT2_TPM
+    file "*.Hisat2.raw" optional true into HISAT2_RAW
     set val(sample_id), val(1) into CLEAN_STRINGTIE_SIGNAL
     val sample_id into HISAT2_SAMPLE_COMPLETE_SIGNAL
 
@@ -1238,8 +1246,8 @@ process hisat2_fpkm_tpm {
  */
 MULTIQC_RUN = MULTIQC_READY_SIGNAL.mix(MULTIQC_BOOTSTRAP)
 
-FASTQC_1_OUTPUT
-  .concat(FASTQC_2_OUTPUT, KALLISTO_LOG, SALMON_GA_LOG, HISAT2_SAM_LOG, BAM_INDEXED_LOG, TRIMMED_SAMPLE_LOG).set {MULTIQC_FILES}
+FASTQC_1_OUTPUT.flatten()
+  .concat(FASTQC_2_OUTPUT.flatten(), KALLISTO_LOG, SALMON_GA_LOG, HISAT2_SAM_LOG, BAM_INDEXED_LOG, TRIMMED_SAMPLE_LOG).set {MULTIQC_FILES}
 
 /**
  * Process to generate the multiqc report once everything is completed
@@ -1277,6 +1285,8 @@ process multiqc {
  * received.
  */
 CREATE_GEM_RUN = CREATE_GEM_READY_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
+SALMON_RAW
+  .concat(SALMON_TPM, KALLISTO_RAW, KALLISTO_TPM, HISAT2_RAW, HISAT2_TPM, HISAT2_FPKM).set {QUANT_FILES}
 
 /**
  * Creates the GEM file from all the FPKM/TPM outputs
@@ -1287,6 +1297,7 @@ process create_gem {
 
   input:
     val signal from CREATE_GEM_RUN.collect()
+    file input_files from QUANT_FILES.collect()
 
   output:
     file "*.GEM.*.txt" into GEM_FILES
@@ -1307,8 +1318,7 @@ process create_gem {
   create_gem.sh \
     ${publish_fpkm} \
     ${hisat2_enable} \
-    ./ \
-    ${params.outdir}/Samples \
+    . \
     GEMmaker \
     ${publish_raw} \
     ${publish_tpm}
@@ -1384,6 +1394,9 @@ process clean_fastq {
 
   input:
     set val(sample_id), val(files_list) from FASTQ_CLEANUP_READY
+
+  when:
+    params.keep_retrieved_fastq == false
 
   script:
   flist = files_list[0].join(" ")
