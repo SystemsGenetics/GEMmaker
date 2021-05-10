@@ -103,7 +103,7 @@ if (params.pipeline.equals('salmon')) {
 }
 
 if (!(hisat2_enable || kallisto_enable || salmon_enable)) {
-  error "Error: You must select a valid quantification tool in the 'nextflow.config' file."
+  error "Error: You must select a valid quantification tool using the '--pipeline' parameter. Currently valid options are 'salmon', 'kallisto', or 'hisat2'"
 }
 
 // Create the directories we'll use for running
@@ -124,7 +124,7 @@ else {
   active_method = reader.readLine()
   reader.close()
   if (!active_method.equals(params.pipeline)) {
-    error "Error: previously, GEMmaker was set to run using the '${active_method}' tool, but it looks as though the configuration has changed to use the '${params.pipeline}' tool. GEMmaker only supports use of one tool at a time. If you would like to change the quantification tool please re-run GEMmaker in a new directory or remove the `work` and `output` directories prior to restarting GEMmaker to clear out unwanted results."
+    error "Error: previously, GEMmaker was set to run using the '${active_method}' tool, but it looks as though the configuration has changed to use the '${params.pipeline}' tool. GEMmaker only supports use of one tool at a time. If you would like to change the quantification tool please re-run GEMmaker in a new directory or remove the `work` and `results` directories prior to restarting GEMmaker to clear out unwanted results."
   }
 }
 
@@ -137,14 +137,14 @@ if (hisat2_enable) {
 
   if (gtfFile.isEmpty()) {
     error "Error: GTF reference file for Hisat2 does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-    \nGEMmaker is missing the following file: '${params.hisat2_gtf_file}' (where '*' is the name of your organism)"
+    \nGEMmaker is missing the following file: '${params.hisat2_gtf_file}' "
   }
 
   hisat2_index_dir = file("${params.hisat2_index_dir}")
 
   if (!hisat2_index_dir.isDirectory()) {
     error "Error: hisat2 Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-    \nGEMmaker is missing the following file: '${params.hisat2_index_dir}' (where '*' is the name of your organism)"
+    \nGEMmaker is missing the following file: '${params.hisat2_index_dir}'"
   }
 }
 
@@ -154,7 +154,7 @@ if (kallisto_enable) {
 
   if (kallisto_index_file.isEmpty()) {
     error "Error: Kallisto Index File does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-    \nGEMmaker is missing the following file: '${params.kallisto_index_path}' (where '*' is the name of your organism)"
+    \nGEMmaker is missing the following file: '${params.kallisto_index_path}'"
   }
 }
 
@@ -164,7 +164,7 @@ if (salmon_enable) {
 
   if (!salmon_index_dir.isDirectory()) {
     error "Error: Salmon Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-    \nGEMmaker is missing the following file: '${params.salmon_index_path}' (where '*' is the name of your organism)"
+    \nGEMmaker is missing the following file: '${params.salmon_index_path}'"
   }
 }
 
@@ -188,7 +188,7 @@ if (params.sras) {
 if (params.skip_samples) {
     skip_file = file("${params.skip_samples}")
     if (!skip_file.exists()) {
-       error "Error: The file conatining samples to skip does not exists at '${params.skip_samples}'."
+       error "Error: The file containing samples to skip does not exists at '${params.skip_samples}'."
    }
 }
 
@@ -983,7 +983,7 @@ process salmon_tpm {
  * the path where the clipping files are stored.
  *
  * MINLEN is calculated using based on percentage of the mean
- * read length. The percenage is determined by the user in the
+ * read length. The percentage is determined by the user in the
  * "nextflow.config" file
  */
 process trimmomatic {
