@@ -1,12 +1,9 @@
 .. _installation:
 
-Installation
-------------
+Prerequisites
+-------------
 
-Dependencies
-~~~~~~~~~~~~
-
-GEMmaker requires a variety of common and bioinformatics software.  You must install the required software listed in the **Required Dependencies** section below.  Afterwards, there are several ways to ensure other software are available.
+GEMmaker uses a variety of bioinformatics software packages, which will be downloaded to your machine automatically. **The GEMmaker workflow is downloaded automatically to your machine when you run it via Nextflow for the first time**. To do this, there are two dependencies you will need: Nextflow and your choice of container executor (Singularity or Docker).
 
 Required Dependencies
 *********************
