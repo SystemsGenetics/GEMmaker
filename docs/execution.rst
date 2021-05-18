@@ -136,9 +136,7 @@ GEMmaker should resume processing of samples without starting over.
 
 Running on a Cluster
 ''''''''''''''''''''
-If you want to run GEMmaker on a local High Performance Computing Cluster (HPC) that uses a scheduler such as SLURM or PBS, you must first create a configuration file to help GEMmaker know how to submit jobs.  The file should be named ``nextflow.config`` and be placed in the same directory where you are running GEMmaker.
-
-Below is an example ``nextflow.config`` file for executing GEMmaker on a cluster that uses the SLURM scheduler.
+If you want to run GEMmaker on a local High Performance Computing Cluster (HPC) that uses a scheduler such as SLURM or PBS, you must first create a configuration file to help GEMmaker know how to submit jobs.  The file should be named ``nextflow.config`` and be placed in the same directory where you are running GEMmaker.  Below is an example ``nextflow.config`` file for executing GEMmaker on a cluster that uses the SLURM scheduler.
 
 .. code::
 
@@ -177,9 +175,10 @@ Next, is an example SLURM submission script for submitting a job to run GEMmaker
       -resume \
       --pipeline kallisto \
       --kallisto_index_path Araport11_genes.201606.cdna.indexed \
-      --sras  SRA_IDs.txt
+      --sras  SRA_IDs.txt \
+      --max_cpus 120
 
-Notice in the call to nextflow, the profile ``my_cluster`` has been added along with ``singularity``.
+Notice in the call to nextflow, the profile ``my_cluster`` has been added along with ``singularity``, also, the ``--max_cpus`` argument has been set to the same size as the ``queueSize`` value in the config file. The default value of ``--max_cpus`` is 4 and won't allow the workflow to expand beyond 4 CPUs if it is not increased to match the config file.
 
 
 Intermediate Files
