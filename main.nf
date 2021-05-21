@@ -880,6 +880,7 @@ process kallisto {
   kallisto.sh \
     ${sample_id} \
     ${kallisto_index} \
+    ${params.kallisto_bootstrap_samples} \
     ${task.cpus} \
     "${fastq_files}"
   """

@@ -90,6 +90,11 @@
                     "description": "The directory containing the reference genome index files",
                     "default": "${baseDir}/assets/demo/references/CORG.transcripts.Kallisto.indexed"
                 },
+                "kallisto_bootstrap_samples": {
+                    "type": "integer",
+                    "description": "Number of bootstrap samples (default: 0)",
+                    "default": "0"
+                },
                 "kallisto_keep_data": {
                     "type": "boolean",
                     "description": "Indicates if the intermediate data files created by Kallisto should be kept. If true, the files are retrained, if false the files are removed to save storage space."
