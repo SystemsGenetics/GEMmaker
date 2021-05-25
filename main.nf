@@ -639,6 +639,7 @@ SAMPLE_COMPLETE_SIGNAL
 process next_sample {
   tag { sample_id }
   label "local"
+  cache false
 
   input:
     val sample_id from NEXT_SAMPLE_SIGNAL
