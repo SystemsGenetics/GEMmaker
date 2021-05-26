@@ -226,7 +226,12 @@ FAILED_RUN_TEMPLATE = Channel.fromPath("${params.failed_run_report_template}").c
 MULTIQC_CONFIG = Channel.fromPath("${params.multiqc_config_file}").collect()
 MULTIQC_CUSTOM_LOGO = Channel.fromPath("${params.multiqc_custom_logo}").collect()
 
-
+if (params.skip_samples) {
+  SKIP_SAMPLES_FILE = Channel.fromPath("${params.skip_samples}")
+}
+else {
+    Channel.empty().set { SKIP_SAMPLES_FILE }
+}
 
 /**
  * Local Sample Input.
@@ -368,15 +373,15 @@ process retrieve_sra_metadata {
 
   input:
     file srr_file from SRR_FILE
+    file skip_samples from SKIP_SAMPLES_FILE
 
   output:
     stdout REMOTE_SAMPLES_LIST
     file "failed_runs.metadata.txt" into METADATA_FAILED_RUNS
 
   script:
-  skip_arg = ""
-  if (params.skip_samples) {
-      skip_arg = "--skip_file ${params.skip_samples}"
+  if (skip_samples) {
+      skip_arg = "--skip_file ${skip_samples}"
   }
   """
   >&2 echo "#TRACE n_remote_run_ids=`cat ${srr_file} | wc -l`"
@@ -414,6 +419,12 @@ ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
 // all samples have completed.
 MULTIQC_BOOTSTRAP = Channel.create()
 CREATE_GEM_BOOTSTRAP = Channel.create()
+
+// Remove any lock file that might be leftover from a previous run
+lockfile = file("${workflow.workDir}/GEMmaker/gemmaker.lock")
+if (lockfile.exists()) {
+    lockfile.delete()
+}
 
 // Clean up any files left over from a previous run by moving them
 // back to the stage directory.
