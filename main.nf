@@ -437,6 +437,20 @@ for (existing_file in existing_files) {
 // stage directory. If so we need to keep processing
 // samples
 staged_files = file('work/GEMmaker/stage/*')
+
+// If a user added a sample to skip after a failed run, then
+// we want to remove it from the stage folder.
+if (params.skip_samples) {
+    skip_file = file("${params.skip_samples}")
+    skip_file.eachLine { line ->
+        skip_sample = file('work/GEMmaker/stage/' + line.trim() + '.sample.csv')
+        if (skip_sample.exists()) {
+            skip_sample.delete()
+        }
+    }
+}
+
+
 if (staged_files.size() == 0) {
   // If there are no staged files then the workflow will
   // end because it only proceeds when there are samples
@@ -468,10 +482,8 @@ process write_stage_files {
     skip_samples = []
     if (params.skip_samples) {
         skip_file = file("${params.skip_samples}")
-        if (skip_file.exists()) {
-          skip_file.eachLine { line ->
+        skip_file.eachLine { line ->
             skip_samples << line.trim()
-          }
         }
     }
 

@@ -120,20 +120,6 @@ Using Both Paired-End and Non Paired Local Data
 ...............................................
 GEMmaker can work with both paired and non-paired data in the same data set. The only stipulation is that the non-paired data must follow the same naming convention as the paired data. See the section `Using Paired-End Local data`_. For example, if your paired files have a ``1.fastq`` and ``2.fastq`` extension, then the non-paired files should have a ``1.fastq`` suffix as well.
 
-Skipping Samples
-................
-You may find that an SRA file from NCBI is problematic. It may be corrupt, does not align or has other problems that may cause the GEMaker to  fail. For such samples, you can either remove them from your file of SRA run IDs or you can create a new file and add them--one per line.  Then, use the ``--skip_samples`` argument to tell GEMmaker about this file with IDs for skipping.  For example:
-
-.. code:: bash
-
-  nextflow run systemsgenetics/gemmaker -profile singularity \
-    --pipeline kallisto \
-    --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
-    --sras SRAs.txt \
-    --skip_samples SRAs2skip.txt
-
-In the example above any SRA run IDs that should be skipped should be added to the ``SRA2skip.txt`` file.
-
 Resuming After Failure
 ''''''''''''''''''''''
 If for some reason GEMmaker fails to fully complete and Nextflow reports some form of error. You can resume execution of the workflow, afer correcting any problems, by passing the ``-resume`` flag to GEMmaker. For example to resume a failed Kallisto run:
@@ -147,6 +133,24 @@ If for some reason GEMmaker fails to fully complete and Nextflow reports some fo
     --sras SRAs.txt
 
 GEMmaker should resume processing of samples without starting over.
+
+Skipping Samples
+................
+You may find that a sample is problematic. It may be corrupt, does not align or has other problems that may cause GEMaker to fail. For such samples that cause GEMmaker to fail, you have two options. You can either remove the bad samples and restart GEMmaker or you can resume, as just described in the previous section, but first add the sample names to a new file, one per line, then, use the ``--skip_samples`` argument to tell GEMmaker about this file.  For example:
+
+.. code:: bash
+
+  nextflow run systemsgenetics/gemmaker -profile singularity \
+    --pipeline kallisto \
+    --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
+    --sras SRAs.txt \
+    --skip_samples samples2skip.txt
+
+In the example above any samples that should be skipped should be added to the ``samples2skip.txt`` file.
+
+.. warning ::
+
+    Note, when you provide SRA IDs to GEMmaker you provide the RUN IDs, but multiple run IDs can be contained in a single sample.  To skip a sample, you must provide the sample ID. For SRA, these  begin with the prefix SRX, DRX or ERX, where as run IDs begin with SRR, DRR or ERR.
 
 Running on a Cluster
 ''''''''''''''''''''
