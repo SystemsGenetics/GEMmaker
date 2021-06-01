@@ -226,7 +226,12 @@ FAILED_RUN_TEMPLATE = Channel.fromPath("${params.failed_run_report_template}").c
 MULTIQC_CONFIG = Channel.fromPath("${params.multiqc_config_file}").collect()
 MULTIQC_CUSTOM_LOGO = Channel.fromPath("${params.multiqc_custom_logo}").collect()
 
-
+if (params.skip_samples) {
+  SKIP_SAMPLES_FILE = Channel.fromPath("${params.skip_samples}")
+}
+else {
+    Channel.empty().set { SKIP_SAMPLES_FILE }
+}
 
 /**
  * Local Sample Input.
@@ -368,15 +373,15 @@ process retrieve_sra_metadata {
 
   input:
     file srr_file from SRR_FILE
+    file skip_samples from SKIP_SAMPLES_FILE
 
   output:
     stdout REMOTE_SAMPLES_LIST
     file "failed_runs.metadata.txt" into METADATA_FAILED_RUNS
 
   script:
-  skip_arg = ""
-  if (params.skip_samples) {
-      skip_arg = "--skip_file ${params.skip_samples}"
+  if (skip_samples) {
+      skip_arg = "--skip_file ${skip_samples}"
   }
   """
   >&2 echo "#TRACE n_remote_run_ids=`cat ${srr_file} | wc -l`"
@@ -415,6 +420,12 @@ ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
 MULTIQC_BOOTSTRAP = Channel.create()
 CREATE_GEM_BOOTSTRAP = Channel.create()
 
+// Remove any lock file that might be leftover from a previous run
+lockfile = file("${workflow.workDir}/GEMmaker/gemmaker.lock")
+if (lockfile.exists()) {
+    lockfile.delete()
+}
+
 // Clean up any files left over from a previous run by moving them
 // back to the stage directory.
 existing_files = file('work/GEMmaker/process/*')
@@ -426,6 +437,20 @@ for (existing_file in existing_files) {
 // stage directory. If so we need to keep processing
 // samples
 staged_files = file('work/GEMmaker/stage/*')
+
+// If a user added a sample to skip after a failed run, then
+// we want to remove it from the stage folder.
+if (params.skip_samples) {
+    skip_file = file("${params.skip_samples}")
+    skip_file.eachLine { line ->
+        skip_sample = file('work/GEMmaker/stage/' + line.trim() + '.sample.csv')
+        if (skip_sample.exists()) {
+            skip_sample.delete()
+        }
+    }
+}
+
+
 if (staged_files.size() == 0) {
   // If there are no staged files then the workflow will
   // end because it only proceeds when there are samples
@@ -457,10 +482,8 @@ process write_stage_files {
     skip_samples = []
     if (params.skip_samples) {
         skip_file = file("${params.skip_samples}")
-        if (skip_file.exists()) {
-          skip_file.eachLine { line ->
+        skip_file.eachLine { line ->
             skip_samples << line.trim()
-          }
         }
     }
 
@@ -508,10 +531,10 @@ process get_software_versions {
     fastqc --version > v_fastqc.txt
     multiqc --version > v_multiqc.txt
     kallisto version > v_kallisto.txt
-    hisat2 --version | head -n 1 > v_hisat2.txt
+    hisat2 --version > v_hisat2.txt
     salmon --version > v_salmon.txt
     python --version > v_python.txt
-    samtools version | head -n 1 > v_samtools.txt
+    samtools version > v_samtools.txt
     fastq-dump --version > v_fastq_dump.txt
     stringtie --version > v_stringtie.txt
     trimmomatic -version > v_trimmomatic.txt
@@ -639,6 +662,7 @@ SAMPLE_COMPLETE_SIGNAL
 process next_sample {
   tag { sample_id }
   label "local"
+  cache false
 
   input:
     val sample_id from NEXT_SAMPLE_SIGNAL

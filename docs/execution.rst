@@ -134,6 +134,24 @@ If for some reason GEMmaker fails to fully complete and Nextflow reports some fo
 
 GEMmaker should resume processing of samples without starting over.
 
+Skipping Samples
+................
+You may find that a sample is problematic. It may be corrupt, does not align or has other problems that may cause GEMaker to fail. For such samples that cause GEMmaker to fail, you have two options. You can either remove the bad samples and restart GEMmaker or you can resume, as just described in the previous section, but first add the sample names to a new file, one per line, then, use the ``--skip_samples`` argument to tell GEMmaker about this file.  For example:
+
+.. code:: bash
+
+  nextflow run systemsgenetics/gemmaker -profile singularity \
+    --pipeline kallisto \
+    --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
+    --sras SRAs.txt \
+    --skip_samples samples2skip.txt
+
+In the example above any samples that should be skipped should be added to the ``samples2skip.txt`` file.
+
+.. warning ::
+
+    Note, when you provide SRA IDs to GEMmaker you provide the RUN IDs, but multiple run IDs can be contained in a single sample.  To skip a sample, you must provide the sample ID. For SRA, these  begin with the prefix SRX, DRX or ERX, where as run IDs begin with SRR, DRR or ERR.
+
 Running on a Cluster
 ''''''''''''''''''''
 If you want to run GEMmaker on a local High Performance Computing Cluster (HPC) that uses a scheduler such as SLURM or PBS, you must first create a configuration file to help GEMmaker know how to submit jobs.  The file should be named ``nextflow.config`` and be placed in the same directory where you are running GEMmaker.  Below is an example ``nextflow.config`` file for executing GEMmaker on a cluster that uses the SLURM scheduler.
