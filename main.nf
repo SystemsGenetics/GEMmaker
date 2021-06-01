@@ -531,10 +531,10 @@ process get_software_versions {
     fastqc --version > v_fastqc.txt
     multiqc --version > v_multiqc.txt
     kallisto version > v_kallisto.txt
-    hisat2 --version | head -n 1 > v_hisat2.txt
+    hisat2 --version > v_hisat2.txt
     salmon --version > v_salmon.txt
     python --version > v_python.txt
-    samtools version | head -n 1 > v_samtools.txt
+    samtools version > v_samtools.txt
     fastq-dump --version > v_fastq_dump.txt
     stringtie --version > v_stringtie.txt
     trimmomatic -version > v_trimmomatic.txt
