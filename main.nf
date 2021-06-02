@@ -669,21 +669,19 @@ process next_sample {
 
   exec:
     // Use a file lock to prevent a race condition for grabbing the next sample.
-    File lockfile = null
     FileChannel channel = null
     FileLock lock = null
     success = false
 
     try {
       attempts = 0
+      channel = new RandomAccessFile("${workflow.workDir}/GEMmaker/gemmaker.lock", "rw").getChannel()
+      // We will try for a release lock for about 10 minutes max. It may take
+      // this long on a slow NFS system.  We will try the lock 3 times before
+      // giving up.
       while (!lock)  {
-        // We will try for a release lock for about 10 minutes max. The sleep
-        // time is set to 1 second.  It may take this long on a slow NFS
-        // system.
-        if (attempts < 6000) {
+        if (attempts < 3) {
           try {
-            lockfile = new File("${workflow.workDir}/GEMmaker/gemmaker.lock")
-            channel = new RandomAccessFile(lockfile, "rw").getChannel()
             lock = channel.lock()
           }
           catch (OverlappingFileLockException e) {
