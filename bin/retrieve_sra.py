@@ -60,6 +60,7 @@ def get_sample_url(run_id):
     # Initialize paths.
     fasp_path = ""
     https_path = ""
+    sra_size = 0
 
     # First try if there is an aspera path.
     p = subprocess.Popen(
