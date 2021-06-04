@@ -686,6 +686,7 @@ process next_sample {
           }
           catch (OverlappingFileLockException e) {
             // Do nothing, let's try a few more times....
+            println "Failed Lock: " + e.getMessage()
           }
           if (!lock) {
             println "Waiting on lock. After sample, " + sample_id + ", attempt " + attempts + "..."
