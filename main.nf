@@ -690,7 +690,7 @@ process next_sample {
           if (!lock) {
             println "Waiting on lock. After sample, " + sample_id + ", attempt " + attempts + "..."
             // Sleep for 1 minute
-            sleep 6000
+            sleep 60000
             attempts = attempts + 1
           }
         }
