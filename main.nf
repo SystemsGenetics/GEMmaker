@@ -676,21 +676,21 @@ process next_sample {
     try {
       attempts = 0
       channel = new RandomAccessFile("${workflow.workDir}/GEMmaker/gemmaker.lock", "rw").getChannel()
-      // We will try for a release lock for about 10 minutes max. It may take
-      // this long on a slow NFS system.  We will try the lock 3 times before
-      // giving up.
+      // We will try for a release lock for about 1 hour. It's not clear
+      // what the optimal wait time should be.
       while (!lock)  {
-        if (attempts < 3) {
+        // 60 attempts with a sleep of 1 minute == 1 hour.
+        if (attempts < 60) {
           try {
             lock = channel.lock()
           }
           catch (OverlappingFileLockException e) {
             // Do nothing, let's try a few more times....
-            println "Failed Lock: " + e.getMessage()
           }
           if (!lock) {
             println "Waiting on lock. After sample, " + sample_id + ", attempt " + attempts + "..."
-            sleep 1000
+            // Sleep for 1 minute
+            sleep 6000
             attempts = attempts + 1
           }
         }
