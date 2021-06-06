@@ -680,7 +680,7 @@ process next_sample {
       // what the optimal wait time should be.
       while (!lock)  {
         // 60 attempts with a sleep of 1 minute == 1 hour.
-        if (attempts < 60) {
+        if (attempts < 600) {
           try {
             lock = channel.lock()
           }
