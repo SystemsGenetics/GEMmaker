@@ -695,7 +695,7 @@ process next_sample {
           }
         }
         else {
-          throw new Exception("Cannot obtain lock to proceed to next sample after 3 attempts")
+          throw new Exception("Cannot obtain lock to proceed to next sample after " + attempts + " attempts.")
         }
       }
       sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
