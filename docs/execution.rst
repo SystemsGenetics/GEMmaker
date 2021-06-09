@@ -188,7 +188,7 @@ Next, is an example SLURM submission script for submitting a job to run GEMmaker
 
     module add java nextflow singularity
 
-    nextflow run systemsgenetics/gemmaker -r nf-core \
+    nextflow run systemsgenetics/gemmaker \
       -profile my_cluster,singularity \
       -resume \
       --pipeline kallisto \
@@ -301,3 +301,15 @@ The "labels" that GEMmaker provides and which you can set custom directives incl
 - ``multiqc``: For the step that runs the MultiQC results summary report.
 - ``create_gem``: For the step that creates the final GEM files.
 - ``multithreaded``:  For all of the tools that support multithreading you can use this label to set a default number of CPUs using the ``cpus`` directive.  These tools include Salmon, Kallisto, Trimmomatic, Hisat2 and Stringtie.  By using this label you set set the same number of ``cpus`` for all multithreaded steps at once.
+
+Using the Development Version
+'''''''''''''''''''''''''''''
+New updates to GEMmaker, prior to issuing a formal release, are held in ``dev`` branch of the GEMmaker github repository. It is recommended to always use a formal release of GEMmaker, however, you can test the most recent improvements prior to release.  To do so, use the ``-r dev`` argument when running GEMmaker. For example:
+.. code:: bash
+
+  nextflow run systemsgenetics/gemmaker -r dev -profile singularity \
+    --pipeline kallisto \
+    --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
+    --sras SRAs.txt
+
+The ``-r dev`` argument forces Nextflow to use the development version of GEMmaker rather than the most recent stable version.
