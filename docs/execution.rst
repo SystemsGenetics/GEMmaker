@@ -305,6 +305,7 @@ The "labels" that GEMmaker provides and which you can set custom directives incl
 Using the Development Version
 '''''''''''''''''''''''''''''
 New updates to GEMmaker, prior to issuing a formal release, are held in ``dev`` branch of the GEMmaker github repository. It is recommended to always use a formal release of GEMmaker, however, you can test the most recent improvements prior to release.  To do so, use the ``-r dev`` argument when running GEMmaker. For example:
+
 .. code:: bash
 
   nextflow run systemsgenetics/gemmaker -r dev -profile singularity \
@@ -313,3 +314,7 @@ New updates to GEMmaker, prior to issuing a formal release, are held in ``dev`` 
     --sras SRAs.txt
 
 The ``-r dev`` argument forces Nextflow to use the development version of GEMmaker rather than the most recent stable version.
+
+.. note::
+
+    You can find the most recent documentation for the ``dev`` branch at https://gemmaker.readthedocs.io/en/dev/
