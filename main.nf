@@ -10,10 +10,6 @@
 --------------------------------------------------------------------------------
 */
 
-import java.nio.channels.FileLock
-import java.nio.channels.FileChannel
-import java.nio.channels.OverlappingFileLockException
-
 log.info Headers.nf_core(workflow, params.monochrome_logs)
 
 ////////////////////////////////////////////////////
@@ -419,13 +415,6 @@ ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
 // all samples have completed.
 MULTIQC_BOOTSTRAP = Channel.create()
 CREATE_GEM_BOOTSTRAP = Channel.create()
-
-// Remove any lock file that might be leftover from a previous run
-lockfile = file("${workflow.workDir}/GEMmaker/gemmaker.lock")
-if (lockfile.exists()) {
-    lockfile.delete()
-}
-lockfile = null
 
 // Clean up any files left over from a previous run by moving them
 // back to the stage directory.
