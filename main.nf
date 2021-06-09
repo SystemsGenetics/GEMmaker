@@ -679,8 +679,8 @@ process next_sample {
       // We will try for a release lock for about 1 hour. It's not clear
       // what the optimal wait time should be.
       while (!lock)  {
-        // 60 attempts with a sleep of 1 minute == 1 hour.
-        if (attempts < 3600) {
+        // Sleep for 36000 attempts, that equals about 1 hour.
+        if (attempts < 36000) {
           try {
             lock = channel.lock()
           }
@@ -689,8 +689,8 @@ process next_sample {
           }
           if (!lock) {
             println "Waiting on lock. After sample, " + sample_id + ", attempt " + attempts + "..."
-            // Sleep for 1 second
-            sleep 1000
+            // Sleep for .1 second
+            sleep 100
             attempts = attempts + 1
           }
         }
