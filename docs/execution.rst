@@ -304,7 +304,7 @@ The "labels" that GEMmaker provides and which you can set custom directives incl
 
 Using the Development Version
 '''''''''''''''''''''''''''''
-New updates to GEMmaker, prior to issuing a formal release, are held in ``dev`` branch of the GEMmaker github repository. It is recommended to always use a formal release of GEMmaker, however, you can test the most recent improvements prior to release.  To do so, use the ``-r dev`` argument when running GEMmaker. For example:
+New updates to GEMmaker, prior to issuing a formal release, are held in the ``dev`` branch of the GEMmaker github repository. It is recommended to always use a formal release of GEMmaker, however, you can test the most recent improvements prior to release.  To do so, use the ``-r dev`` argument when running GEMmaker. For example:
 
 .. code:: bash
 
