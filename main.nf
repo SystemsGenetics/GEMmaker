@@ -425,6 +425,7 @@ lockfile = file("${workflow.workDir}/GEMmaker/gemmaker.lock")
 if (lockfile.exists()) {
     lockfile.delete()
 }
+lockfile = null
 
 // Clean up any files left over from a previous run by moving them
 // back to the stage directory.
@@ -432,6 +433,8 @@ existing_files = file('work/GEMmaker/process/*')
 for (existing_file in existing_files) {
   existing_file.moveTo('work/GEMmaker/stage')
 }
+existing_files = null
+
 
 // Check to see if we have any files left in the
 // stage directory. If so we need to keep processing
@@ -461,6 +464,7 @@ if (staged_files.size() == 0) {
   MULTIQC_BOOTSTRAP.bind(1)
   CREATE_GEM_BOOTSTRAP.bind(1)
 }
+staged_files = null
 
 
 /**
@@ -663,84 +667,38 @@ process next_sample {
   tag { sample_id }
   label "local"
   cache false
+  maxForks 1
 
   input:
     val sample_id from NEXT_SAMPLE_SIGNAL
 
   exec:
-    // Use a file lock to prevent a race condition for grabbing the next sample.
-    FileChannel channel = null
-    FileLock lock = null
-    success = false
+    // Move the completed file into the done folder.
+    sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
+    sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
 
-    try {
-      attempts = 0
-      channel = new RandomAccessFile("${workflow.workDir}/GEMmaker/gemmaker.lock", "rw").getChannel()
-      // We will try for a release lock for about 1 hour. It's not clear
-      // what the optimal wait time should be.
-      while (!lock)  {
-        // Sleep for 36000 attempts, that equals about 1 hour.
-        if (attempts < 36000) {
-          try {
-            lock = channel.lock()
-          }
-          catch (OverlappingFileLockException e) {
-            // Do nothing, let's try a few more times....
-          }
-          if (!lock) {
-            println "Waiting on lock. After sample, " + sample_id + ", attempt " + attempts + "..."
-            // Sleep for .1 second
-            sleep 100
-            attempts = attempts + 1
-          }
-        }
-        else {
-          throw new Exception("Cannot obtain lock to proceed to next sample after " + attempts + " attempts.")
-        }
-      }
-      sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
-      sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
-
-      // Move the next sample file into the processing directory
-      // which will trigger the start of the next sample.
-      staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
-      if (staged_files.size() > 0) {
+    // Move the next sample file into the processing directory
+    // which will trigger the start of the next sample.
+    staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
+    if (staged_files.size() > 0) {
         staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
-      }
-      else {
+    }
+    // If there are no more staged files, then check if there are no more
+    // files in processing. If so, then close out all the channels.
+    else {
         processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
         if (processing_files.size() == 0) {
-          NEXT_SAMPLE.close()
-          NEXT_SAMPLE_SIGNAL.close()
-          HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
-          KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
-          SALMON_SAMPLE_COMPLETE_SIGNAL.close()
-          SAMPLE_COMPLETE_SIGNAL.close()
-          MULTIQC_BOOTSTRAP.close()
-          CREATE_GEM_BOOTSTRAP.close()
-          SKIP_DUMP_SAMPLE.close()
-          SKIP_DOWNLOAD_SAMPLE.close()
+            NEXT_SAMPLE.close()
+            NEXT_SAMPLE_SIGNAL.close()
+            HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
+            KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
+            SALMON_SAMPLE_COMPLETE_SIGNAL.close()
+            SAMPLE_COMPLETE_SIGNAL.close()
+            MULTIQC_BOOTSTRAP.close()
+            CREATE_GEM_BOOTSTRAP.close()
+            SKIP_DUMP_SAMPLE.close()
+            SKIP_DOWNLOAD_SAMPLE.close()
         }
-      }
-      success = true
-    }
-    catch (Exception e) {
-      println "Error: " + e.getMessage()
-    }
-    finally {
-      // Release the lock file and close the file if they were opened.
-      if (lock && lock.isValid()) {
-        lock.release()
-      }
-      // Close the channel.
-      if (channel) {
-        channel.close()
-      }
-      lock = null;
-      // Re-throw exception to terminate the workflow if there was no success.
-      if (!success) {
-        throw new Exception("Could not move to the next sample.")
-      }
     }
 }
 
