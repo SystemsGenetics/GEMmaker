@@ -34,13 +34,13 @@ jobs:
 
       - name: Build new docker image
         if: env.MATCHED_FILES
-        run: docker build --no-cache . -t systemsgenetics/gemmaker:dev
+        run: docker build --no-cache . -t systemsgenetics/gemmaker:2.0.0
 
       - name: Pull docker image
         if: ${{ !env.MATCHED_FILES }}
         run: |
-          docker pull systemsgenetics/gemmaker:dev
-          docker tag systemsgenetics/gemmaker:dev systemsgenetics/gemmaker:dev
+          docker pull systemsgenetics/gemmaker:2.0.0
+          docker tag systemsgenetics/gemmaker:.2.0.0 systemsgenetics/gemmaker:2.0.0
 
       - name: Install Nextflow
         env:
