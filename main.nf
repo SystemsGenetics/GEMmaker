@@ -46,7 +46,7 @@ Workflow Information:
 
 Samples:
 --------
-  Remote fastq list path:     ${params.sras}
+  Remote sample list path:    ${params.sras}
   Local sample glob:          ${params.input}
   Skip samples file:          ${params.skip_samples}
 
@@ -226,7 +226,7 @@ if (params.skip_samples) {
   SKIP_SAMPLES_FILE = Channel.fromPath("${params.skip_samples}")
 }
 else {
-    Channel.empty().set { SKIP_SAMPLES_FILE }
+    Channel.value('NA').set { SKIP_SAMPLES_FILE }
 }
 
 /**
@@ -376,7 +376,7 @@ process retrieve_sra_metadata {
     file "failed_runs.metadata.txt" into METADATA_FAILED_RUNS
 
   script:
-  if (skip_samples) {
+  if (skip_samples != 'NA') {
       skip_arg = "--skip_file ${skip_samples}"
   }
   """
