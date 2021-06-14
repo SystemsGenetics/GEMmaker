@@ -1,0 +1,29 @@
+# You can use this file to create a conda environment for this pipeline:
+#   conda env create -f environment.yml
+name: systemsgenetics-gemmaker-2.0dev
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  # nf-core dependencies
+  - conda-forge::python=3.9.2
+  - conda-forge::markdown=3.3.4
+  - conda-forge::pymdown-extensions=8.1.1
+  - conda-forge::pygments=2.8.1
+  # Software dependencies here
+  - conda-forge::pandas=1.2.3
+  - conda-forge::numpy=1.20.2
+  - conda-forge::xmltodict=0.12.0
+  - conda-forge::tbb=2020.2
+  - bioconda::fastqc=0.11.9
+  - bioconda::hisat2=2.2.1
+  - bioconda::kallisto=0.46.2
+  - bioconda::salmon=1.4.0
+  - bioconda::multiqc=1.10.1
+  - bioconda::samtools=1.12
+  # Use version 2.10.0 to avoid a vdb-config problem with singularity
+  - bioconda::sra-tools=2.10.0
+  - bioconda::stringtie=2.1.5
+  - bioconda::trimmomatic=0.39
+  - bioconda::gffread=0.12.1

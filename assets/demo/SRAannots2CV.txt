@@ -1,0 +1,18 @@
+SRA_Tag	CV_IDs	Names
+#
+# BIOLOGICAL SAMPLE
+# This section is for mapping terms associated with the biological sample.
+# The sequence of terms should always start with "sep:00195"
+#
+sample name	sep:00195,schema:name	biological sample,name
+age	sep:00195,NCIT:C25150	biological sample,age
+genotype	sep:00195,NCIT:C16631	biological sample,genotype
+tissue	sep:00195,NCIT:C12801	biological sample,tissue
+dev_stage	sep:00195,NCIT:C43531	biological sample,development stage
+#
+# EXPERIMENT
+# This section is for terms about the experiment
+#
+temp	NCIT:C25206	Temperature
+time	EFO:0000721	time
+treatment	EFO:0000727	treatment

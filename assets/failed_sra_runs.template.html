@@ -1,0 +1,98 @@
+<html>
+    <head>
+        <style>
+            pre {
+                overflow: auto;
+                max-width: 600px;
+                max-height: 400px;
+            }
+            table {
+                width: 90%;
+            }
+            table th {
+                background-color: #666666;
+                color: #FFFFFF;
+            }
+            tr:nth-child(even) {
+                background: #EEEEEE
+            }
+            tr:nth-child(odd) {
+                background: #FFFFFF
+            }
+            td, th {
+                vertical-align: top;
+            }
+            td.empty {
+                text-align: center;
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>${{title}}</h1>
+        <p>If SRA runs files are listed in any of the tables below then these runs were excluded from the GEMmaker results.</p>
+        <h2>SRA Runs with Metadata Failures</h2>
+        <table>
+            <tr>
+                <th>SRA Run ID</th>
+                <th>Reason for Failure</th>
+            </tr>
+            {% if failed_metadata|length == 0 %}
+                <tr>
+                    <td colspan="3" class='empty'>No Runs Failed</td>
+                </tr>
+            {% else %}
+                {% for item in failed_metadata %}
+                <tr>
+                    <td>${{item.run_id}}</td>
+                    <td>${{item.reason}}</td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+        </table>
+
+        <h2>SRA Runs with Failed Downloads</h2>
+        <table>
+            <tr>
+                <th>SRA Run ID</th>
+                <th>SRA Sample ID</th>
+                <th>Reason for Failure</th>
+            </tr>
+            {% if failed_downloads|length == 0 %}
+                <tr>
+                    <td colspan="3" class='empty'>No Runs Failed</td>
+                </tr>
+            {% else %}
+                {% for item in failed_downloads %}
+                <tr>
+                    <td>${{item.run_id}}</td>
+                    <td>${{item.sample_id}}</td>
+                    <td><pre>${{item.reason}}</pre></td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+        </table>
+
+        <h2>SRA Runs with Failed Dumps</h2>
+        <table>
+            <tr>
+                <th>SRA Run ID</th>
+                <th>SRA Sample ID</th>
+                <th>Reason for Failure</th>
+            </tr>
+            {% if failed_dumps|length == 0 %}
+                <tr>
+                    <td colspan="3" class='empty'>No Runs Failed</td>
+                </tr>
+            {% else %}
+                {% for item in failed_dumps %}
+                <tr>
+                    <td>${{item.run_id}}</td>
+                    <td>${{item.sample_id}}</td>
+                    <td><pre>${{item.reason}}</pre></td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+        </table>
+    </body>
+</html>

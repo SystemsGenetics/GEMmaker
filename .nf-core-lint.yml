@@ -1,0 +1,24 @@
+files_exist:
+  - assets/nf-core-systemsgenetics/gemmaker_logo.png
+  - docs/images/nf-core-systemsgenetics/gemmaker_logo.png
+files_unchanged: 
+  - .github/CONTRIBUTING.md
+  - .github/ISSUE_TEMPLATE/bug_report.md
+  - .github/ISSUE_TEMPLATE/config.yml
+  - .github/ISSUE_TEMPLATE/feature_request.md
+  - .github/PULL_REQUEST_TEMPLATE.md
+  - .github/workflows/branch.yml
+  - assets/email_template.html
+  - assets/email_template.txt
+  - assets/sendmail_template.txt
+  - docs/README.md
+  - .github/workflows/push_dockerhub_dev.yml
+  - .github/workflows/push_dockerhub_release.yml
+  - assets/multiqc_config.yaml
+pipeline_name_conventions: false
+# The following don't have the granularity we need so 
+# unfortunately we have to turn them off. But they should
+# be commented out from time to time to check that
+# the majority of tests pass.
+nextflow_config: false
+conda_env_yaml: false
