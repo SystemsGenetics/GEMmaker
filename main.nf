@@ -830,6 +830,7 @@ process kallisto {
   tag { sample_id }
   label "multithreaded"
   label "kallisto"
+  errorStrategy { task.exitStatus = 1 ? 'ignore' : 'terminate' }
 
   input:
     set val(sample_id), file(fastq_files) from KALLISTO_CHANNEL
