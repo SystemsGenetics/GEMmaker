@@ -6,8 +6,12 @@ bootstrap_samples="$3"
 task_cpus="$4"
 fastq_files="$5"
 
-# convert the incoming FASTQ file list to an array
+# Convert the incoming FASTQ file list to an array
 read -a fastq_files <<< $fastq_files
+
+# Kallisto will generate an exit code of 1 if no alignments are made. This
+# isn't an error and should be rewritten to 0 so that Nextflow doesn't end.
+trap 'if [[ $? == 1 ]]; then echo OK; exit 0; fi' EXIT
 
 if [ ${#fastq_files[@]} == 2 ]; then
   kallisto quant \
