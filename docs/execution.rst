@@ -15,6 +15,10 @@ The demonstrate how to to use GEMmaker the `Arabidopsis thaliana` reference geno
 
 If you followed the example in the previous step you should have the reference genome already indexed.
 
+.. note::
+
+    For the examples on this page, Singularity will be used.  Singularity will automatically retrieve the GEMmaker Docker images and by default will store them in the ``work`` folder that Nextflow creates. However, Nextflow may warn that a cache directory is not set. If you intend to run GEMmaker multipe times, you may wish to designate a permanent cache directory by seting the ``NXF_SINGULARITY_CACHEDIR`` prior to running GEMmaker. You can learn more at the `nf-core tools page <https://nf-co.re/tools/#singularity-cache-directory>`_
+
 Use Kallisto
 ............
 To run Kallisto you need to specify:

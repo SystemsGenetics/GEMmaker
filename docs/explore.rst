@@ -5,6 +5,10 @@ Test GEMmaker
 
 GEMmaker provides example data to quickly show how it works. This data consists of a small set of local files (contained with GEMmaker) and a remote sample from the `NCBI's SRA repository <https://www.ncbi.nlm.nih.gov/sra>`__. These samples are small to demonstrate usage for a mixed set of local and remote files.  This example assumes you have `Singularity <https://sylabs.io/>`__ installed.
 
+.. note::
+
+    For the examples on this page, Singularity will be used.  Singularity will automatically retrieve the GEMmaker Docker images and by default will store them in the ``work`` folder that Nextflow creates. However, Nextflow may warn that a cache directory is not set. If you intend to run GEMmaker multipe times, you may wish to designate a permanent cache directory by seting the ``NXF_SINGULARITY_CACHEDIR`` prior to running GEMmaker. You can learn more at the `nf-core tools page <https://nf-co.re/tools/#singularity-cache-directory>`_
+
 You can run the example by executing the following command within the GEMmaker directory:
 
 .. code:: bash

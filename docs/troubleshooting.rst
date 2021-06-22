@@ -3,6 +3,16 @@
 Troubleshooting
 ---------------
 
+WARNING about "sticked on revision"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you encounter a similar warning message when running GEMmaker:
+
+.. code:: bash
+
+    Project `systemsgenetics/gemmaker` currently is sticked on revision: dev -- you need to specify explicitly a revision with the option `-r` to use it
+
+This means you have multiple versions of GEMmaker cached by Nextflow and it isn't sure which one to use.  You must specify the ``-r <version>`` parameter when running Nextflow. For example, to use the ``dev`` version of GEMmaker you would provdie ``-r dev``.
+
 ERROR  : Unknown image format/type
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 If you encounter the following error:
