@@ -551,7 +551,7 @@ process start_first_batch {
     // Move the first set of sample file into the processing directory
     // so that we jumpstart the workflow.
     sample_files = file("${workflow.workDir}/GEMmaker/stage/*.sample.csv")
-    start_samples = sample_files.sort().take(params.max_cpus)
+    start_samples = sample_files.sort().take(params.max_jobs)
     if (sample_files.size() > 0 ) {
       for (sample in start_samples) {
         sample.moveTo("${workflow.workDir}/GEMmaker/process")
@@ -714,8 +714,9 @@ process download_runs {
   script:
   """
   echo "#TRACE n_remote_run_ids=${run_ids.tokenize(' ').size()}"
+  echo "#TRACE n_spots=`retrieve_sra_spots.py ${workflow.workDir}/GEMmaker ${sample_id}`"
 
-  retrieve_sra.py --sample ${sample_id} --run_ids ${run_ids} --akey \$ASPERA_KEY
+  retrieve_sra.py --sample ${sample_id} --run_ids ${run_ids} --akey \${ASPERA_KEY}
   """
 }
 
@@ -828,7 +829,7 @@ COMBINED_SAMPLES_FOR_COUNTING.choice( HISAT2_CHANNEL, KALLISTO_CHANNEL, SALMON_C
 process kallisto {
   publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Kallisto_GA
   tag { sample_id }
-  label "multithreaded"
+  label "process_medium"
   label "kallisto"
 
   input:
@@ -894,7 +895,7 @@ process kallisto_tpm {
 process salmon {
   publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Salmon_GA
   tag { sample_id }
-  label "multithreaded"
+  label "process_medium"
   label "salmon"
 
   input:
@@ -966,7 +967,7 @@ process salmon_tpm {
 process trimmomatic {
   publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_trimmomatic
   tag { sample_id }
-  label "multithreaded"
+  label "process_medium"
   label "trimmomatic"
 
   input:
@@ -1039,7 +1040,7 @@ process fastqc_2 {
 process hisat2 {
   publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*.log"
   tag { sample_id }
-  label "multithreaded"
+  label "process_medium"
   label "hisat2"
 
   input:
@@ -1141,7 +1142,7 @@ process samtools_index {
 process stringtie {
   publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_stringtie_gtf_and_ga
   tag { sample_id }
-  label "multithreaded"
+  label "process_medium"
   label "stringtie"
 
   input:
