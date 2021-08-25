@@ -713,6 +713,7 @@ process download_runs {
 
   script:
   """
+  echo "#TRACE sample_id=${sample_id}"
   echo "#TRACE n_remote_run_ids=${run_ids.tokenize(' ').size()}"
   echo "#TRACE n_spots=`retrieve_sra_spots.py ${workflow.workDir}/GEMmaker ${sample_id}`"
 
