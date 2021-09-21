@@ -31,6 +31,65 @@ if (params.validate_params) {
     NfcoreSchema.validateParameters(params, json_schema, log)
 }
 
+/**
+ * Determine which quantification tool was selected.
+ */
+hisat2_enable = false
+kallisto_enable = false
+salmon_enable = false
+
+if (params.pipeline.equals('hisat2')) {
+  hisat2_enable = true
+}
+else if (params.pipeline.equals('kallisto')) {
+  kallisto_enable = true
+}
+else if (params.pipeline.equals('salmon')) {
+  salmon_enable = true
+}
+else {
+  error "Error: You must select a valid quantification tool using the '--pipeline' parameter. Currently valid options are 'salmon', 'kallisto', or 'hisat2'"
+}
+
+/**
+ * Make sure that at least one output format is enabled.
+ */
+if (hisat2_enable == true && params.hisat2_keep_counts == false &&
+    params.hisat2_keep_fpkm == false && params.hisat2_keep_tpm == false) {
+  error "Error: at least one output format (raw, fpkm, tpm) must be enabled for hisat2"
+}
+
+if (hisat2_enable == false && params.hisat2_keep_counts == false && params.hisat2_keep_tpm == false) {
+  error "Error: at least one output format (raw, tpm) must be enabled for kallisto / salmon"
+}
+
+/**
+ * Determine which GEM formats should be published.
+ */
+publish_fpkm = false
+publish_tpm = false
+publish_raw = false
+publish_gem = false
+
+if (hisat2_enable && params.hisat2_keep_fpkm) {
+    publish_fpkm = true
+}
+if ((hisat2_enable && params.hisat2_keep_counts) ||
+    (salmon_enable && params.salmon_keep_counts) ||
+    (kallisto_enable && params.kallisto_keep_counts)) {
+    publish_raw = true
+}
+if ((hisat2_enable && params.hisat2_keep_tpm) ||
+    (salmon_enable && params.salmon_keep_tpm) ||
+    (kallisto_enable && params.kallisto_keep_tpm)) {
+    publish_tpm = true
+}
+if ((hisat2_enable && params.hisat2_keep_gem) ||
+    (salmon_enable && params.salmon_keep_gem) ||
+    (kallisto_enable && params.kallisto_keep_gem)) {
+    publish_gem = true
+}
+
 ////////////////////////////////////////////////////
 /* --     Collect configuration parameters     -- */
 ////////////////////////////////////////////////////
@@ -62,16 +121,7 @@ Quantification:
 ---------------
   Tool:                       ${params.pipeline}"""
 
-// Indicates which tool the user selected.
-hisat2_enable = false
-kallisto_enable = false
-salmon_enable = false
-selected_tool = 0
-
-// Print out details per the selected tool.
-if (params.pipeline.equals('hisat2')) {
-  hisat2_enable = true
-  selected_tool = 0
+if (hisat2_enable) {
   println """\
   Hisat2 Index Base Name:     ${params.hisat2_base_name}
   Hisat2 GTF File:            ${params.hisat2_gtf_file}
@@ -85,77 +135,111 @@ if (params.pipeline.equals('hisat2')) {
      TRAILING:                ${params.trimmomatic_TRAILING}
   """
 }
-if (params.pipeline.equals('kallisto')) {
-  kallisto_enable = true
-  selected_tool = 1
+else if (kallisto_enable) {
   println """\
   Kallisto Index File:        ${params.kallisto_index_path}
   """
 }
-if (params.pipeline.equals('salmon')) {
-  salmon_enable = true
-  selected_tool = 2
+else if (salmon_enable) {
   println """\
   Salmon Index Directory:     ${params.salmon_index_path}
   """
-}
-
-if (!(hisat2_enable || kallisto_enable || salmon_enable)) {
-  error "Error: You must select a valid quantification tool using the '--pipeline' parameter. Currently valid options are 'salmon', 'kallisto', or 'hisat2'"
-}
-
-/**
- * Make sure that at least one output format is enabled.
- */
-if (hisat2_enable == true && params.hisat2_keep_counts == false &&
-    params.hisat2_keep_fpkm == false && params.hisat2_keep_tpm == false) {
-  error "Error: at least one output format (raw, fpkm, tpm) must be enabled for hisat2"
-}
-
-if (hisat2_enable == false && params.hisat2_keep_counts == false && params.hisat2_keep_tpm == false) {
-  error "Error: at least one output format (raw, tpm) must be enabled for kallisto / salmon"
 }
 
 println """\
 
 Published Results:
 ---------------
-  Output Dir:                 ${params.outdir}/GEMs """
+  Output Dir:                 ${params.outdir}/GEMs"""
 
-// For the create_gem process we need to know if the FKPM, TMP and raw counts
-// should be published.
-publish_fpkm = false
-publish_tpm = false
-publish_raw = false
-publish_gem = false
-if (hisat2_enable && params.hisat2_keep_fpkm) {
-    publish_fpkm = true
+if (publish_fpkm) {
     println """  FPKM counts:                Yes"""
 }
-if ((hisat2_enable && params.hisat2_keep_counts) ||
-    (salmon_enable && params.salmon_keep_counts) ||
-    (kallisto_enable && params.kallisto_keep_counts)) {
-    publish_raw = true
+if (publish_raw) {
     println """  Raw counts:                 Yes"""
 }
-if ((hisat2_enable && params.hisat2_keep_tpm) ||
-    (salmon_enable && params.salmon_keep_tpm) ||
-    (kallisto_enable && params.kallisto_keep_tpm)) {
-    publish_tpm = true
+if (publish_tpm) {
     println """  TPM counts:                 Yes"""
 }
-
-if ((hisat2_enable && params.hisat2_keep_gem) ||
-    (salmon_enable && params.salmon_keep_gem) ||
-    (kallisto_enable && params.kallisto_keep_gem)) {
-    publish_gem = true
+if (publish_gem) {
     println """  GEM file:                   Yes"""
 }
 
-// Add a few lines after the header.
 println """\
 
 """
+
+
+
+/**
+ * Create the directories used for running batches
+ */
+file("${workflow.workDir}/GEMmaker").mkdir()
+file("${workflow.workDir}/GEMmaker/stage").mkdir()
+file("${workflow.workDir}/GEMmaker/process").mkdir()
+file("${workflow.workDir}/GEMmaker/done").mkdir()
+
+/**
+ * Make sure that the user hasn't changed the quantification
+ * tool on a resumed run.
+ */
+method_lock_file = file("${workflow.workDir}/GEMmaker/method")
+
+if (!method_lock_file.exists()) {
+    method_lock_file << "${params.pipeline}"
+}
+else {
+    reader = method_lock_file.newReader()
+    active_method = reader.readLine()
+    reader.close()
+    if (!active_method.equals(params.pipeline)) {
+        error "Error: previously, GEMmaker was set to run using the '${active_method}' tool, but it looks as though the configuration has changed to use the '${params.pipeline}' tool. GEMmaker only supports use of one tool at a time. If you would like to change the quantification tool please re-run GEMmaker in a new directory or remove the `work` and `results` directories prior to restarting GEMmaker to clear out unwanted results."
+    }
+}
+
+/**
+ * Check that required reference files exist
+ */
+if (hisat2_enable && file(params.hisat2_gtf_file).isEmpty()) {
+    error "Error: GTF reference file for Hisat2 does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.hisat2_gtf_file}' "
+}
+
+if (hisat2_enable && !file(params.hisat2_index_dir).isDirectory()) {
+    error "Error: hisat2 Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.hisat2_index_dir}'"
+}
+
+if (kallisto_enable && file(params.kallisto_index_path).isEmpty()) {
+    error "Error: Kallisto Index File does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.kallisto_index_path}'"
+}
+
+if (salmon_enable && !file(params.salmon_index_path).isDirectory()) {
+    error "Error: Salmon Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.salmon_index_path}'"
+}
+
+/**
+ * Check that other input files/directories exist
+ */
+if (hisat2_enable && !file(params.trimmomatic_clip_file).exists()) {
+    error "Error: The Trimmomatic clip file cannot be found at '${params.trimmomatic_clip_file}'."
+}
+
+if (params.sras && !file(params.sras).exists()) {
+    error "Error: The NCBI download sample file does not exists at '${params.sras}'. This file must be provided. If you are not downloading samples from NCBI SRA the file must exist but can be left empty."
+}
+
+if (params.skip_samples && !file(params.skip_samples).exists()) {
+    error "Error: The file containing samples to skip does not exists at '${params.skip_samples}'."
+}
+
+if (!file(params.failed_run_report_template).exists()) {
+    error "Error: The failed run report template cannot be found at '${params.failed_run_report_template}'. This file comes with GEMmaker and is required."
+}
+
+
 
 /**
  * Set the pattern for publishing downloaded FASTQ files
@@ -203,95 +287,6 @@ publish_pattern_Salmon_GA = params.salmon_keep_data
 publish_pattern_stringtie_gtf_and_ga = params.hisat2_keep_data
   ? "{*.ga, *.gtf}"
   : "{none}"
-
-
-
-// Create the directories we'll use for running
-// batches
-file("${workflow.workDir}/GEMmaker").mkdir()
-file("${workflow.workDir}/GEMmaker/stage").mkdir()
-file("${workflow.workDir}/GEMmaker/process").mkdir()
-file("${workflow.workDir}/GEMmaker/done").mkdir()
-
-// Make sure that once GEMmaker runs that the user doesn't try to change
-// quantification tools half way through.
-method_lock_file = file("${workflow.workDir}/GEMmaker/method")
-if (!method_lock_file.exists()) {
-    method_lock_file << "${params.pipeline}"
-}
-else {
-    reader = method_lock_file.newReader()
-    active_method = reader.readLine()
-    reader.close()
-    if (!active_method.equals(params.pipeline)) {
-        error "Error: previously, GEMmaker was set to run using the '${active_method}' tool, but it looks as though the configuration has changed to use the '${params.pipeline}' tool. GEMmaker only supports use of one tool at a time. If you would like to change the quantification tool please re-run GEMmaker in a new directory or remove the `work` and `results` directories prior to restarting GEMmaker to clear out unwanted results."
-    }
-}
-
-/**
- * Check to make sure that required reference files exist
- */
-// If Hisat2 was selected:
-if (hisat2_enable) {
-    gtfFile = file("${params.hisat2_gtf_file}")
-    if (gtfFile.isEmpty()) {
-        error "Error: GTF reference file for Hisat2 does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-        \nGEMmaker is missing the following file: '${params.hisat2_gtf_file}' "
-    }
-
-    hisat2_index_dir = file("${params.hisat2_index_dir}")
-    if (!hisat2_index_dir.isDirectory()) {
-        error "Error: hisat2 Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-        \nGEMmaker is missing the following file: '${params.hisat2_index_dir}'"
-    }
-}
-
-// If Kallisto was selected
-if (kallisto_enable) {
-    kallisto_index_file = file("${params.kallisto_index_path}")
-    if (kallisto_index_file.isEmpty()) {
-        error "Error: Kallisto Index File does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-        \nGEMmaker is missing the following file: '${params.kallisto_index_path}'"
-    }
-}
-
-// If Salmon was selected
-if (salmon_enable) {
-    salmon_index_dir = file("${params.salmon_index_path}")
-    if (!salmon_index_dir.isDirectory()) {
-        error "Error: Salmon Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
-        \nGEMmaker is missing the following file: '${params.salmon_index_path}'"
-    }
-}
-
-/**
- * Check that other input files/directories exist
- */
-if (hisat2_enable) {
-    clip_path = file("${params.trimmomatic_clip_file}")
-    if (!clip_path.exists()) {
-        error "Error: The Trimmomatic clip file cannot be found at '${params.trimmomatic_clip_file}'."
-    }
-}
-
-if (params.sras) {
-    sample_file = file("${params.sras}")
-    if (!sample_file.exists()) {
-        error "Error: The NCBI download sample file does not exists at '${params.sras}'. This file must be provided. If you are not downloading samples from NCBI SRA the file must exist but can be left empty."
-    }
-}
-
-if (params.skip_samples) {
-    skip_file = file("${params.skip_samples}")
-    if (!skip_file.exists()) {
-        error "Error: The file containing samples to skip does not exists at '${params.skip_samples}'."
-    }
-}
-
-failed_report_template = file("${params.failed_run_report_template}")
-if (!failed_report_template.exists()) {
-    error "Error: The failed run report template cannot be found at '${params.failed_run_report_template}'. This file comes with GEMmaker and is required."
-}
 
 
 
@@ -521,9 +516,9 @@ workflow {
      */
     COMBINED_SAMPLES
         .branch {
-            hisat2:   selected_tool == 0
-            kallisto: selected_tool == 1
-            salmon:   selected_tool == 2
+            hisat2:   hisat2_enable
+            kallisto: kallisto_enable
+            salmon:   salmon_enable
         }
         .set { SAMPLE_TOOL_BRANCHES }
 
