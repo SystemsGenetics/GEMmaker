@@ -54,17 +54,16 @@ else {
 /**
  * Make sure that at least one output format is enabled.
  */
-if (hisat2_enable == true && params.hisat2_keep_counts == false &&
-    params.hisat2_keep_fpkm == false && params.hisat2_keep_tpm == false) {
+if (hisat2_enable && !params.hisat2_keep_counts && !params.hisat2_keep_fpkm && !params.hisat2_keep_tpm) {
   error "Error: at least one output format (raw, fpkm, tpm) must be enabled for hisat2"
 }
 
-if (hisat2_enable == false && params.hisat2_keep_counts == false && params.hisat2_keep_tpm == false) {
+if (!hisat2_enable && !params.hisat2_keep_counts && !params.hisat2_keep_tpm) {
   error "Error: at least one output format (raw, tpm) must be enabled for kallisto / salmon"
 }
 
 /**
- * Determine which GEM formats should be published.
+ * Determine which output formats should be published.
  */
 publish_fpkm = false
 publish_tpm = false
@@ -186,7 +185,7 @@ file("${workflow.workDir}/GEMmaker/done").mkdir()
 method_lock_file = file("${workflow.workDir}/GEMmaker/method")
 
 if (!method_lock_file.exists()) {
-    method_lock_file << "${params.pipeline}"
+    method_lock_file << params.pipeline
 }
 else {
     reader = method_lock_file.newReader()
@@ -267,9 +266,16 @@ publish_pattern_samtools_index = params.hisat2_keep_bam
   : "{*.log}"
 
 /**
+ * Set the pattern for publishing stringtie GA and GTF files
+ */
+publish_pattern_stringtie_ga_gtf = params.hisat2_keep_data
+  ? "{*.ga, *.gtf}"
+  : "{none}"
+
+/**
  * Set the pattern for publishing Kallisto GA files
  */
-publish_pattern_Kallisto_GA = params.kallisto_keep_data
+publish_pattern_kallisto_ga = params.kallisto_keep_data
   ? "{*.ga,*.log}"
   : "{*.log}"
 
@@ -277,16 +283,9 @@ publish_pattern_Kallisto_GA = params.kallisto_keep_data
  * Set the pattern for publishing Salmon GA files
  * Publishes only log file used by multiqc if false
  */
-publish_pattern_Salmon_GA = params.salmon_keep_data
+publish_pattern_salmon_ga = params.salmon_keep_data
   ? "{*.ga}"
   : "{*.ga/aux_info/meta_info.json,*.ga/libParams/flenDist.txt}"
-
-/**
- * Set the pattern for publishing STRINGTIE GA and GTF files
- */
-publish_pattern_stringtie_gtf_and_ga = params.hisat2_keep_data
-  ? "{*.ga, *.gtf}"
-  : "{none}"
 
 
 
@@ -294,315 +293,253 @@ workflow {
     get_software_versions()
 
     /**
-     * Create value channels that can be reused
+     * Move any incomplete samples from previous run back to staging.
      */
-    if (hisat2_enable) {
-        HISAT2_INDEXES = Channel.fromPath("${params.hisat2_index_dir}/*").collect()
-        FASTA_ADAPTER = Channel.fromPath("${params.trimmomatic_clip_file}").collect()
-        GTF_FILE = Channel.fromPath("${params.hisat2_gtf_file}").collect()
-    }
-    else {
-        HISAT2_INDEXES = Channel.empty()
-        FASTA_ADAPTER = Channel.empty()
-        GTF_FILE = Channel.empty()
-    }
-
-    if (kallisto_enable) {
-        KALLISTO_INDEX = Channel.fromPath("${params.kallisto_index_path}").collect()
-    }
-    else {
-        KALLISTO_INDEX = Channel.empty()
-    }
-
-    if (salmon_enable) {
-        SALMON_INDEXES = Channel.fromPath("${params.salmon_index_path}").collect()
-    }
-    else {
-        SALMON_INDEXES = Channel.empty()
-    }
-
-    FAILED_RUN_TEMPLATE = Channel.fromPath("${params.failed_run_report_template}").collect()
-    MULTIQC_CONFIG = Channel.fromPath("${params.multiqc_config_file}").collect()
-    MULTIQC_CUSTOM_LOGO = Channel.fromPath("${params.multiqc_custom_logo}").collect()
-
-    if (params.skip_samples) {
-        SKIP_SAMPLES_FILE = Channel.fromPath("${params.skip_samples}")
-    }
-    else {
-        SKIP_SAMPLES_FILE = Channel.value('NA')
+    for (existing_file in file('work/GEMmaker/process/*')) {
+        existing_file.moveTo('work/GEMmaker/stage')
     }
 
     /**
-     * Local Sample Input.
-     * This checks the folder that the user has given
+     * Fetch the list of currently staged samples.
      */
-    if (params.input) {
-        LOCAL_SAMPLE_FILES_FOR_STAGING = Channel.fromFilePairs( "${params.input}", size: -1 )
-        LOCAL_SAMPLE_FILES_FOR_JOIN = Channel.fromFilePairs( "${params.input}", size: -1 )
-    }
-    else {
-        LOCAL_SAMPLE_FILES_FOR_STAGING = Channel.empty()
-        LOCAL_SAMPLE_FILES_FOR_JOIN = Channel.empty()
-    }
-
-    /**
-     * Remote fastq_run_id Input.
-     */
-    if (params.sras != "") {
-        SRR_FILE = Channel.fromPath("${params.sras}")
-    }
-    else {
-        SRR_FILE = Channel.empty()
-    }
-
-    retrieve_sra_metadata(SRR_FILE, SKIP_SAMPLES_FILE)
-    REMOTE_SAMPLES_LIST = retrieve_sra_metadata.out.REMOTE_SAMPLES_LIST
-    METADATA_FAILED_RUNS = retrieve_sra_metadata.out.METADATA_FAILED_RUNS
-
-    /**
-     * Splits the SRR2XRX mapping file
-     */
-
-    // First create a list of the remote and local samples
-    REMOTE_SAMPLES_LIST
-      .splitCsv()
-      .groupTuple(by: 1)
-      .map { [it[1], it[0].toString().replaceAll(/[\[\]\'\,]/,''), 'remote'] }
-      .set{REMOTE_SAMPLES_FOR_STAGING}
-
-    LOCAL_SAMPLE_FILES_FOR_STAGING
-      .map{ [it[0], it[1], 'local'] }
-      .set{LOCAL_SAMPLES_FOR_STAGING}
-
-    ALL_SAMPLES = REMOTE_SAMPLES_FOR_STAGING
-      .mix(LOCAL_SAMPLES_FOR_STAGING)
-
-    // Clean up any files left over from a previous run by moving them
-    // back to the stage directory.
-    existing_files = file('work/GEMmaker/process/*')
-    for (existing_file in existing_files) {
-      existing_file.moveTo('work/GEMmaker/stage')
-    }
-    existing_files = null
-
-    // Check to see if we have any files left in the
-    // stage directory. If so we need to keep processing
-    // samples
     staged_files = file('work/GEMmaker/stage/*')
 
-    // If a user added a sample to skip after a failed run, then
-    // we want to remove it from the stage folder.
+    /**
+     * Remove samples in the skip list from staging.
+     */
     if (params.skip_samples) {
-        skip_file = file("${params.skip_samples}")
+        skip_file = file(params.skip_samples)
         skip_file.eachLine { line ->
-            skip_sample = file('work/GEMmaker/stage/' + line.trim() + '.sample.csv')
+            skip_sample = file('work/GEMmaker/stage/${line.trim()}.sample.csv')
             if (skip_sample.exists()) {
                 skip_sample.delete()
             }
         }
     }
 
-    // If there are no staged files then the workflow will
-    // end because it only proceeds when there are samples
-    // in the processed directory.  However suppose the workflow
-    // fails on multiqc and needs to be resumed.  The
-    // following bootstraps the post-processsing portion of
-    // the workflow
-    if (staged_files.size() == 0) {
-        MULTIQC_BOOTSTRAP = Channel.fromList( [1] )
-        CREATE_GEM_BOOTSTRAP = Channel.fromList( [1] )
-    }
-    else {
-        MULTIQC_BOOTSTRAP = Channel.empty()
-        CREATE_GEM_BOOTSTRAP = Channel.empty()
-    }
-    staged_files = null
+    /**
+     * Trigger the post-processing steps (multiqc, create_gem)
+     * manually if there are no samples in staging, such as when
+     * resuming a run in which all samples have already been
+     * processed.
+     */
+    BOOSTRAP_SIGNAL = staged_files.size() == 0
+        ? Channel.fromList( [1] )
+        : Channel.empty()
 
-    write_stage_files(ALL_SAMPLES)
-    SAMPLES_READY_SIGNAL = write_stage_files.out.SAMPLES_READY_SIGNAL
+    /**
+     * Load local sample files.
+     */
+    LOCAL_SAMPLE_FILES = params.input
+        ? Channel.fromFilePairs( params.input, size: -1 )
+        : Channel.empty()
 
-    // When all batch files are created we need to then
-    // move the first file into the process directory.
-    SAMPLES_READY_SIGNAL.collect().set { FIRST_SAMPLE_START_SIGNAL }
+    LOCAL_SAMPLES_FOR_STAGING = LOCAL_SAMPLE_FILES
+        .map{ [it[0], it[1], 'local'] }
 
-    // TODO: move exec code into workflow
-    start_first_batch(FIRST_SAMPLE_START_SIGNAL)
+    /**
+     * Retrieve metadata for remote samples from NCBI SRA.
+     */
+    SRR_FILE = params.sras != ""
+        ? Channel.fromPath( params.sras )
+        : Channel.empty()
 
-    // Create the channel that will watch the process directory
-    // for new files. When a new sample file is added
-    // it will be read it and sent it through the workflow.
-    NEXT_SAMPLE = Channel
-       .watchPath("${workflow.workDir}/GEMmaker/process")
+    SKIP_SAMPLES_FILE = params.skip_samples
+        ? Channel.fromPath( params.skip_samples )
+        : Channel.fromList( [null] )
 
-    read_sample_file(NEXT_SAMPLE)
-    SAMPLE_FILE_CONTENTS = read_sample_file.out.SAMPLE_FILE_CONTENTS
+    retrieve_sra_metadata(SRR_FILE, SKIP_SAMPLES_FILE)
+    REMOTE_SAMPLES = retrieve_sra_metadata.out.REMOTE_SAMPLES
 
-    // Split our sample file contents into two different
-    // channels, one for remote samples and another for local.
-    SAMPLE_FILE_CONTENTS
-      .splitCsv(quote: '"')
-      .branch {
-          local: it[2] =~ /local/
-          remote: true
-      }
-      .set { SAMPLE_BRANCHES }
+    /**
+     * Split the SRR2XRX mapping file into remote samples
+     */
+    REMOTE_SAMPLES_FOR_STAGING = REMOTE_SAMPLES
+      .splitCsv()
+      .groupTuple(by: 1)
+      .map { [it[1], it[0].toString().replaceAll(/[\[\]\'\,]/,''), 'remote'] }
 
-    LOCAL_SAMPLES = SAMPLE_BRANCHES.local
-    REMOTE_SAMPLES = SAMPLE_BRANCHES.remote
+    /**
+     * Move all samples into staging
+     */
+    SAMPLES_FOR_STAGING = LOCAL_SAMPLES_FOR_STAGING.mix(REMOTE_SAMPLES_FOR_STAGING)
 
-    // Split our list of local samples into two pathways, onefor
-    // FastQC analysis and the other for read counting.  We don't
-    // do this for remote samples because they need downloading
-    // first.
-    LOCAL_SAMPLES = LOCAL_SAMPLES
-      .map {[it[0], 'hi']}
-      .mix(LOCAL_SAMPLE_FILES_FOR_JOIN)
+    write_stage_files(SAMPLES_FOR_STAGING)
+
+    /**
+     * Move the first batch of samples into processing
+     */
+    START_FIRST_BATCH_SIGNAL = write_stage_files.out.DONE_SIGNAL.collect()
+
+    start_first_batch(START_FIRST_BATCH_SIGNAL)
+
+    /**
+     * Watch the process directory for new samples. Each new
+     * sample is sent to different downstream processes based
+     * on whether it is a local or remote sample.
+     */
+    Channel.watchPath("${workflow.workDir}/GEMmaker/process")
+        .splitCsv(sep: '\t')
+        .branch {
+            local: it[2] =~ /local/
+            remote: true
+        }
+        .set { NEXT_SAMPLE }
+
+    /**
+     * Merge local sample staging data with sample files
+     */
+    LOCAL_SAMPLES = NEXT_SAMPLE.local
+      .map { [it[0], 'hi'] }
+      .mix(LOCAL_SAMPLE_FILES)
       .groupTuple(size: 2)
-      .map {[it[0], it[1][0]]}
+      .map { [it[0], it[1][0]] }
 
-    // Create the channels needed for signalling when
-    // samples are completed.
-    HISAT2_SAMPLE_COMPLETE_SIGNAL = Channel.empty()
-    KALLISTO_SAMPLE_COMPLETE_SIGNAL = Channel.empty()
-    SALMON_SAMPLE_COMPLETE_SIGNAL = Channel.empty()
-    SKIP_DOWNLOAD_SAMPLE = Channel.empty()
-    SKIP_DUMP_SAMPLE = Channel.empty()
-
-    // Create the channel that will collate all the signals
-    // and release a signal when the sample is complete
-    SAMPLE_COMPLETE_SIGNAL = Channel.empty().mix(
-        HISAT2_SAMPLE_COMPLETE_SIGNAL,
-        KALLISTO_SAMPLE_COMPLETE_SIGNAL,
-        SALMON_SAMPLE_COMPLETE_SIGNAL,
-        SKIP_DUMP_SAMPLE.map { it[0] },
-        SKIP_DOWNLOAD_SAMPLE.map { it[0] })
-
-    // TODO: move exec code into workflow
-    next_sample(SAMPLE_COMPLETE_SIGNAL)
+    /**
+     * Download, extract, and merge remote samples.
+     */
+    REMOTE_SAMPLES = NEXT_SAMPLE.remote
 
     download_runs(REMOTE_SAMPLES)
-    SRA_TO_EXTRACT = download_runs.out.SRA_TO_EXTRACT
-    SRA_TO_CLEAN = download_runs.out.SRA_TO_CLEAN
-    SKIP_DOWNLOAD_SAMPLE = download_runs.out.SKIP_DOWNLOAD_SAMPLE
-    DOWNLOAD_FAILED_RUNS = download_runs.out.DOWNLOAD_FAILED_RUNS
+    SRA_FILES = download_runs.out.SRA_FILES
 
-    fastq_dump(SRA_TO_EXTRACT)
-    DOWNLOADED_FASTQ_FOR_MERGING = fastq_dump.out.DOWNLOADED_FASTQ_FOR_MERGING
-    DOWNLOADED_FASTQ_FOR_CLEANING = fastq_dump.out.DOWNLOADED_FASTQ_FOR_CLEANING
-    SKIP_DUMP_SAMPLE = fastq_dump.out.SKIP_DUMP_SAMPLE
-    CLEAN_SRA_SIGNAL = fastq_dump.out.CLEAN_SRA_SIGNAL
-    FASTQ_DUMP_FAILED_RUNS = fastq_dump.out.FASTQ_DUMP_FAILED_RUNS
+    fastq_dump(SRA_FILES)
+    DOWNLOADED_FASTQ_FILES = fastq_dump.out.FASTQ_FILES
 
-    fastq_merge(DOWNLOADED_FASTQ_FOR_MERGING)
-    MERGED_SAMPLES_FOR_COUNTING = fastq_merge.out.MERGED_SAMPLES_FOR_COUNTING
-    MERGED_SAMPLES_FOR_FASTQC_1 = fastq_merge.out.MERGED_SAMPLES_FOR_FASTQC_1
-    MERGED_FASTQ_FOR_CLEANING = fastq_merge.out.MERGED_FASTQ_FOR_CLEANING
-    CLEAN_FASTQ_SIGNAL = fastq_merge.out.CLEAN_FASTQ_SIGNAL
+    fastq_merge(DOWNLOADED_FASTQ_FILES)
+    MERGED_FASTQ_FILES = fastq_merge.out.FASTQ_FILES
 
     /**
-     * This is where we combine samples from both local and remote sources.
+     * Combine local and remote samples.
      */
-    COMBINED_SAMPLES = LOCAL_SAMPLES.mix(MERGED_SAMPLES_FOR_FASTQC_1)
-
-    fastqc_1(COMBINED_SAMPLES)
-    FASTQC_1_OUTPUT = fastqc_1.out.FASTQC_1_OUTPUT
-    CLEAN_MERGED_FASTQ_FASTQC_SIGNAL = fastqc_1.out.CLEAN_MERGED_FASTQ_FASTQC_SIGNAL
+    SAMPLES = LOCAL_SAMPLES.mix(MERGED_FASTQ_FILES)
 
     /**
-     * THIS IS WHERE THE SPLIT HAPPENS FOR hisat2 vs Kallisto vs Salmon
-     *
-     * Information about "choice" split operator (to be deleted before final
-     * GEMmaker release)
+     * Perform fastqc analysis on all samples.
      */
-    COMBINED_SAMPLES
-        .branch {
-            hisat2:   hisat2_enable
-            kallisto: kallisto_enable
-            salmon:   salmon_enable
-        }
-        .set { SAMPLE_TOOL_BRANCHES }
+    fastqc_1(SAMPLES)
 
-    HISAT2_CHANNEL   = SAMPLE_TOOL_BRANCHES.hisat2
-    KALLISTO_CHANNEL = SAMPLE_TOOL_BRANCHES.kallisto
-    SALMON_CHANNEL   = SAMPLE_TOOL_BRANCHES.salmon
+    /**
+     * Process samples with hisat2 if enabled.
+     */
+    if (hisat2_enable) {
+        // execute hisat2 pipeline
+        HISAT2_INDEXES = Channel.fromPath( "${params.hisat2_index_dir}/*" ).collect()
+        FASTA_ADAPTER = Channel.fromPath( params.trimmomatic_clip_file ).collect()
+        GTF_FILE = Channel.fromPath( params.hisat2_gtf_file ).collect()
 
-    kallisto(KALLISTO_CHANNEL, KALLISTO_INDEX)
-    KALLISTO_GA = kallisto.out.KALLISTO_GA
-    KALLISTO_GA_TO_CLEAN = kallisto.out.KALLISTO_GA_TO_CLEAN
-    CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL = kallisto.out.CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL
-    KALLISTO_LOG = kallisto.out.KALLISTO_LOG
+        trimmomatic(SAMPLES, FASTA_ADAPTER)
+        TRIMMED_FASTQ_FILES = trimmomatic.out.FASTQ_FILES
 
-    kallisto_tpm(KALLISTO_GA)
-    KALLISTO_TPM = kallisto_tpm.out.KALLISTO_TPM
-    KALLISTO_RAW = kallisto_tpm.out.KALLISTO_RAW
-    CLEAN_KALLISTO_GA_SIGNAL = kallisto_tpm.out.CLEAN_KALLISTO_GA_SIGNAL
-    KALLISTO_SAMPLE_COMPLETE_SIGNAL = kallisto_tpm.out.KALLISTO_SAMPLE_COMPLETE_SIGNAL
+        fastqc_2(TRIMMED_FASTQ_FILES)
 
-    salmon(SALMON_CHANNEL, SALMON_INDEXES)
-    SALMON_GA = salmon.out.SALMON_GA
-    SALMON_GA_LOG = salmon.out.SALMON_GA_LOG
-    SALMON_GA_TO_CLEAN = salmon.out.SALMON_GA_TO_CLEAN
-    CLEAN_MERGED_FASTQ_SALMON_SIGNAL = salmon.out.CLEAN_MERGED_FASTQ_SALMON_SIGNAL
+        hisat2(TRIMMED_FASTQ_FILES, HISAT2_INDEXES)
+        SAM_FILES = hisat2.out.SAM_FILES
+        MERGED_FASTQ_DONE = hisat2.out.DONE_SIGNAL
 
-    salmon_tpm(SALMON_GA)
-    SALMON_TPM = salmon_tpm.out.SALMON_TPM
-    SALMON_RAW = salmon_tpm.out.SALMON_RAW
-    CLEAN_SALMON_GA_SIGNAL = salmon_tpm.out.CLEAN_SALMON_GA_SIGNAL
-    SALMON_SAMPLE_COMPLETE_SIGNAL = salmon_tpm.out.SALMON_SAMPLE_COMPLETE_SIGNAL
+        samtools_sort(SAM_FILES)
+        BAM_FILES = samtools_sort.out.BAM_FILES
 
-    trimmomatic(HISAT2_CHANNEL, FASTA_ADAPTER)
-    TRIMMED_SAMPLES_FOR_FASTQC = trimmomatic.out.TRIMMED_SAMPLES_FOR_FASTQC
-    TRIMMED_SAMPLES_FOR_HISAT2 = trimmomatic.out.TRIMMED_SAMPLES_FOR_HISAT2
-    TRIMMED_FASTQ_FOR_CLEANING = trimmomatic.out.TRIMMED_FASTQ_FOR_CLEANING
-    TRIMMED_SAMPLE_LOG = trimmomatic.out.TRIMMED_SAMPLE_LOG
+        samtools_index(BAM_FILES)
+        INDEXED_BAM_FILES = samtools_index.out.BAM_FILES
 
-    fastqc_2(TRIMMED_SAMPLES_FOR_FASTQC)
-    FASTQC_2_OUTPUT = fastqc_2.out.FASTQC_2_OUTPUT
-    CLEAN_TRIMMED_FASTQ_FASTQC_SIGNAL = fastqc_2.out.CLEAN_TRIMMED_FASTQ_FASTQC_SIGNAL
+        stringtie(INDEXED_BAM_FILES, GTF_FILE)
+        STRINGTIE_FILES = stringtie.out.GA_GTF_FILES
 
-    hisat2(TRIMMED_SAMPLES_FOR_HISAT2, HISAT2_INDEXES)
-    HISAT2_SAM_FILE = hisat2.out.HISAT2_SAM_FILE
-    HISAT2_SAM_LOG = hisat2.out.HISAT2_SAM_LOG
-    SAM_FOR_CLEANING = hisat2.out.SAM_FOR_CLEANING
-    CLEAN_TRIMMED_FASTQ_HISAT_SIGNAL = hisat2.out.CLEAN_TRIMMED_FASTQ_HISAT_SIGNAL
-    CLEAN_MERGED_FASTQ_HISAT_SIGNAL = hisat2.out.CLEAN_MERGED_FASTQ_HISAT_SIGNAL
+        hisat2_fpkm_tpm(STRINGTIE_FILES)
+        RAW_FILES = hisat2_fpkm_tpm.out.RAW_FILES
+        TPM_FILES = hisat2_fpkm_tpm.out.TPM_FILES
+        FPKM_FILES = hisat2_fpkm_tpm.out.FPKM_FILES
 
-    samtools_sort(HISAT2_SAM_FILE)
-    SORTED_FOR_INDEX = samtools_sort.out.SORTED_FOR_INDEX
-    BAM_FOR_CLEANING = samtools_sort.out.BAM_FOR_CLEANING
-    CLEAN_SAM_SIGNAL = samtools_sort.out.CLEAN_SAM_SIGNAL
+        // prepare channels for downstream processes
+        COMPLETED_SAMPLES = hisat2_fpkm_tpm.out.DONE_SIGNAL
 
-    samtools_index(SORTED_FOR_INDEX)
-    BAM_INDEXED_FOR_STRINGTIE = samtools_index.out.BAM_INDEXED_FOR_STRINGTIE
-    BAI_INDEXED_FILE = samtools_index.out.BAI_INDEXED_FILE
-    BAM_INDEXED_LOG = samtools_index.out.BAM_INDEXED_LOG
+        MULTIQC_FILES = Channel.empty()
+            .concat(
+                fastqc_1.out.REPORTS.flatten(),
+                trimmomatic.out.LOGS,
+                fastqc_2.out.REPORTS.flatten(),
+                hisat2.out.LOGS,
+                samtools_index.out.LOGS)
+    }
 
-    stringtie(BAM_INDEXED_FOR_STRINGTIE, GTF_FILE)
-    STRINGTIE_GTF_FOR_FPKM = stringtie.out.STRINGTIE_GTF_FOR_FPKM
-    STRINGTIE_GTF_FOR_CLEANING = stringtie.out.STRINGTIE_GTF_FOR_CLEANING
-    CLEAN_BAM_SIGNAL = stringtie.out.CLEAN_BAM_SIGNAL
+    /**
+     * Process samples with kallisto if enabled.
+     */
+    if (kallisto_enable) {
+        // execute kallisto pipeline
+        KALLISTO_INDEX = Channel.fromPath( params.kallisto_index_path ).collect()
 
-    hisat2_fpkm_tpm(STRINGTIE_GTF_FOR_FPKM)
-    HISAT2_FPKM = hisat2_fpkm_tpm.out.HISAT2_FPKM
-    HISAT2_TPM = hisat2_fpkm_tpm.out.HISAT2_TPM
-    HISAT2_RAW = hisat2_fpkm_tpm.out.HISAT2_RAW
-    CLEAN_STRINGTIE_SIGNAL = hisat2_fpkm_tpm.out.CLEAN_STRINGTIE_SIGNAL
-    HISAT2_SAMPLE_COMPLETE_SIGNAL = hisat2_fpkm_tpm.out.HISAT2_SAMPLE_COMPLETE_SIGNAL
+        kallisto(SAMPLES, KALLISTO_INDEX)
+        GA_FILES = kallisto.out.GA_FILES
+        MERGED_FASTQ_DONE = kallisto.out.DONE_SIGNAL
+
+        kallisto_tpm(GA_FILES)
+        RAW_FILES = kallisto_tpm.out.RAW_FILES
+        TPM_FILES = kallisto_tpm.out.TPM_FILES
+        FPKM_FILES = Channel.empty()
+
+        // prepare channels for downstream processes
+        COMPLETED_SAMPLES = kallisto_tpm.out.DONE_SIGNAL
+
+        MULTIQC_FILES = Channel.empty()
+            .concat(
+                fastqc_1.out.REPORTS.flatten(),
+                kallisto.out.LOGS)
+    }
+
+    /**
+     * Process samples with salmon if enabled.
+     */
+    if (salmon_enable) {
+        // execute salmon pipeline
+        SALMON_INDEXES = Channel.fromPath( params.salmon_index_path ).collect()
+
+        salmon(SAMPLES, SALMON_INDEXES)
+        GA_FILES = salmon.out.GA_FILES
+        MERGED_FASTQ_DONE = salmon.out.DONE_SIGNAL
+
+        salmon_tpm(GA_FILES)
+        RAW_FILES = salmon_tpm.out.RAW_FILES
+        TPM_FILES = salmon_tpm.out.TPM_FILES
+        FPKM_FILES = Channel.empty()
+
+        // prepare channels for downstream processes
+        COMPLETED_SAMPLES = salmon_tpm.out.DONE_SIGNAL
+
+        MULTIQC_FILES = Channel.empty()
+            .concat(
+                fastqc_1.out.REPORTS.flatten(),
+                salmon.out.LOGS)
+    }
+
+    /**
+     * Move a new sample into processing when a current
+     * sample is completed or skipped.
+     */
+    NEXT_SAMPLE_SIGNAL = Channel.empty()
+        .mix(
+            COMPLETED_SAMPLES.map { it[0] },
+            download_runs.out.FAILED_SAMPLES.map { it[0] },
+            fastq_dump.out.FAILED_SAMPLES.map { it[0] })
+
+    next_sample(NEXT_SAMPLE_SIGNAL)
 
     /**
      * The multiqc process should run when all samples have
      * completed or if on a resume when the bootstrap signal is
      * received.
      */
-    MULTIQC_RUN = SAMPLE_COMPLETE_SIGNAL.mix(MULTIQC_BOOTSTRAP)
+    if ( params.publish_multiqc_report ) {
+        MULTIQC_RUN = BOOSTRAP_SIGNAL.mix(COMPLETED_SAMPLES)
+        MULTIQC_CONFIG = Channel.fromPath( params.multiqc_config_file )
+        MULTIQC_CUSTOM_LOGO = Channel.fromPath( params.multiqc_custom_logo )
 
-    FASTQC_1_OUTPUT.flatten()
-      .concat(FASTQC_2_OUTPUT.flatten(), KALLISTO_LOG, SALMON_GA_LOG, HISAT2_SAM_LOG, BAM_INDEXED_LOG, TRIMMED_SAMPLE_LOG).set {MULTIQC_FILES}
-
-    if ( params.publish_multiqc_report == true ) {
-        multiqc(MULTIQC_RUN.collect(), MULTIQC_CONFIG, MULTIQC_CUSTOM_LOGO, MULTIQC_FILES.collect())
-        MULTIQC_DATA = multiqc.out.MULTIQC_DATA
-        MULTIQC_REPORT = multiqc.out.MULTIQC_REPORT
+        multiqc(
+            MULTIQC_RUN.collect(),
+            MULTIQC_CONFIG.collect(),
+            MULTIQC_CUSTOM_LOGO.collect(),
+            MULTIQC_FILES.collect())
     }
 
     /**
@@ -610,141 +547,171 @@ workflow {
      * completed or if on a resume when the bootstrap signal is
      * received.
      */
-    CREATE_GEM_RUN = SAMPLE_COMPLETE_SIGNAL.mix(CREATE_GEM_BOOTSTRAP)
-    SALMON_RAW
-      .concat(SALMON_TPM, KALLISTO_RAW, KALLISTO_TPM, HISAT2_RAW, HISAT2_TPM, HISAT2_FPKM).set {QUANT_FILES}
+    if ( publish_gem ) {
+        CREATE_GEM_RUN = BOOSTRAP_SIGNAL.mix(COMPLETED_SAMPLES)
+        CREATE_GEM_FILES = Channel.empty()
+            .concat(
+                RAW_FILES,
+                TPM_FILES,
+                FPKM_FILES)
 
-    if ( publish_gem == true ) {
-        create_gem(CREATE_GEM_RUN.collect(), QUANT_FILES.collect())
-        GEM_FILES = create_gem.out.GEM_FILES
+        create_gem(
+            CREATE_GEM_RUN.collect(),
+            CREATE_GEM_FILES.collect())
     }
 
-    failed_run_report(METADATA_FAILED_RUNS, DOWNLOAD_FAILED_RUNS.collect(), FASTQ_DUMP_FAILED_RUNS.collect(), FAILED_RUN_TEMPLATE)
-    FAILED_RUN_REPORT = failed_run_report.out.FAILED_RUN_REPORT
+    /**
+     * Create a report of failed samples.
+     */
+    FAILED_RUNS = Channel.empty()
+        .mix(
+            retrieve_sra_metadata.out.FAILED_RUNS,
+            download_runs.out.FAILED_RUNS.collect(),
+            fastq_dump.out.FAILED_RUNS.collect())
+    FAILED_RUN_TEMPLATE = Channel.fromPath( params.failed_run_report_template )
 
-    SRA_TO_CLEAN
-      .mix(CLEAN_SRA_SIGNAL)
-      .groupTuple(size: 2)
-      .set { CLEAN_SRA_READY }
+    failed_run_report(
+        FAILED_RUNS,
+        FAILED_RUN_TEMPLATE.collect())
 
-    if ( params.keep_sra == false ) {
+    /**
+     * CLEANING INTERMEDIATE FILES
+     *
+     * Intermediate files should be deleted once they are no
+     * longer needed. However, if an intermediate file is an
+     * input to a task, deleting the file will invalidate
+     * Nextflow's cache and cause the task to be re-run, even
+     * if the sample was already processed.
+     *
+     * To trick Nextflow, we truncate the file to zero size
+     * while preserving the original size and read/write
+     * timestamps in the file's metadata.
+     *
+     * We determine when to clean the files from a particular
+     * channel by combining the channel with the "done" signals
+     * of every process that uses it. For example, if a channel
+     * is used by two downstream processes, we combine the source
+     * channel with the two corresponding done signals, and then
+     * use groupTuple(size: 3) to ensure that signals from all three
+     * channels are received for a file before deleting it.
+     *
+     * The done signal should include the sample_id and an arbitrary
+     * value (e.g. val(1)) to ensure that the total number of signals
+     * for a file can be counted.
+     */
+
+    /**
+     * Clean sra files after they are used by fastq_dump.
+     */
+    if ( !params.keep_sra ) {
+        CLEAN_SRA_READY = SRA_FILES
+            .mix(fastq_dump.out.DONE_SIGNAL)
+            .groupTuple(size: 2)
+            .map { [it[0], it[1].flatten().findAll { v -> v != 1 }] }
+
         clean_sra(CLEAN_SRA_READY)
     }
 
     /**
-     * PROCESSES FOR CLEANING LARGE FILES
-     *
-     * Nextflow doesn't allow files to be removed from the
-     * work directories that are used in Channels.  If it
-     * detects a different timestamp or change in file
-     * size than what was cached it will rerun the process.
-     * To trick Nextflow we will truncate the file to a
-     * sparce file of size zero but masquerading as its
-     * original size, we will also reset the original modify
-     * and access times.
+     * Clean downloaded fastq files after they are used by fastq_merge.
      */
+    if ( !params.keep_retrieved_fastq ) {
+        CLEAN_DOWNLOADED_FASTQ_READY = DOWNLOADED_FASTQ_FILES
+            .mix(fastq_merge.out.DONE_SIGNAL)
+            .groupTuple(size: 2)
+            .map { [it[0], it[1].flatten().findAll { v -> v != 1 }] }
 
-    FCLEAN = DOWNLOADED_FASTQ_FOR_CLEANING.mix(CLEAN_FASTQ_SIGNAL)
-    FCLEAN.groupTuple(size: 2).set { FASTQ_CLEANUP_READY }
-
-    if ( params.keep_retrieved_fastq == false ) {
-        clean_fastq(FASTQ_CLEANUP_READY)
+        clean_downloaded_fastq(CLEAN_DOWNLOADED_FASTQ_READY)
     }
 
     /**
-     * The "signal" to clean up the merged FASTQ files consists of:
-     *
-     *   1. The list of FASTQ files in the work directory to clean up. This comes
-     *      from the MERGED_FASTQ_FOR_CLEANING channel.
-     *   2. The signal from the alignment tool that it is complete. This comes
-     *      from one of these channels:  CLEAN_MERGED_FASTQ_HISAT_SIGNAL,
-     *      CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL, CLEAN_MERGED_FASTQ_SALMON_SIGNAL.
-     *   3. The signal from the FastQC tool that it is complete. This comes
-     *      from this signal: CLEAN_MERGED_FASTQ_FASTQC_SIGNAL.
-     *
-     * Each element from these channels is a list (or tuple), where the key
-     * (first element) is the sample ID.  We use a groupTuple to ensure that
-     * three elements are combined together into a single tuple that gets emited
-     * into the MERGED_FASTQ_CLEANUP_READY channel once all 3 signals are received.
-     * Only when all the tuple has all three values is it emited.
-     *
-     * The first element of the tuple should be the files because they should
-     * always come first via the MERGED_FASTQ_FOR_CLEANING channel.
+     * Clean merged fastq files after they are used by fastqc_1 and
+     * the quantification tool.
      */
-    MFCLEAN = MERGED_FASTQ_FOR_CLEANING.mix(CLEAN_MERGED_FASTQ_HISAT_SIGNAL, CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL, CLEAN_MERGED_FASTQ_SALMON_SIGNAL, CLEAN_MERGED_FASTQ_FASTQC_SIGNAL)
-    MFCLEAN.groupTuple(size: 3).set { MERGED_FASTQ_CLEANUP_READY }
+    if ( !params.keep_retrieved_fastq ) {
+        CLEAN_MERGED_FASTQ_READY = MERGED_FASTQ_FILES
+            .mix(
+                fastqc_1.out.DONE_SIGNAL,
+                MERGED_FASTQ_DONE)
+            .groupTuple(size: 3)
+            .map { [it[0], it[1].flatten().findAll { v -> v != 1 }] }
 
-    if ( params.keep_retrieved_fastq == false ) {
-        clean_merged_fastq(MERGED_FASTQ_CLEANUP_READY)
+        clean_merged_fastq(CLEAN_MERGED_FASTQ_READY)
     }
 
     /**
-     * Merge the Trimmomatic samples with Hisat's signal and FastQC signal. Once
-     * both tools send the signal that they are done with the trimmed file it can
-     * be removed.
+     * Clean trimmed fastq files after they are used by fastqc_2 and hisat2.
      */
-    TRHIMIX = TRIMMED_FASTQ_FOR_CLEANING.mix(CLEAN_TRIMMED_FASTQ_HISAT_SIGNAL, CLEAN_TRIMMED_FASTQ_FASTQC_SIGNAL)
-    TRHIMIX.groupTuple(size: 3).set { TRIMMED_FASTQ_CLEANUP_READY }
+    if ( hisat2_enable && !params.trimmomatic_keep_trimmed_fastq ) {
+        CLEAN_TRIMMED_FASTQ_READY = TRIMMED_FASTQ_FILES
+            .mix(
+                fastqc_2.out.DONE_SIGNAL,
+                hisat2.out.DONE_SIGNAL)
+            .groupTuple(size: 3)
+            .map { [it[0], it[1].flatten().findAll { v -> v != 1 }] }
 
-    if ( params.trimmomatic_keep_trimmed_fastq == false ) {
-        clean_trimmed_fastq(TRIMMED_FASTQ_CLEANUP_READY)
+        clean_trimmed_fastq(CLEAN_TRIMMED_FASTQ_READY)
     }
 
     /**
-     * Merge the HISAT sam file with samtools_sort signal that it is
-     * done so that we can remove these files.
+     * Clean sam files after they are used by samtools_sort.
      */
-    HISSMIX = SAM_FOR_CLEANING.mix(CLEAN_SAM_SIGNAL)
-    HISSMIX.groupTuple(size: 2).set { SAM_CLEANUP_READY }
+    if ( hisat2_enable && !params.hisat2_keep_sam ) {
+        CLEAN_SAM_READY = SAM_FILES
+            .mix(samtools_sort.out.DONE_SIGNAL)
+            .groupTuple(size: 2)
+            .map { [it[0], it[1].flatten().findAll { v -> v != 1 }] }
 
-    if ( params.hisat2_keep_sam == false ) {
-        clean_sam(SAM_CLEANUP_READY)
+        clean_sam(CLEAN_SAM_READY)
     }
 
     /**
-     * Merge the samtools_sort bam file with stringtie signal that it is
-     * done so that we can remove these files.
+     * Clean bam files after they are used by stringtie.
      */
-    SSSTMIX = BAM_FOR_CLEANING.mix(CLEAN_BAM_SIGNAL)
-    SSSTMIX.groupTuple(size: 2).set { BAM_CLEANUP_READY }
+    if ( hisat2_enable && !params.hisat2_keep_bam ) {
+        CLEAN_BAM_READY = BAM_FILES
+            .mix(stringtie.out.DONE_SIGNAL)
+            .groupTuple(size: 2)
+            .map { [it[0], it[1].flatten().findAll { v -> v != 1 }] }
 
-    if ( params.hisat2_keep_bam == false ) {
-        clean_bam(BAM_CLEANUP_READY)
+        clean_bam(CLEAN_BAM_READY)
     }
 
     /**
-     * Merge the Kallisto .ga file with the clean kallisto ga signal so that we can
-     * remove the .ga file after it has been used
+     * Clean stringtie files after they are used by hisat2_fpkm_tpm.
      */
-    KGAMIX = KALLISTO_GA_TO_CLEAN.mix(CLEAN_KALLISTO_GA_SIGNAL)
-    KGAMIX.groupTuple(size: 2).set { KALLISTO_GA_CLEANUP_READY }
+    if ( hisat2_enable && !params.hisat2_keep_data ) {
+        CLEAN_STRINGTIE_READY = STRINGTIE_FILES
+            .mix(hisat2_fpkm_tpm.out.DONE_SIGNAL)
+            .groupTuple(size: 2)
+            .map { [it[0], it[1].flatten().findAll { v -> v != 1 }] }
 
-    if ( params.kallisto_keep_data == false ) {
-        clean_kallisto_ga(KALLISTO_GA_CLEANUP_READY)
+        clean_stringtie_ga(CLEAN_STRINGTIE_READY)
     }
 
     /**
-     * Merge the Salmon .ga file with the clean salmon ga signal so that we can
-     * remove the .ga file after it has been used
+     * Clean kallisto files after they are used by kallisto_tpm.
      */
-    SGAMIX = SALMON_GA_TO_CLEAN.mix(CLEAN_SALMON_GA_SIGNAL)
-    SGAMIX.groupTuple(size: 2).set { SALMON_GA_CLEANUP_READY }
+    if ( kallisto_enable && !params.kallisto_keep_data ) {
+        CLEAN_KALLISTO_GA_READY = GA_FILES
+            .mix(kallisto_tpm.out.DONE_SIGNAL)
+            .groupTuple(size: 2)
+            .map { [it[0], it[1][0]] }
 
-    if ( params.salmon_keep_data == false ) {
-        clean_salmon_ga(SALMON_GA_CLEANUP_READY)
+        clean_kallisto_ga(CLEAN_KALLISTO_GA_READY)
     }
 
     /**
-     * Merge the Salmon .ga file with the clean salmon ga signal so that we can
-     * remove the .ga file after it has been used
+     * Clean salmon files after they are used by salmon_tpm.
      */
-    SMIX = STRINGTIE_GTF_FOR_CLEANING.mix(CLEAN_STRINGTIE_SIGNAL)
-    SMIX.groupTuple(size: 2).set { STRINGTIE_CLEANUP_READY }
+    if ( salmon_enable && !params.salmon_keep_data ) {
+        CLEAN_SALMON_GA_READY = GA_FILES
+            .mix(salmon_tpm.out.DONE_SIGNAL)
+            .groupTuple(size: 2)
+            .map { [it[0], it[1].flatten().findAll { v -> v != 1 }] }
 
-    if ( params.hisat2_keep_data == false ) {
-        clean_stringtie_ga(STRINGTIE_CLEANUP_READY)
+        clean_salmon_ga(CLEAN_SALMON_GA_READY)
     }
-
 }
 
 
@@ -794,11 +761,11 @@ process retrieve_sra_metadata {
 
   input:
     path(srr_file)
-    path(skip_samples)
+    path(skip_file)
 
   output:
-    stdout emit: REMOTE_SAMPLES_LIST
-    path("failed_runs.metadata.txt"), emit: METADATA_FAILED_RUNS
+    stdout emit: REMOTE_SAMPLES
+    path("failed_runs.metadata.txt"), emit: FAILED_RUNS
 
   script:
   """
@@ -807,15 +774,14 @@ process retrieve_sra_metadata {
   retrieve_sra_metadata.py \
       --run_id_file ${srr_file} \
       --meta_dir ${workflow.workDir}/GEMmaker \
-      ${skip_samples != 'NA' ? "--skip_file ${skip_samples}" : ""}
+      ${skip_file != null ? "--skip_file ${skip_file}" : ""}
   """
 }
 
 
 
 /**
- * Writes the batch files and stores them in the
- * stage directory.
+ * Create a stage file for every sample.
  */
 process write_stage_files {
   tag { sample_id }
@@ -825,30 +791,28 @@ process write_stage_files {
     tuple val(sample_id), val(run_files_or_ids), val(sample_type)
 
   output:
-    val(1), emit: SAMPLES_READY_SIGNAL
+    val(1), emit: DONE_SIGNAL
 
   exec:
-    // Get any samples to skip
+    // Get list of samples to skip.
     skip_samples = []
     if (params.skip_samples) {
-        skip_file = file("${params.skip_samples}")
+        skip_file = file(params.skip_samples)
         skip_file.eachLine { line ->
             skip_samples << line.trim()
         }
     }
 
-    // Only stage files that should not be skipped.
+    // Stage samples that are not in the skip list.
     if (skip_samples.intersect([sample_id]) == []) {
-      // Create a file for each samples.
-      sample_file = file("${workflow.workDir}/GEMmaker/stage/" + sample_id + '.sample.csv')
+      sample_file = file("${workflow.workDir}/GEMmaker/stage/${sample_id}.sample.csv")
       sample_file.withWriter {
-        // If this is a local file.
         if (sample_type.equals('local')) {
-          it.writeLine '"' + sample_id + '","' + run_files_or_ids.join('::') + '","' + sample_type + '"'
+          it.writeLine "${sample_id}\t${run_files_or_ids.join('::')}\t${sample_type}"
         }
-        // If this is a remote file.
-        else {
-          it.writeLine '"' + sample_id + '","' + run_files_or_ids + '","' + sample_type + '"'
+
+        else if (sample_type.equals('remote')) {
+          it.writeLine "${sample_id}\t${run_files_or_ids}\t${sample_type}"
         }
       }
     }
@@ -875,53 +839,14 @@ process start_first_batch {
       for (sample in start_samples) {
         sample.moveTo("${workflow.workDir}/GEMmaker/process")
       }
-   }
-   // If there are no staged files then we need to
-   // close out the channels so we don't hang.
-   else {
-      // NEXT_SAMPLE.close()
-      // HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
-      // KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
-      // SALMON_SAMPLE_COMPLETE_SIGNAL.close()
-      // SAMPLE_COMPLETE_SIGNAL.close()
-      // MULTIQC_BOOTSTRAP.close()
-      // CREATE_GEM_BOOTSTRAP.close()
-      // SKIP_DUMP_SAMPLE.close()
-      // SKIP_DOWNLOAD_SAMPLE.close()
-      println "There are no staged samples.  Moving on to post-processing"
-   }
+    }
 }
 
 
 
 /**
- * Opens the sample file and prints it's contents to
- * STDOUT so that the samples can be caught in a new
- * channel and start processing.
- */
-process read_sample_file {
-  tag { sample_file }
-  label "local"
-  cache false
-
-  input:
-    path(sample_file)
-
-  output:
-    stdout emit: SAMPLE_FILE_CONTENTS
-
-  script:
-  """
-  cat ${sample_file}
-  """
-}
-
-
-
-/**
- * Handles the end of a sample by moving a new sample
- * file into the process directory which triggers
- * the NEXT_SAMPLE.watchPath channel.
+ * Move a new sample into the process directory when
+ * a previous sample is completed.
  */
 process next_sample {
   tag { sample_id }
@@ -934,31 +859,13 @@ process next_sample {
 
   exec:
     // Move the completed file into the done folder.
-    sample_file = file("${workflow.workDir}/GEMmaker/process/" + sample_id + '.sample.csv')
+    sample_file = file("${workflow.workDir}/GEMmaker/process/${sample_id}.sample.csv")
     sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
 
-    // Move the next sample file into the processing directory
-    // which will trigger the start of the next sample.
+    // Move the next sample file into the processing directory.
     staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
     if (staged_files.size() > 0) {
         staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
-    }
-    // If there are no more staged files, then check if there are no more
-    // files in processing. If so, then close out all the channels.
-    else {
-        processing_files = file("${workflow.workDir}/GEMmaker/process/*.sample.csv")
-        if (processing_files.size() == 0) {
-            // NEXT_SAMPLE.close()
-            // SAMPLE_COMPLETE_SIGNAL.close()
-            // HISAT2_SAMPLE_COMPLETE_SIGNAL.close()
-            // KALLISTO_SAMPLE_COMPLETE_SIGNAL.close()
-            // SALMON_SAMPLE_COMPLETE_SIGNAL.close()
-            // SAMPLE_COMPLETE_SIGNAL.close()
-            // MULTIQC_BOOTSTRAP.close()
-            // CREATE_GEM_BOOTSTRAP.close()
-            // SKIP_DUMP_SAMPLE.close()
-            // SKIP_DOWNLOAD_SAMPLE.close()
-        }
     }
 }
 
@@ -977,10 +884,9 @@ process download_runs {
     tuple val(sample_id), val(run_ids), val(type)
 
   output:
-    tuple val(sample_id), path("*.sra"), optional: true, emit: SRA_TO_EXTRACT
-    tuple val(sample_id), path("*.sra"), optional: true, emit: SRA_TO_CLEAN
-    tuple val(sample_id), path("sample_failed"), optional: true, emit: SKIP_DOWNLOAD_SAMPLE
-    tuple val(sample_id), path('*.failed_runs.download.txt'), emit: DOWNLOAD_FAILED_RUNS
+    tuple val(sample_id), path("*.sra"), optional: true, emit: SRA_FILES
+    tuple val(sample_id), path("sample_failed"), optional: true, emit: FAILED_SAMPLES
+    tuple val(sample_id), path('*.failed_runs.download.txt'), emit: FAILED_RUNS
 
   script:
   """
@@ -1007,11 +913,10 @@ process fastq_dump {
     tuple val(sample_id), path(sra_files)
 
   output:
-    tuple val(sample_id), path("*.fastq"), optional: true, emit: DOWNLOADED_FASTQ_FOR_MERGING
-    tuple val(sample_id), path("*.fastq"), optional: true, emit: DOWNLOADED_FASTQ_FOR_CLEANING
-    tuple val(sample_id), path("sample_failed"), optional: true, emit: SKIP_DUMP_SAMPLE
-    tuple val(sample_id), val(1), emit: CLEAN_SRA_SIGNAL
-    tuple val(sample_id), path('*.failed_runs.fastq-dump.txt'), emit: FASTQ_DUMP_FAILED_RUNS
+    tuple val(sample_id), path("*.fastq"), optional: true, emit: FASTQ_FILES
+    tuple val(sample_id), path("sample_failed"), optional: true, emit: FAILED_SAMPLES
+    tuple val(sample_id), path('*.failed_runs.fastq-dump.txt'), emit: FAILED_RUNS
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1034,10 +939,8 @@ process fastq_merge {
     tuple val(sample_id), path(fastq_files)
 
   output:
-    tuple val(sample_id), path("${sample_id}_?.fastq"), emit: MERGED_SAMPLES_FOR_COUNTING
-    tuple val(sample_id), path("${sample_id}_?.fastq"), emit: MERGED_SAMPLES_FOR_FASTQC_1
-    tuple val(sample_id), path("${sample_id}_?.fastq"), emit: MERGED_FASTQ_FOR_CLEANING
-    tuple val(sample_id), val(1), emit: CLEAN_FASTQ_SIGNAL
+    tuple val(sample_id), path("${sample_id}_?.fastq"), emit: FASTQ_FILES
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1062,8 +965,8 @@ process fastqc_1 {
     tuple val(sample_id), path(fastq_files)
 
   output:
-    tuple path("*_fastqc.html"), path("*_fastqc.zip"), emit: FASTQC_1_OUTPUT
-    tuple val(sample_id), val(1), emit: CLEAN_MERGED_FASTQ_FASTQC_SIGNAL
+    tuple path("*_fastqc.html"), path("*_fastqc.zip"), emit: REPORTS
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1080,7 +983,7 @@ process fastqc_1 {
  * Performs KALLISTO alignemnt of fastq files
  */
 process kallisto {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Kallisto_GA
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_kallisto_ga
   tag { sample_id }
   label "process_medium"
   label "kallisto"
@@ -1090,10 +993,9 @@ process kallisto {
     path(kallisto_index)
 
   output:
-    tuple val(sample_id), path("*.ga"), emit: KALLISTO_GA
-    tuple val(sample_id), path("*.ga"), emit: KALLISTO_GA_TO_CLEAN
-    tuple val(sample_id), val(1), emit: CLEAN_MERGED_FASTQ_KALLISTO_SIGNAL
-    path("*.kallisto.log"), emit: KALLISTO_LOG
+    tuple val(sample_id), path("*.ga"), emit: GA_FILES
+    path("*.kallisto.log"), emit: LOGS
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1123,10 +1025,9 @@ process kallisto_tpm {
     tuple val(sample_id), path(ga_File)
 
   output:
-    path("*.tpm"), optional: true, emit: KALLISTO_TPM
-    path("*.raw"), optional: true, emit: KALLISTO_RAW
-    tuple val(sample_id), val(1), emit: CLEAN_KALLISTO_GA_SIGNAL
-    val(sample_id), emit: KALLISTO_SAMPLE_COMPLETE_SIGNAL
+    path("*.tpm"), optional: true, emit: TPM_FILES
+    path("*.raw"), optional: true, emit: RAW_FILES
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1146,7 +1047,7 @@ process kallisto_tpm {
  * Performs SALMON alignemnt of fastq files
  */
 process salmon {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_Salmon_GA
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_salmon_ga
   tag { sample_id }
   label "process_medium"
   label "salmon"
@@ -1156,10 +1057,9 @@ process salmon {
     path(salmon_index)
 
   output:
-    tuple val(sample_id), path("*.ga"), emit: SALMON_GA
-    tuple val(sample_id), path("${sample_id}.Salmon.ga", type: 'dir'), emit: SALMON_GA_LOG
-    tuple val(sample_id), path("*.ga/quant.sf"), emit: SALMON_GA_TO_CLEAN
-    tuple val(sample_id), val(1), emit: CLEAN_MERGED_FASTQ_SALMON_SIGNAL
+    tuple val(sample_id), path("*.ga"), emit: GA_FILES
+    tuple val(sample_id), path("*.ga", type: 'dir'), emit: LOGS
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1188,10 +1088,9 @@ process salmon_tpm {
     tuple val(sample_id), path(ga_file)
 
   output:
-    path("*.Salmon.tpm"), optional: true, emit: SALMON_TPM
-    path("*.Salmon.raw"), optional: true, emit: SALMON_RAW
-    tuple val(sample_id), val(1), emit: CLEAN_SALMON_GA_SIGNAL
-    val(sample_id), emit: SALMON_SAMPLE_COMPLETE_SIGNAL
+    path("*.Salmon.tpm"), optional: true, emit: TPM_FILES
+    path("*.Salmon.raw"), optional: true, emit: RAW_FILES
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1228,10 +1127,8 @@ process trimmomatic {
     path(fasta_adapter)
 
   output:
-    tuple val(sample_id), path("*_trim.fastq"), emit: TRIMMED_SAMPLES_FOR_FASTQC
-    tuple val(sample_id), path("*_trim.fastq"), emit: TRIMMED_SAMPLES_FOR_HISAT2
-    tuple val(sample_id), path("*_trim.fastq"), emit: TRIMMED_FASTQ_FOR_CLEANING
-    tuple val(sample_id), path("*.trim.log"), emit: TRIMMED_SAMPLE_LOG
+    tuple val(sample_id), path("*_trim.fastq"), emit: FASTQ_FILES
+    tuple val(sample_id), path("*.trim.log"), emit: LOGS
 
   script:
   """
@@ -1271,8 +1168,8 @@ process fastqc_2 {
     tuple val(sample_id), path(fastq_files)
 
   output:
-    tuple path("*_fastqc.html"), path("*_fastqc.zip"), emit: FASTQC_2_OUTPUT
-    tuple val(sample_id), val(1), emit: CLEAN_TRIMMED_FASTQ_FASTQC_SIGNAL
+    tuple path("*_fastqc.html"), path("*_fastqc.zip"), emit: REPORTS
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1299,11 +1196,9 @@ process hisat2 {
     path(indexes)
 
   output:
-    tuple val(sample_id), path("*.sam"), emit: HISAT2_SAM_FILE
-    tuple val(sample_id), path("*.sam.log"), emit: HISAT2_SAM_LOG
-    tuple val(sample_id), path("*.sam"), emit: SAM_FOR_CLEANING
-    tuple val(sample_id), val(1), emit: CLEAN_TRIMMED_FASTQ_HISAT_SIGNAL
-    tuple val(sample_id), val(1), emit: CLEAN_MERGED_FASTQ_HISAT_SIGNAL
+    tuple val(sample_id), path("*.sam"), emit: SAM_FILES
+    tuple val(sample_id), path("*.sam.log"), emit: LOGS
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1334,9 +1229,8 @@ process samtools_sort {
     tuple val(sample_id), path(sam_file)
 
   output:
-    tuple val(sample_id), path("*.bam"), emit: SORTED_FOR_INDEX
-    tuple val(sample_id), path("*.bam"), emit: BAM_FOR_CLEANING
-    tuple val(sample_id), val(1), emit: CLEAN_SAM_SIGNAL
+    tuple val(sample_id), path("*.bam"), emit: BAM_FILES
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1365,9 +1259,9 @@ process samtools_index {
     tuple val(sample_id), path(bam_file)
 
   output:
-    tuple val(sample_id), path(bam_file), emit: BAM_INDEXED_FOR_STRINGTIE
-    tuple val(sample_id), path("*.bam.bai"), emit: BAI_INDEXED_FILE
-    tuple val(sample_id), path("*.bam.log"), emit: BAM_INDEXED_LOG
+    tuple val(sample_id), path(bam_file), emit: BAM_FILES
+    tuple val(sample_id), path("*.bam.bai"), emit: BAI_FILES
+    tuple val(sample_id), path("*.bam.log"), emit: LOGS
 
   script:
   """
@@ -1385,7 +1279,7 @@ process samtools_index {
  * Generates expression-level transcript abundance
  */
 process stringtie {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_stringtie_gtf_and_ga
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_stringtie_ga_gtf
   tag { sample_id }
   label "process_medium"
   label "stringtie"
@@ -1395,9 +1289,8 @@ process stringtie {
     path(gtf_file)
 
   output:
-    tuple val(sample_id), path("*.Hisat2.ga"), path("*.Hisat2.gtf"), emit: STRINGTIE_GTF_FOR_FPKM
-    tuple val(sample_id), path("*.Hisat2.*"), emit: STRINGTIE_GTF_FOR_CLEANING
-    tuple val(sample_id), val(1), emit: CLEAN_BAM_SIGNAL
+    tuple val(sample_id), path("*.Hisat2.*"), emit: GA_GTF_FILES
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1428,14 +1321,13 @@ process hisat2_fpkm_tpm {
   label "stringtie"
 
   input:
-    tuple val(sample_id), path(ga_file), path(gtf_file)
+    tuple val(sample_id), path(stringtie_files)
 
   output:
-    path("*.Hisat2.fpkm"), optional: true, emit: HISAT2_FPKM
-    path("*.Hisat2.tpm"), optional: true, emit: HISAT2_TPM
-    path("*.Hisat2.raw"), optional: true, emit: HISAT2_RAW
-    tuple val(sample_id), val(1), emit: CLEAN_STRINGTIE_SIGNAL
-    val(sample_id), emit: HISAT2_SAMPLE_COMPLETE_SIGNAL
+    path("*.Hisat2.fpkm"), optional: true, emit: FPKM_FILES
+    path("*.Hisat2.tpm"), optional: true, emit: TPM_FILES
+    path("*.Hisat2.raw"), optional: true, emit: RAW_FILES
+    tuple val(sample_id), val(1), emit: DONE_SIGNAL
 
   script:
   """
@@ -1526,9 +1418,7 @@ process failed_run_report {
   publishDir "${params.outdir}/reports", mode: params.publish_dir_mode
 
   input:
-    path(metadata_failed_runs)
-    path(download_failed_runs)
-    path(fastq_dump_failed_runs)
+    path(failed_runs)
     path(failed_run_template)
 
   output:
@@ -1543,68 +1433,68 @@ process failed_run_report {
 
 
 /**
- * Cleans downloaded SRA files
+ * Clean up downloaded SRA files
  */
 process clean_sra {
   tag { sample_id }
 
   input:
-    tuple val(sample_id), val(files_list)
+    tuple val(sample_id), val(files)
 
   script:
   """
-  clean_work_files.sh "${files_list[0]}"
+  clean_work_files.sh "${files.join(" ")}"
   """
 }
 
 
 
 /**
- * Cleans downloaded fastq files
+ * Clean up downloaded fastq files
  */
-process clean_fastq {
+process clean_downloaded_fastq {
   tag { sample_id }
 
   input:
-    tuple val(sample_id), val(files_list)
+    tuple val(sample_id), val(files)
 
   script:
   """
-  clean_work_files.sh "${files_list[0].join(" ")}"
+  clean_work_files.sh "${files.join(" ")}"
   """
 }
 
 
 
 /**
- * Cleans merged fastq files
+ * Clean up merged fastq files
  */
 process clean_merged_fastq {
   tag { sample_id }
 
   input:
-    tuple val(sample_id), val(files_list)
+    tuple val(sample_id), val(files)
 
   script:
   """
-  clean_work_files.sh "${files_list[0].join(" ")}"
+  clean_work_files.sh "${files.join(" ")}"
   """
 }
 
 
 
 /**
- * Cleans trimmed fastq files
+ * Clean up trimmed fastq files
  */
 process clean_trimmed_fastq {
   tag { sample_id }
 
   input:
-    tuple val(sample_id), val(files_list)
+    tuple val(sample_id), val(files)
 
   script:
   """
-  clean_work_files.sh "${files_list[0].join(" ")}"
+  clean_work_files.sh "${files.join(" ")}"
   """
 }
 
@@ -1617,11 +1507,11 @@ process clean_sam {
   tag { sample_id }
 
   input:
-    tuple val(sample_id), val(files_list)
+    tuple val(sample_id), val(files)
 
   script:
   """
-  clean_work_files.sh "${files_list[0]}"
+  clean_work_files.sh "${files.join(" ")}"
   """
 }
 
@@ -1634,11 +1524,28 @@ process clean_bam {
   tag { sample_id }
 
   input:
-    tuple val(sample_id), val(files_list)
+    tuple val(sample_id), val(files)
 
   script:
   """
-  clean_work_files.sh "${files_list[0]}"
+  clean_work_files.sh "${files.join(" ")}"
+  """
+}
+
+
+
+/**
+ * Clean up stringtie GA files
+ */
+process clean_stringtie_ga {
+  tag { sample_id }
+
+  input:
+    tuple val(sample_id), val(files)
+
+  script:
+  """
+  clean_work_files.sh "${files.join(" ")}"
   """
 }
 
@@ -1655,7 +1562,7 @@ process clean_kallisto_ga {
 
   script:
   """
-  clean_work_dirs.sh "${directory[0]}"
+  clean_work_dirs.sh "${directory}"
   """
 }
 
@@ -1668,27 +1575,10 @@ process clean_salmon_ga {
   tag { sample_id }
 
   input:
-    tuple val(sample_id), val(files_list)
+    tuple val(sample_id), val(files)
 
   script:
   """
-  clean_work_files.sh "${files_list[0]}"
-  """
-}
-
-
-
-/**
- * Clean up Salmon GA files
- */
-process clean_stringtie_ga {
-  tag { sample_id }
-
-  input:
-    tuple val(sample_id), val(files_list)
-
-  script:
-  """
-  clean_work_files.sh "${files_list[0].join(" ")}"
+  clean_work_files.sh "${files.join(" ")}"
   """
 }
