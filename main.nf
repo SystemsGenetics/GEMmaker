@@ -441,12 +441,12 @@ workflow {
 
         trimmomatic(FASTQ_FILES, FASTA_ADAPTER)
         TRIMMED_FASTQ_FILES = trimmomatic.out.FASTQ_FILES
+        MERGED_FASTQ_DONE = trimmomatic.out.DONE_SIGNAL
 
         fastqc_2(TRIMMED_FASTQ_FILES)
 
         hisat2(TRIMMED_FASTQ_FILES, HISAT2_INDEXES)
         SAM_FILES = hisat2.out.SAM_FILES
-        MERGED_FASTQ_DONE = hisat2.out.DONE_SIGNAL
 
         samtools_sort(SAM_FILES)
         BAM_FILES = samtools_sort.out.BAM_FILES
@@ -627,7 +627,7 @@ workflow {
         CLEAN_SRA_READY = SRA_FILES
             .mix(fastq_dump.out.DONE_SIGNAL)
             .groupTuple(size: 2)
-            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL}] }
+            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
         clean_sra(CLEAN_SRA_READY)
     }
@@ -639,7 +639,7 @@ workflow {
         CLEAN_DOWNLOADED_FASTQ_READY = DOWNLOADED_FASTQ_FILES
             .mix(fastq_merge.out.DONE_SIGNAL)
             .groupTuple(size: 2)
-            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL}] }
+            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
         clean_downloaded_fastq(CLEAN_DOWNLOADED_FASTQ_READY)
     }
@@ -654,7 +654,7 @@ workflow {
                 fastqc_1.out.DONE_SIGNAL,
                 MERGED_FASTQ_DONE)
             .groupTuple(size: 3)
-            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL}] }
+            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
         clean_merged_fastq(CLEAN_MERGED_FASTQ_READY)
     }
@@ -668,7 +668,7 @@ workflow {
                 fastqc_2.out.DONE_SIGNAL,
                 hisat2.out.DONE_SIGNAL)
             .groupTuple(size: 3)
-            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL}] }
+            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
         clean_trimmed_fastq(CLEAN_TRIMMED_FASTQ_READY)
     }
@@ -680,7 +680,7 @@ workflow {
         CLEAN_SAM_READY = SAM_FILES
             .mix(samtools_sort.out.DONE_SIGNAL)
             .groupTuple(size: 2)
-            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL}] }
+            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
         clean_sam(CLEAN_SAM_READY)
     }
@@ -692,7 +692,7 @@ workflow {
         CLEAN_BAM_READY = BAM_FILES
             .mix(stringtie.out.DONE_SIGNAL)
             .groupTuple(size: 2)
-            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL}] }
+            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
         clean_bam(CLEAN_BAM_READY)
     }
@@ -704,7 +704,7 @@ workflow {
         CLEAN_STRINGTIE_READY = STRINGTIE_FILES
             .mix(hisat2_fpkm_tpm.out.DONE_SIGNAL)
             .groupTuple(size: 2)
-            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL}] }
+            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
         clean_stringtie_ga(CLEAN_STRINGTIE_READY)
     }
@@ -728,7 +728,7 @@ workflow {
         CLEAN_SALMON_GA_READY = GA_FILES
             .mix(salmon_tpm.out.DONE_SIGNAL)
             .groupTuple(size: 2)
-            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL}] }
+            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
         clean_salmon_ga(CLEAN_SALMON_GA_READY)
     }
@@ -1090,6 +1090,7 @@ process trimmomatic {
   output:
     tuple val(sample_id), path("*_trim.fastq"), emit: FASTQ_FILES
     tuple val(sample_id), path("*.trim.log"), emit: LOGS
+    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
 
   script:
   """
