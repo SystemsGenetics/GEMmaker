@@ -619,29 +619,31 @@ workflow {
      * DONE_SENTINEL to ensure that the total number of signals
      * for a file can be counted.
      */
+    CLEAN_WORK_FILES = Channel.empty()
+    CLEAN_WORK_DIRS = Channel.empty()
 
     /**
      * Clean sra files after they are used by fastq_dump.
      */
     if ( !params.keep_sra ) {
-        CLEAN_SRA_READY = SRA_FILES
+        CLEAN_SRA_FILES = SRA_FILES
             .mix(fastq_dump.out.DONE_SIGNAL)
             .groupTuple(size: 2)
             .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
-        clean_sra(CLEAN_SRA_READY)
+        CLEAN_WORK_FILES = CLEAN_WORK_FILES.mix(CLEAN_SRA_FILES)
     }
 
     /**
      * Clean downloaded fastq files after they are used by fastq_merge.
      */
     if ( !params.keep_retrieved_fastq ) {
-        CLEAN_DOWNLOADED_FASTQ_READY = DOWNLOADED_FASTQ_FILES
+        CLEAN_DOWNLOADED_FASTQ_FILES = DOWNLOADED_FASTQ_FILES
             .mix(fastq_merge.out.DONE_SIGNAL)
             .groupTuple(size: 2)
             .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
-        clean_downloaded_fastq(CLEAN_DOWNLOADED_FASTQ_READY)
+        CLEAN_WORK_FILES = CLEAN_WORK_FILES.mix(CLEAN_DOWNLOADED_FASTQ_FILES)
     }
 
     /**
@@ -649,89 +651,92 @@ workflow {
      * the quantification tool.
      */
     if ( !params.keep_retrieved_fastq ) {
-        CLEAN_MERGED_FASTQ_READY = MERGED_FASTQ_FILES
+        CLEAN_MERGED_FASTQ_FILES = MERGED_FASTQ_FILES
             .mix(
                 fastqc_1.out.DONE_SIGNAL,
                 MERGED_FASTQ_DONE)
             .groupTuple(size: 3)
             .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
-        clean_merged_fastq(CLEAN_MERGED_FASTQ_READY)
+        CLEAN_WORK_FILES = CLEAN_WORK_FILES.mix(CLEAN_MERGED_FASTQ_FILES)
     }
 
     /**
      * Clean trimmed fastq files after they are used by fastqc_2 and hisat2.
      */
     if ( hisat2_enable && !params.trimmomatic_keep_trimmed_fastq ) {
-        CLEAN_TRIMMED_FASTQ_READY = TRIMMED_FASTQ_FILES
+        CLEAN_TRIMMED_FASTQ_FILES = TRIMMED_FASTQ_FILES
             .mix(
                 fastqc_2.out.DONE_SIGNAL,
                 hisat2.out.DONE_SIGNAL)
             .groupTuple(size: 3)
             .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
-        clean_trimmed_fastq(CLEAN_TRIMMED_FASTQ_READY)
+        CLEAN_WORK_FILES = CLEAN_WORK_FILES.mix(CLEAN_TRIMMED_FASTQ_FILES)
     }
 
     /**
      * Clean sam files after they are used by samtools_sort.
      */
     if ( hisat2_enable && !params.hisat2_keep_sam ) {
-        CLEAN_SAM_READY = SAM_FILES
+        CLEAN_SAM_FILES = SAM_FILES
             .mix(samtools_sort.out.DONE_SIGNAL)
             .groupTuple(size: 2)
             .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
-        clean_sam(CLEAN_SAM_READY)
+        CLEAN_WORK_FILES = CLEAN_WORK_FILES.mix(CLEAN_SAM_FILES)
     }
 
     /**
      * Clean bam files after they are used by stringtie.
      */
     if ( hisat2_enable && !params.hisat2_keep_bam ) {
-        CLEAN_BAM_READY = BAM_FILES
+        CLEAN_BAM_FILES = BAM_FILES
             .mix(stringtie.out.DONE_SIGNAL)
             .groupTuple(size: 2)
             .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
-        clean_bam(CLEAN_BAM_READY)
+        CLEAN_WORK_FILES = CLEAN_WORK_FILES.mix(CLEAN_BAM_FILES)
     }
 
     /**
      * Clean stringtie files after they are used by hisat2_fpkm_tpm.
      */
     if ( hisat2_enable && !params.hisat2_keep_data ) {
-        CLEAN_STRINGTIE_READY = STRINGTIE_FILES
+        CLEAN_STRINGTIE_FILES = STRINGTIE_FILES
             .mix(hisat2_fpkm_tpm.out.DONE_SIGNAL)
             .groupTuple(size: 2)
             .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
-        clean_stringtie_ga(CLEAN_STRINGTIE_READY)
+        CLEAN_WORK_FILES = CLEAN_WORK_FILES.mix(CLEAN_STRINGTIE_FILES)
     }
 
     /**
      * Clean kallisto files after they are used by kallisto_tpm.
      */
     if ( kallisto_enable && !params.kallisto_keep_data ) {
-        CLEAN_KALLISTO_GA_READY = GA_FILES
+        CLEAN_KALLISTO_GA_FILES = GA_FILES
             .mix(kallisto_tpm.out.DONE_SIGNAL)
             .groupTuple(size: 2)
             .map { [it[0], it[1][0]] }
 
-        clean_kallisto_ga(CLEAN_KALLISTO_GA_READY)
+        CLEAN_WORK_DIRS = CLEAN_WORK_DIRS.mix(CLEAN_KALLISTO_GA_FILES)
     }
 
     /**
      * Clean salmon files after they are used by salmon_tpm.
      */
     if ( salmon_enable && !params.salmon_keep_data ) {
-        CLEAN_SALMON_GA_READY = GA_FILES
+        CLEAN_SALMON_GA_FILES = GA_FILES
             .mix(salmon_tpm.out.DONE_SIGNAL)
             .groupTuple(size: 2)
             .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
-        clean_salmon_ga(CLEAN_SALMON_GA_READY)
+        CLEAN_WORK_DIRS = CLEAN_WORK_DIRS.mix(CLEAN_SALMON_GA_FILES)
     }
+
+    clean_work_files(CLEAN_WORK_FILES)
+    clean_work_dirs(CLEAN_WORK_DIRS)
 }
 
 
@@ -850,7 +855,7 @@ process download_runs {
   script:
   """
   echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE n_remote_run_ids=${run_ids.tokenize(' ').size()}"
+  echo "#TRACE n_remote_run_ids=${run_ids.tokenize(" ").size()}"
   echo "#TRACE n_spots=`retrieve_sra_spots.py ${workflow.workDir}/GEMmaker ${sample_id}`"
 
   retrieve_sra.py --sample ${sample_id} --run_ids ${run_ids} --akey \${ASPERA_KEY}
@@ -1010,7 +1015,7 @@ process salmon {
 
   output:
     tuple val(sample_id), path("*.ga"), emit: GA_FILES
-    tuple val(sample_id), path("*.ga", type: 'dir'), emit: LOGS
+    tuple val(sample_id), path("*.ga", type: "dir"), emit: LOGS
     tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
 
   script:
@@ -1376,10 +1381,11 @@ process failed_run_report {
 
 
 /**
- * Clean up downloaded SRA files
+ * Clean intermediate files.
  */
-process clean_sra {
+process clean_work_files {
   tag { sample_id }
+  label "local"
 
   input:
     tuple val(sample_id), val(files)
@@ -1393,112 +1399,11 @@ process clean_sra {
 
 
 /**
- * Clean up downloaded fastq files
+ * Clean intermediate directories.
  */
-process clean_downloaded_fastq {
+process clean_work_dirs {
   tag { sample_id }
-
-  input:
-    tuple val(sample_id), val(files)
-
-  script:
-  """
-  clean_work_files.sh "${files.join(" ")}"
-  """
-}
-
-
-
-/**
- * Clean up merged fastq files
- */
-process clean_merged_fastq {
-  tag { sample_id }
-
-  input:
-    tuple val(sample_id), val(files)
-
-  script:
-  """
-  clean_work_files.sh "${files.join(" ")}"
-  """
-}
-
-
-
-/**
- * Clean up trimmed fastq files
- */
-process clean_trimmed_fastq {
-  tag { sample_id }
-
-  input:
-    tuple val(sample_id), val(files)
-
-  script:
-  """
-  clean_work_files.sh "${files.join(" ")}"
-  """
-}
-
-
-
-/**
- * Clean up SAM files
- */
-process clean_sam {
-  tag { sample_id }
-
-  input:
-    tuple val(sample_id), val(files)
-
-  script:
-  """
-  clean_work_files.sh "${files.join(" ")}"
-  """
-}
-
-
-
-/**
- * Clean up BAM files
- */
-process clean_bam {
-  tag { sample_id }
-
-  input:
-    tuple val(sample_id), val(files)
-
-  script:
-  """
-  clean_work_files.sh "${files.join(" ")}"
-  """
-}
-
-
-
-/**
- * Clean up stringtie GA files
- */
-process clean_stringtie_ga {
-  tag { sample_id }
-
-  input:
-    tuple val(sample_id), val(files)
-
-  script:
-  """
-  clean_work_files.sh "${files.join(" ")}"
-  """
-}
-
-
-
-/**
- * Clean up Kallisto GA files
- */
-process clean_kallisto_ga {
-  tag { sample_id }
+  label "local"
 
   input:
     tuple val(sample_id), val(directory)
@@ -1506,22 +1411,5 @@ process clean_kallisto_ga {
   script:
   """
   clean_work_dirs.sh "${directory}"
-  """
-}
-
-
-
-/**
- * Clean up Salmon GA files
- */
-process clean_salmon_ga {
-  tag { sample_id }
-
-  input:
-    tuple val(sample_id), val(files)
-
-  script:
-  """
-  clean_work_files.sh "${files.join(" ")}"
   """
 }

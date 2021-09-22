@@ -12,13 +12,11 @@
 directory="$1"
 
 for dir in ${directory}; do
-  dir=`echo $dir | perl -p -e 's/[\\[,\\]]//g'`
   if [ -e $dir ]; then
-    echo "Cleaning $dir"
-    file_list=`find $dir -type  f `
-    echo File List to delete: $file_list
-    for file in $file_list; do
-      clean_work_files.sh $file "null"
-    done
+    echo "Cleaning: $dir"
+    files=`find $dir -type  f `
+
+    echo "Files to delete: $files"
+    clean_work_files.sh "$files" "null"
   fi
 done
