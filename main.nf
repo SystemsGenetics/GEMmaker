@@ -299,16 +299,16 @@ workflow {
     get_software_versions()
 
     /**
-     * Move any incomplete samples from previous run back to staging.
+     * Delete "done" file from previous run.
      */
-    file("work/GEMmaker/process/*").each { sample_file ->
-        sample_file.moveTo('work/GEMmaker/stage')
-    }
+    file("${workflow.workDir}/GEMmaker/process/DONE").delete()
 
     /**
-     * Get list of currently staged samples.
+     * Move any incomplete samples from previous run back to staging.
      */
-    staged_files = file("work/GEMmaker/stage/*")
+    file("${workflow.workDir}/GEMmaker/process/*").each { sample_file ->
+        sample_file.moveTo("${workflow.workDir}/GEMmaker/stage")
+    }
 
     /**
      * Get list of samples to skip.
@@ -320,22 +320,12 @@ workflow {
     /**
      * Remove samples in the skip list from staging.
      */
-    skip_samples.each { line ->
-        skip_sample = file("work/GEMmaker/stage/${line}.sample.csv")
+    skip_samples.each { sample_id ->
+        skip_sample = file("${workflow.workDir}/GEMmaker/stage/${sample_id}.sample.csv")
         if (skip_sample.exists()) {
             skip_sample.delete()
         }
     }
-
-    /**
-     * Trigger the post-processing steps (multiqc, create_gem)
-     * manually if there are no samples in staging, such as when
-     * resuming a run in which all samples have already been
-     * processed.
-     */
-    BOOSTRAP_SIGNAL = staged_files.size() == 0
-        ? Channel.fromList( [1] )
-        : Channel.empty()
 
     /**
      * Load local sample files.
@@ -350,7 +340,7 @@ workflow {
     /**
      * Retrieve metadata for remote samples from NCBI SRA.
      */
-    SRR_FILE = params.sras != ""
+    SRR_FILE = (params.sras != "")
         ? Channel.fromPath( params.sras )
         : Channel.empty()
 
@@ -369,7 +359,7 @@ workflow {
         .map { [it[1], it[0].join(" "), "remote"] }
 
     /**
-     * Move all samples into staging.
+     * Prepare sample files for staging and processing.
      */
     LOCAL_SAMPLES.mix(REMOTE_SAMPLES)
         .filter { sample -> !skip_samples.contains(sample[0]) }
@@ -397,8 +387,11 @@ workflow {
      * Watch the process directory for new samples. Each new
      * sample is sent to different downstream processes based
      * on whether it is a local or remote sample.
+     *
+     * Close the channel when the "done" file is received.
      */
     Channel.watchPath("${workflow.workDir}/GEMmaker/process")
+        .until { it.name == "DONE" }
         .splitCsv(sep: '\t')
         .branch { sample ->
             local: sample[2] == "local"
@@ -473,12 +466,12 @@ workflow {
         COMPLETED_SAMPLES = hisat2_fpkm_tpm.out.DONE_SIGNAL
 
         MULTIQC_FILES = Channel.empty()
-            .concat(
+            .mix(
                 fastqc_1.out.REPORTS.flatten(),
-                trimmomatic.out.LOGS,
+                trimmomatic.out.LOGS.map { it[1] },
                 fastqc_2.out.REPORTS.flatten(),
-                hisat2.out.LOGS,
-                samtools_index.out.LOGS)
+                hisat2.out.LOGS.map { it[1] },
+                samtools_index.out.LOGS.map { it[1] })
     }
 
     /**
@@ -501,9 +494,9 @@ workflow {
         COMPLETED_SAMPLES = kallisto_tpm.out.DONE_SIGNAL
 
         MULTIQC_FILES = Channel.empty()
-            .concat(
+            .mix(
                 fastqc_1.out.REPORTS.flatten(),
-                kallisto.out.LOGS)
+                kallisto.out.LOGS.map { it[1] })
     }
 
     /**
@@ -526,9 +519,9 @@ workflow {
         COMPLETED_SAMPLES = salmon_tpm.out.DONE_SIGNAL
 
         MULTIQC_FILES = Channel.empty()
-            .concat(
+            .mix(
                 fastqc_1.out.REPORTS.flatten(),
-                salmon.out.LOGS)
+                salmon.out.LOGS.map { it[1] })
     }
 
     /**
@@ -537,12 +530,20 @@ workflow {
      */
     SAMPLE_DONE_SIGNAL = Channel.empty()
         .mix(
-            COMPLETED_SAMPLES,
-            download_runs.out.FAILED_SAMPLES,
-            fastq_dump.out.FAILED_SAMPLES)
-        .map { it[0] }
+            COMPLETED_SAMPLES.map { it[0] },
+            download_runs.out.FAILED_SAMPLES.map { it[0] },
+            fastq_dump.out.FAILED_SAMPLES.map { it[0] })
 
     next_sample(SAMPLE_DONE_SIGNAL)
+
+    /**
+     * Define a "bootstrap" signal for the post-processing steps
+     * (multiqc, create_gem) to ensure that they will run even if
+     * no new samples were processed via COMPLETED_SAMPLES, such as
+     * when resuming a run in which all samples have already been
+     * processed.
+     */
+    BOOTSTRAP_SIGNAL = Channel.fromList( [DONE_SENTINEL] )
 
     /**
      * The multiqc process should run when all samples have
@@ -550,7 +551,7 @@ workflow {
      * received.
      */
     if ( params.publish_multiqc_report ) {
-        MULTIQC_RUN = BOOSTRAP_SIGNAL.mix(COMPLETED_SAMPLES)
+        MULTIQC_RUN = BOOTSTRAP_SIGNAL.mix(COMPLETED_SAMPLES)
         MULTIQC_CONFIG = Channel.fromPath( params.multiqc_config_file )
         MULTIQC_CUSTOM_LOGO = Channel.fromPath( params.multiqc_custom_logo )
 
@@ -567,9 +568,9 @@ workflow {
      * received.
      */
     if ( publish_gem ) {
-        CREATE_GEM_RUN = BOOSTRAP_SIGNAL.mix(COMPLETED_SAMPLES)
+        CREATE_GEM_RUN = BOOTSTRAP_SIGNAL.mix(COMPLETED_SAMPLES)
         CREATE_GEM_FILES = Channel.empty()
-            .concat(
+            .mix(
                 RAW_FILES,
                 TPM_FILES,
                 FPKM_FILES)
@@ -585,12 +586,12 @@ workflow {
     FAILED_RUNS = Channel.empty()
         .mix(
             retrieve_sra_metadata.out.FAILED_RUNS,
-            download_runs.out.FAILED_RUNS.collect(),
-            fastq_dump.out.FAILED_RUNS.collect())
+            download_runs.out.FAILED_RUNS.map { it[1] },
+            fastq_dump.out.FAILED_RUNS.map { it[1] })
     FAILED_RUN_TEMPLATE = Channel.fromPath( params.failed_run_report_template )
 
     failed_run_report(
-        FAILED_RUNS,
+        FAILED_RUNS.collect(),
         FAILED_RUN_TEMPLATE.collect())
 
     /**
@@ -822,6 +823,12 @@ process next_sample {
     if (staged_files.size() > 0) {
         staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
     }
+
+    // Write the "done" file if there are no more samples to process.
+    else {
+        done_file = file("${workflow.workDir}/GEMmaker/process/DONE")
+        done_file << ""
+    }
 }
 
 
@@ -841,7 +848,7 @@ process download_runs {
   output:
     tuple val(sample_id), path("*.sra"), optional: true, emit: SRA_FILES
     tuple val(sample_id), path("sample_failed"), optional: true, emit: FAILED_SAMPLES
-    tuple val(sample_id), path('*.failed_runs.download.txt'), emit: FAILED_RUNS
+    tuple val(sample_id), path("*.failed_runs.download.txt"), emit: FAILED_RUNS
 
   script:
   """
@@ -870,7 +877,7 @@ process fastq_dump {
   output:
     tuple val(sample_id), path("*.fastq"), optional: true, emit: FASTQ_FILES
     tuple val(sample_id), path("sample_failed"), optional: true, emit: FAILED_SAMPLES
-    tuple val(sample_id), path('*.failed_runs.fastq-dump.txt'), emit: FAILED_RUNS
+    tuple val(sample_id), path("*.failed_runs.fastq-dump.txt"), emit: FAILED_RUNS
     tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
 
   script:
@@ -949,7 +956,7 @@ process kallisto {
 
   output:
     tuple val(sample_id), path("*.ga"), emit: GA_FILES
-    path("*.kallisto.log"), emit: LOGS
+    tuple val(sample_id), path("*.kallisto.log"), emit: LOGS
     tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
 
   script:
@@ -977,7 +984,7 @@ process kallisto_tpm {
   tag { sample_id }
 
   input:
-    tuple val(sample_id), path(ga_File)
+    tuple val(sample_id), path(ga_file)
 
   output:
     path("*.tpm"), optional: true, emit: TPM_FILES
@@ -987,7 +994,6 @@ process kallisto_tpm {
   script:
   """
   echo "#TRACE sample_id=${sample_id}"
-  #echo "#TRACE ga_lines=`cat *.ga | wc -l`"
 
   kallisto_tpm.sh \
     ${sample_id} \
@@ -1313,8 +1319,8 @@ process multiqc {
 
   input:
     val(signal)
-    path(multiqc_config)
-    path(gemmaker_logo)
+    path(config_file)
+    path(custom_logo)
     path(input_files)
 
   output:
@@ -1323,7 +1329,7 @@ process multiqc {
 
   script:
   """
-  multiqc --config ${multiqc_config} ./
+  multiqc --config ${config_file} ./
   """
 }
 
