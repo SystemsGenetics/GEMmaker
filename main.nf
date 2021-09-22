@@ -953,7 +953,7 @@ process kallisto {
     path(kallisto_index)
 
   output:
-    tuple val(sample_id), path("*.ga"), emit: GA_FILES
+    tuple val(sample_id), path("*.ga", type: "dir"), emit: GA_FILES
     tuple val(sample_id), path("*.kallisto.log"), emit: LOGS
     tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
 
@@ -1014,7 +1014,7 @@ process salmon {
     path(salmon_index)
 
   output:
-    tuple val(sample_id), path("*.ga"), emit: GA_FILES
+    tuple val(sample_id), path("*.ga", type: "dir"), emit: GA_FILES
     tuple val(sample_id), path("*.ga", type: "dir"), emit: LOGS
     tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
 
