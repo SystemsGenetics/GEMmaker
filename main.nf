@@ -375,18 +375,14 @@ workflow {
         .filter { sample -> !skip_samples.contains(sample[0]) }
         .subscribe onNext: { sample ->
             // Stage samples that are not in the skip list.
-            sample_id = sample[0]
-            run_files_or_ids = sample[1]
-            sample_type = sample[2]
+            (sample_id, run_files_or_ids, sample_type) = sample
 
             sample_file = file("${workflow.workDir}/GEMmaker/stage/${sample_id}.sample.csv")
-            sample_file.withWriter { writer ->
-                line = sample_type == "local"
-                    ? "${sample_id}\t${run_files_or_ids}\t${sample_type}"
-                    : "${sample_id}\t${run_files_or_ids}\t${sample_type}"
 
-                writer << line
-            }
+            line = (sample_type == "local")
+                ? "${sample_id}\t${run_files_or_ids}\t${sample_type}"
+                : "${sample_id}\t${run_files_or_ids}\t${sample_type}"
+            sample_file << line
         }, onComplete: {
             // Move the first batch of samples into processing.
             file("${workflow.workDir}/GEMmaker/stage/*.sample.csv")
@@ -406,7 +402,7 @@ workflow {
         .splitCsv(sep: '\t')
         .branch { sample ->
             local: sample[2] == "local"
-            remote: true
+            remote: sample[2] == "remote"
         }
         .set { NEXT_SAMPLE }
 
@@ -415,7 +411,7 @@ workflow {
      */
     LOCAL_FASTQ_FILES = NEXT_SAMPLE.local
         .join(LOCAL_SAMPLES)
-        .map { [it[0], it[3]]}
+        .map { [it[0], it[3]] }
 
     /**
      * Download, extract, and merge remote samples.
@@ -539,14 +535,14 @@ workflow {
      * Move a new sample into processing when a current
      * sample is completed or skipped.
      */
-    NEXT_SAMPLE_SIGNAL = Channel.empty()
+    SAMPLE_DONE_SIGNAL = Channel.empty()
         .mix(
             COMPLETED_SAMPLES,
             download_runs.out.FAILED_SAMPLES,
             fastq_dump.out.FAILED_SAMPLES)
         .map { it[0] }
 
-    next_sample(NEXT_SAMPLE_SIGNAL)
+    next_sample(SAMPLE_DONE_SIGNAL)
 
     /**
      * The multiqc process should run when all samples have
