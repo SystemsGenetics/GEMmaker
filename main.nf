@@ -547,7 +547,7 @@ workflow {
 
     /**
      * The multiqc process should run when all samples have
-     * completed or if on a resume when the bootstrap signal is
+     * completed or on a resume when the bootstrap signal is
      * received.
      */
     if ( params.publish_multiqc_report ) {
@@ -777,7 +777,6 @@ process get_software_versions {
  */
 process retrieve_sra_metadata {
   publishDir params.outdir, mode: params.publish_dir_mode, pattern: "failed_runs.metadata.txt"
-  label "retrieve_sra_metadata"
 
   input:
     path(srr_file)
@@ -837,10 +836,8 @@ process next_sample {
  * Downloads SRA files from NCBI using the SRA Toolkit.
  */
 process download_runs {
-  publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.download.txt', saveAs: { "Samples/${sample_id}/${it}" }
-
   tag { sample_id }
-  label "download_runs"
+  publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.download.txt', saveAs: { "Samples/${sample_id}/${it}" }
 
   input:
     tuple val(sample_id), val(run_ids), val(type)
@@ -866,10 +863,9 @@ process download_runs {
  * Extracts FASTQ files from downloaded SRA files.
  */
 process fastq_dump {
+  tag { sample_id }
   publishDir params.outdir, mode: params.publish_dir_mode, pattern: publish_pattern_fastq_dump, saveAs: { "Samples/${sample_id}/${it}" }
   publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.fastq-dump.txt', saveAs: { "Samples/${sample_id}/${it}" }
-  tag { sample_id }
-  label "fastq_dump"
 
   input:
     tuple val(sample_id), path(sra_files)
@@ -919,9 +915,8 @@ process fastq_merge {
  * Performs fastqc on raw fastq files
  */
 process fastqc_1 {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
   tag { sample_id }
-  label "fastqc"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
 
   input:
     tuple val(sample_id), path(fastq_files)
@@ -945,10 +940,8 @@ process fastqc_1 {
  * Performs KALLISTO alignemnt of fastq files
  */
 process kallisto {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_kallisto_ga
   tag { sample_id }
-  label "process_medium"
-  label "kallisto"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_kallisto_ga
 
   input:
     tuple val(sample_id), path(fastq_files)
@@ -980,8 +973,8 @@ process kallisto {
  * Generates the final TPM and raw count files for Kallisto
  */
 process kallisto_tpm {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
   tag { sample_id }
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
 
   input:
     tuple val(sample_id), path(ga_file)
@@ -1008,10 +1001,8 @@ process kallisto_tpm {
  * Performs SALMON alignemnt of fastq files
  */
 process salmon {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_salmon_ga
   tag { sample_id }
-  label "process_medium"
-  label "salmon"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_salmon_ga
 
   input:
     tuple val(sample_id), path(fastq_files)
@@ -1042,8 +1033,8 @@ process salmon {
  * Generates the final TPM file for Salmon
  */
 process salmon_tpm {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
   tag { sample_id }
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
 
   input:
     tuple val(sample_id), path(ga_file)
@@ -1078,10 +1069,9 @@ process salmon_tpm {
  * "nextflow.config" file
  */
 process trimmomatic {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_trimmomatic
   tag { sample_id }
   label "process_medium"
-  label "trimmomatic"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_trimmomatic
 
   input:
     tuple val(sample_id), path(fastq_files)
@@ -1122,9 +1112,8 @@ process trimmomatic {
  * Files are stored to an independent folder
  */
 process fastqc_2 {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
   tag { sample_id }
-  label "fastqc"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
 
   input:
     tuple val(sample_id), path(fastq_files)
@@ -1148,10 +1137,9 @@ process fastqc_2 {
  * Performs hisat2 alignment of fastq files to a genome reference
  */
 process hisat2 {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*.log"
   tag { sample_id }
   label "process_medium"
-  label "hisat2"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*.log"
 
   input:
     tuple val(sample_id), path(fastq_files)
@@ -1183,9 +1171,8 @@ process hisat2 {
  * Sorts the SAM alignment file and coverts it to binary BAM
  */
 process samtools_sort {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_sort
   tag { sample_id }
-  label "samtools"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_sort
 
   input:
     tuple val(sample_id), path(sam_file)
@@ -1213,9 +1200,8 @@ process samtools_sort {
  * Indexes the BAM alignment file
  */
 process samtools_index {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_index
   tag { sample_id }
-  label "samtools"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_index
 
   input:
     tuple val(sample_id), path(bam_file)
@@ -1241,10 +1227,9 @@ process samtools_index {
  * Generates expression-level transcript abundance
  */
 process stringtie {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_stringtie_ga_gtf
   tag { sample_id }
   label "process_medium"
-  label "stringtie"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_stringtie_ga_gtf
 
   input:
     tuple val(sample_id), path(bam_file)
@@ -1278,9 +1263,8 @@ process stringtie {
  * Generates the final FPKM / TPM / raw files from Hisat2
  */
 process hisat2_fpkm_tpm {
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
   tag { sample_id }
-  label "stringtie"
+  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
 
   input:
     tuple val(sample_id), path(stringtie_files)
@@ -1314,7 +1298,6 @@ process hisat2_fpkm_tpm {
  * Process to generate the multiqc report once everything is completed
  */
 process multiqc {
-  label "multiqc"
   cache false
   publishDir "${params.outdir}/reports", mode: params.publish_dir_mode
 
@@ -1340,7 +1323,6 @@ process multiqc {
  * Creates the GEM file from all the FPKM/TPM outputs
  */
 process create_gem {
-  label "create_gem"
   publishDir "${params.outdir}/GEMs", mode: params.publish_dir_mode
 
   input:
@@ -1376,7 +1358,6 @@ process create_gem {
  * Creates a report of any SRA run IDs that failed and why they failed.
  */
 process failed_run_report {
-  label "reports"
   publishDir "${params.outdir}/reports", mode: params.publish_dir_mode
 
   input:
