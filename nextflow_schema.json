@@ -32,7 +32,7 @@
                 "sras": {
                     "type": "string",
                     "description": "A text file containing NCBI SRA Run IDs, one per line, that GEMmaker should automatically retrieve. If no files are to be retrieved from SRA the file should be left emptly",
-                    "default": "${baseDir}/assets/demo/SRA_IDs.txt"
+                    "default": "${projectDir}/assets/demo/SRA_IDs.txt"
                 },
                 "keep_sra": {
                     "type": "boolean",
@@ -45,7 +45,7 @@
                 "skip_samples": {
                     "type": "string",
                     "description": "A text file containing the names of SRA runs or local FASTQ samples that should be excluded.",
-                    "default": "${baseDir}/assets/demo/samples2skip.txt"
+                    "default": "${projectDir}/assets/demo/samples2skip.txt"
                 },
                 "outdir": {
                     "type": "string",
@@ -88,7 +88,7 @@
                 "kallisto_index_path": {
                     "type": "string",
                     "description": "The directory containing the reference genome index files",
-                    "default": "${baseDir}/assets/demo/references/CORG.transcripts.Kallisto.indexed"
+                    "default": "${projectDir}/assets/demo/references/CORG.transcripts.Kallisto.indexed"
                 },
                 "kallisto_bootstrap_samples": {
                     "type": "integer",
@@ -125,7 +125,7 @@
                 "salmon_index_path": {
                     "type": "string",
                     "description": "The directory containing the reference genome index files",
-                    "default": "${baseDir}/assets/demo/references/CORG.transcripts.Salmon.indexed"
+                    "default": "${projectDir}/assets/demo/references/CORG.transcripts.Salmon.indexed"
                 },
                 "salmon_keep_data": {
                     "type": "boolean",
@@ -162,12 +162,12 @@
                 "hisat2_index_dir": {
                     "type": "string",
                     "description": "The directory containing the hisat2 indexed files for the reference genome.",
-                    "default": "${baseDir}/assets/demo/references/CORG.genome.Hisat2.indexed"
+                    "default": "${projectDir}/assets/demo/references/CORG.genome.Hisat2.indexed"
                 },
                 "hisat2_gtf_file": {
                     "type": "string",
                     "description": "A GTF of the reference genome.",
-                    "default": "${baseDir}/assets/demo/references/CORG.transcripts.gtf"
+                    "default": "${projectDir}/assets/demo/references/CORG.transcripts.gtf"
                 },
                 "hisat2_keep_data": {
                     "type": "boolean",
@@ -204,7 +204,7 @@
                 "trimmomatic_clip_file": {
                     "type": "string",
                     "description": "This option is only used for the Hisat2 pipeline. The location of the clip file containing sequences of contaminants that should be removed from reads during trimming.",
-                    "default": "${baseDir}/assets/fasta_adapter.txt"
+                    "default": "${projectDir}/assets/fasta_adapter.txt"
                 },
                 "trimmomatic_MINLEN": {
                     "type": "number",
