@@ -196,7 +196,7 @@ Next, is an example SLURM submission script for submitting a job to run GEMmaker
       -profile my_cluster,singularity \
       -resume \
       --pipeline kallisto \
-      --kallisto_index_path Araport11_genes.201606.cdna.indexed \
+      --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
       --sras  SRA_IDs.txt \
       --max_cpus 120
 
