@@ -340,11 +340,7 @@ workflow {
     /**
      * Retrieve metadata for remote samples from NCBI SRA.
      */
-    SRR_FILE = (params.sras != "")
-        ? Channel.fromPath( params.sras )
-        : Channel.empty()
-
-    retrieve_sra_metadata(SRR_FILE)
+    retrieve_sra_metadata()
 
     /**
      * Parse remote samples from the SRR2SRX mapping.
@@ -779,26 +775,21 @@ process get_software_versions {
 process retrieve_sra_metadata {
   publishDir params.outdir, mode: params.publish_dir_mode, pattern: "failed_runs.metadata.txt"
 
-  input:
-    path(srr_file)
-
   output:
-    stdout emit: SRR2SRX
-    path("failed_runs.metadata.txt"), emit: FAILED_RUNS
+  stdout emit: SRR2SRX
+  path("failed_runs.metadata.txt"), emit: FAILED_RUNS
+
+  when:
+  params.sras != ''
 
   script:
-  skip_arg = ''
-  if (params.skip_samples != '') {
-      skip_file = path(params.skip_samples)
-      skip_arg = "--skip_file ${skip_file}"
-  }
   """
-  >&2 echo "#TRACE n_remote_run_ids=`cat ${srr_file} | wc -l`"
+  >&2 echo "#TRACE n_remote_run_ids=`cat ${file(params.sras)} | wc -l`"
 
   retrieve_sra_metadata.py \
-      --run_id_file ${srr_file} \
+      --run_id_file ${file(params.sras)} \
       --meta_dir ${workflow.workDir}/GEMmaker \
-       ${skip_arg}
+       ${params.skip_samples != "" ? "--skip_file ${file(params.skip_samples)}" : ""}
   """
 }
 
