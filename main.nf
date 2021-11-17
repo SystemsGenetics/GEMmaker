@@ -344,11 +344,7 @@ workflow {
         ? Channel.fromPath( params.sras )
         : Channel.empty()
 
-    SKIP_SAMPLES_FILE = params.skip_samples
-        ? Channel.fromPath( params.skip_samples )
-        : Channel.fromList( [null] )
-
-    retrieve_sra_metadata(SRR_FILE, SKIP_SAMPLES_FILE)
+    retrieve_sra_metadata(SRR_FILE)
 
     /**
      * Parse remote samples from the SRR2SRX mapping.
@@ -785,20 +781,24 @@ process retrieve_sra_metadata {
 
   input:
     path(srr_file)
-    path(skip_file)
 
   output:
     stdout emit: SRR2SRX
     path("failed_runs.metadata.txt"), emit: FAILED_RUNS
 
   script:
+  skip_arg = ''
+  if (params.skip_samples != '') {
+      skip_file = path(params.skip_samples)
+      skip_arg = "--skip_file ${skip_file}"
+  }
   """
   >&2 echo "#TRACE n_remote_run_ids=`cat ${srr_file} | wc -l`"
 
   retrieve_sra_metadata.py \
       --run_id_file ${srr_file} \
       --meta_dir ${workflow.workDir}/GEMmaker \
-      ${skip_file != null ? "--skip_file ${skip_file}" : ""}
+       ${skip_arg}
   """
 }
 
