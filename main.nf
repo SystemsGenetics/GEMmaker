@@ -293,7 +293,15 @@ publish_pattern_salmon_ga = params.salmon_keep_data
  */
 DONE_SENTINEL = 1
 
-
+/**
+ * Clean up any files left over from a previous run by moving them
+ * back to the stage directory.
+ */
+existing_files = file('work/GEMmaker/process/*')
+for (existing_file in existing_files) {
+  existing_file.moveTo('work/GEMmaker/stage')
+}
+existing_files = null
 
 workflow {
     get_software_versions()
@@ -334,45 +342,69 @@ workflow {
         ? Channel.fromFilePairs( params.input, size: -1 )
         : Channel.empty()
 
-    LOCAL_SAMPLES = LOCAL_SAMPLES
+    LOCAL_SAMPLES_LIST = LOCAL_SAMPLES
         .map{ [it[0], it[1], "local"] }
 
     /**
      * Retrieve metadata for remote samples from NCBI SRA.
      */
-    retrieve_sra_metadata()
+    if ( params.sras ) {
+        retrieve_sra_metadata()
 
-    /**
-     * Parse remote samples from the SRR2SRX mapping.
-     */
-    REMOTE_SAMPLES = retrieve_sra_metadata.out.SRR2SRX
-        .splitCsv()
-        .groupTuple(by: 1)
-        .map { [it[1], it[0].join(" "), "remote"] }
+        /**
+         * Parse remote samples from the SRR2SRX mapping.
+         */
+        REMOTE_SAMPLES_LIST = retrieve_sra_metadata.out.SRR2SRX
+            .splitCsv()
+            .groupTuple(by: 1)
+            .map { [it[1], it[0].join(" "), "remote"] }
+    }
+    else {
+        REMOTE_SAMPLES_LIST = Channel.empty()
+    }
 
     /**
      * Prepare sample files for staging and processing.
      */
-    LOCAL_SAMPLES.mix(REMOTE_SAMPLES)
+    LOCAL_SAMPLES_LIST
+        .mix(REMOTE_SAMPLES_LIST)
         .filter { sample -> !skip_samples.contains(sample[0]) }
         .subscribe onNext: { sample ->
+
             // Stage samples that are not in the skip list.
             (sample_id, run_files_or_ids, sample_type) = sample
 
-            sample_file = file("${workflow.workDir}/GEMmaker/stage/${sample_id}.sample.csv")
+            // Don't create a sample file for samples that are already done.
+            done_file = file("${workflow.workDir}/GEMmaker/done/${sample_id}.sample.csv")
+            if (!done_file.exists()) {
 
-            line = (sample_type == "local")
-                ? "${sample_id}\t${run_files_or_ids}\t${sample_type}"
-                : "${sample_id}\t${run_files_or_ids}\t${sample_type}"
-            sample_file << line
-        }, onComplete: {
-            // Move the first batch of samples into processing.
-            file("${workflow.workDir}/GEMmaker/stage/*.sample.csv")
-                .sort()
-                .take(params.max_cpus)
-                .each { sample ->
-                    sample.moveTo("${workflow.workDir}/GEMmaker/process")
+                // If the sample file already exists don't add more to it.
+                stage_file = file("${workflow.workDir}/GEMmaker/stage/${sample_id}.sample.csv")
+                if (!stage_file.exists()) {
+                    line = (sample_type == "local")
+                        ? "${sample_id}\t${run_files_or_ids}\t${sample_type}"
+                        : "${sample_id}\t${run_files_or_ids}\t${sample_type}"
+                    stage_file << line
                 }
+            }
+        }, onComplete: {
+
+            // If we don't have any staged files this means we had no
+            // samples or the workflow has been run already and it's done.
+            num_staged = file("${workflow.workDir}/GEMmaker/stage/*.sample.csv").size()
+            if (num_staged == 0) {
+                done_file = file("${workflow.workDir}/GEMmaker/process/DONE")
+                done_file << "DONE"
+            }
+            else {
+                // Move the first batch of samples into processing.
+                file("${workflow.workDir}/GEMmaker/stage/*.sample.csv")
+                    .sort()
+                    .take(params.max_cpus)
+                    .each { sample ->
+                        sample.moveTo("${workflow.workDir}/GEMmaker/process")
+                    }
+            }
         }
 
     /**
@@ -391,26 +423,39 @@ workflow {
         }
         .set { NEXT_SAMPLE }
 
+
     /**
      * Merge local samples with local fastq files.
      */
     LOCAL_FASTQ_FILES = NEXT_SAMPLE.local
-        .join(LOCAL_SAMPLES)
+        .join(LOCAL_SAMPLES_LIST)
         .map { [it[0], it[3]] }
 
     /**
      * Download, extract, and merge remote samples.
      */
-    REMOTE_SAMPLES = NEXT_SAMPLE.remote
+    if ( params.sras ) {
 
-    download_runs(REMOTE_SAMPLES)
-    SRA_FILES = download_runs.out.SRA_FILES
+        REMOTE_SAMPLES = NEXT_SAMPLE.remote
 
-    fastq_dump(SRA_FILES)
-    DOWNLOADED_FASTQ_FILES = fastq_dump.out.FASTQ_FILES
+        download_runs(REMOTE_SAMPLES)
+        SRA_FILES = download_runs.out.SRA_FILES
 
-    fastq_merge(DOWNLOADED_FASTQ_FILES)
-    MERGED_FASTQ_FILES = fastq_merge.out.FASTQ_FILES
+        fastq_dump(SRA_FILES)
+        DOWNLOADED_FASTQ_FILES = fastq_dump.out.FASTQ_FILES
+
+        fastq_merge(DOWNLOADED_FASTQ_FILES)
+        MERGED_FASTQ_FILES = fastq_merge.out.FASTQ_FILES
+
+        FAILED_SAMPLES = Channel.empty()
+            .mix(download_runs.out.FAILED_SAMPLES.map { it[0] },
+                 fastq_dump.out.FAILED_SAMPLES.map { it[0] })
+    }
+    else {
+        REMOTE_SAMPLES = Channel.empty()
+        MERGED_FASTQ_FILES = Channel.empty()
+        FAILED_SAMPLES = Channel.empty()
+    }
 
     /**
      * Combine local and remote samples.
@@ -523,8 +568,7 @@ workflow {
     SAMPLE_DONE_SIGNAL = Channel.empty()
         .mix(
             COMPLETED_SAMPLES.map { it[0] },
-            download_runs.out.FAILED_SAMPLES.map { it[0] },
-            fastq_dump.out.FAILED_SAMPLES.map { it[0] })
+            FAILED_SAMPLES)
 
     next_sample(SAMPLE_DONE_SIGNAL)
 
@@ -575,16 +619,21 @@ workflow {
     /**
      * Create a report of failed samples.
      */
-    FAILED_RUNS = Channel.empty()
-        .mix(
-            retrieve_sra_metadata.out.FAILED_RUNS,
-            download_runs.out.FAILED_RUNS.map { it[1] },
-            fastq_dump.out.FAILED_RUNS.map { it[1] })
-    FAILED_RUN_TEMPLATE = Channel.fromPath( params.failed_run_report_template )
+    if ( params.sras ) {
+        FAILED_RUNS = Channel.empty()
+            .mix(
+                retrieve_sra_metadata.out.FAILED_RUNS,
+                download_runs.out.FAILED_RUNS.map { it[1] },
+                fastq_dump.out.FAILED_RUNS.map { it[1] })
 
-    failed_run_report(
-        FAILED_RUNS.collect(),
-        FAILED_RUN_TEMPLATE.collect())
+        FAILED_RUN_TEMPLATE = Channel.fromPath( params.failed_run_report_template )
+
+        failed_run_report(
+            FAILED_RUNS.collect(),
+            FAILED_RUN_TEMPLATE.collect())
+    }
+
+
 
     /**
      * CLEANING INTERMEDIATE FILES
@@ -617,7 +666,7 @@ workflow {
     /**
      * Clean sra files after they are used by fastq_dump.
      */
-    if ( !params.keep_sra ) {
+    if ( params.sras && !params.keep_sra ) {
         CLEAN_SRA_FILES = SRA_FILES
             .mix(fastq_dump.out.DONE_SIGNAL)
             .groupTuple(size: 2)
@@ -629,7 +678,7 @@ workflow {
     /**
      * Clean downloaded fastq files after they are used by fastq_merge.
      */
-    if ( !params.keep_retrieved_fastq ) {
+    if ( params.sras && !params.keep_retrieved_fastq ) {
         CLEAN_DOWNLOADED_FASTQ_FILES = DOWNLOADED_FASTQ_FILES
             .mix(fastq_merge.out.DONE_SIGNAL)
             .groupTuple(size: 2)
@@ -780,7 +829,7 @@ process retrieve_sra_metadata {
   path("failed_runs.metadata.txt"), emit: FAILED_RUNS
 
   when:
-  params.sras != ''
+  params.sras
 
   script:
   """
@@ -789,7 +838,7 @@ process retrieve_sra_metadata {
   retrieve_sra_metadata.py \
       --run_id_file ${file(params.sras)} \
       --meta_dir ${workflow.workDir}/GEMmaker \
-       ${params.skip_samples != "" ? "--skip_file ${file(params.skip_samples)}" : ""}
+       ${params.skip_samples ? "--skip_file ${file(params.skip_samples)}" : ""}
   """
 }
 
