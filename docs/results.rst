@@ -23,7 +23,7 @@ When SRA runs are requested for download by GEMmaker, sometimes those runs fail.
 .. figure:: images/failed_runs_report.png
   :alt: Failed Runs Report
 
-There may also be a file named ``failed_runs.metadata.txt``, which is generated if metadata is not pulled from NCBI.
+There may also be files with naming structure such as ``failed_runs.metadata.txt``. These are used by GEMmaker to generate a final report, and should be ignored. 
 
 Nextflow Reports
 ````````````````
