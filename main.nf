@@ -423,7 +423,6 @@ workflow {
         }
         .set { NEXT_SAMPLE }
 
-
     /**
      * Merge local samples with local fastq files.
      */
@@ -435,7 +434,6 @@ workflow {
      * Download, extract, and merge remote samples.
      */
     if ( params.sras ) {
-
         REMOTE_SAMPLES = NEXT_SAMPLE.remote
 
         download_runs(REMOTE_SAMPLES)
@@ -448,8 +446,9 @@ workflow {
         MERGED_FASTQ_FILES = fastq_merge.out.FASTQ_FILES
 
         FAILED_SAMPLES = Channel.empty()
-            .mix(download_runs.out.FAILED_SAMPLES.map { it[0] },
-                 fastq_dump.out.FAILED_SAMPLES.map { it[0] })
+            .mix(
+                download_runs.out.FAILED_SAMPLES.map { it[0] },
+                fastq_dump.out.FAILED_SAMPLES.map { it[0] })
     }
     else {
         REMOTE_SAMPLES = Channel.empty()
@@ -827,9 +826,6 @@ process retrieve_sra_metadata {
   output:
   stdout emit: SRR2SRX
   path("failed_runs.metadata.txt"), emit: FAILED_RUNS
-
-  when:
-  params.sras
 
   script:
   """
