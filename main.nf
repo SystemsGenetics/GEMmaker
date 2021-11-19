@@ -293,16 +293,6 @@ publish_pattern_salmon_ga = params.salmon_keep_data
  */
 DONE_SENTINEL = 1
 
-/**
- * Clean up any files left over from a previous run by moving them
- * back to the stage directory.
- */
-existing_files = file('work/GEMmaker/process/*')
-for (existing_file in existing_files) {
-  existing_file.moveTo('work/GEMmaker/stage')
-}
-existing_files = null
-
 workflow {
     get_software_versions()
 
