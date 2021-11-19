@@ -9,17 +9,15 @@ Please use the pre-filled template to save time.
 However, don't be put off by this template - other more general issues and suggestions are welcome!
 Contributions to the code are even more welcome ;)
 
-> If you need help using or modifying systemsgenetics/gemmaker then the best place to ask is on the  [GEMmaker GitHub issue queue](https://github.com/SystemsGenetics/GEMmaker/issues).
-
 ## Contribution workflow
 
 If you'd like to write some code for GEMmaker, the standard workflow is as follows:
 
-1. Check that there isn't already an issue about your idea in the [GEMmaker GitHub issue queue](https://github.com/SystemsGenetics/GEMmaker/issues) to avoid duplicating work
+1. Check that there isn't already an issue about your idea in the [GEMmaker issues](https://github.com/systemsgenetics/gemmaker/issues) to avoid duplicating work
     * If there isn't one already, please create one so that others know you're working on this
-2. [Fork](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) the [GEMmaker repository](https://github.com/systemsgenetics/gemmaker) to your GitHub account
+2. [Fork](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) the [systemsgenetics/gemmaker repository](https://github.com/systemsgenetics/gemmaker) to your GitHub account
 3. Make the necessary changes / additions within your forked repository following [Pipeline conventions](#pipeline-contribution-conventions)
-4. Use `nf-core schema build .` and add any new parameters to the pipeline JSON schema (requires [nf-core tools](https://github.com/nf-core/tools) >= 1.10).
+4. Use `nf-core schema build` and add any new parameters to the pipeline JSON schema (requires [nf-core tools](https://github.com/nf-core/tools) >= 1.10).
 5. Submit a Pull Request against the `dev` branch and wait for the code to be reviewed and merged
 
 If you're not used to this workflow with git, you can start with some [docs from GitHub](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests) or even their [excellent `git` resources](https://try.github.io/).
@@ -55,11 +53,11 @@ These tests are run both with the latest available version of `Nextflow` and als
 
 ## Getting help
 
-For further information/help, please consult the [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/).
+For further information/help, please consult the [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/). 
 
 ## Pipeline contribution conventions
 
-To make the GEMmaker code and processing logic more understandable for new contributors and to ensure quality, we semi-standardize the way the code and other contributions are written.
+To make the GEMmaker code and processing logic more understandable for new contributors and to ensure quality, we semi-standardise the way the code and other contributions are written.
 
 ### Adding a new step
 
@@ -69,12 +67,12 @@ If you wish to contribute a new step, please use the following coding standards:
 2. Write the process block (see below).
 3. Define the output channel if needed (see below).
 4. Add any new flags/options to `nextflow.config` with a default (see below).
-5. Add any new flags/options to `nextflow_schema.json` with help text (with `nf-core schema build .`).
+5. Add any new flags/options to `nextflow_schema.json` with help text (with `nf-core schema build`).
 6. Add any new flags/options to the help message (for integer/text parameters, print to help the corresponding `nextflow.config` parameter).
 7. Add sanity checks for all relevant parameters.
 8. Add any new software to the `scrape_software_versions.py` script in `bin/` and the version command to the `scrape_software_versions` process in `main.nf`.
 9. Do local tests that the new code works properly and as expected.
-10. Add a new test command in `.github/workflow/ci.yaml`.
+10. Add a new test command in `.github/workflow/ci.yml`.
 11. If applicable add a [MultiQC](https://https://multiqc.info/) module.
 12. Update MultiQC config `assets/multiqc_config.yaml` so relevant suffixes, name clean up, General Statistics Table column order, and module figures are in the right order.
 13. Optional: Add any descriptions of MultiQC report sections and output files to `docs/output.md`.
@@ -83,7 +81,7 @@ If you wish to contribute a new step, please use the following coding standards:
 
 Parameters should be initialised / defined with default values in `nextflow.config` under the `params` scope.
 
-Once there, use `nf-core schema build .` to add to `nextflow_schema.json`.
+Once there, use `nf-core schema build` to add to `nextflow_schema.json`.
 
 ### Default processes resource requirements
 
