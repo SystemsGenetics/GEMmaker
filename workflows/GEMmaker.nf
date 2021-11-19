@@ -6,13 +6,6 @@
 
 def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 
-// Validate input parameters
-WorkflowGEMmaker.initialise(workflow, params, log)
-
-// Check input path parameters to see if they exist
-def checkPathParamList = [ params.input ]
-for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
-
 /**
  * Determine which quantification tool was selected.
  */
@@ -113,6 +106,22 @@ if (!file(params.failed_run_report_template).exists()) {
     error "Error: The failed run report template cannot be found at '${params.failed_run_report_template}'. This file comes with GEMmaker and is required."
 }
 
+/**
+ * Get list of samples to skip.
+ */
+skip_samples = params.skip_samples
+    ? file(params.skip_samples).readLines().collect { line -> line.trim() }
+    : []
+
+// Validate input parameters
+WorkflowGEMmaker.initialise(workflow, skip_samples, params, log)
+
+// Check input path parameters to see if they exist
+def checkPathParamList = [ params.input ]
+for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
+
+// Define the sentinel for "done" signals
+DONE_SENTINEL = 1
 
 /*
 ========================================================================================
@@ -126,8 +135,6 @@ if (!file(params.failed_run_report_template).exists()) {
     IMPORT LOCAL MODULES/SUBWORKFLOWS
 ========================================================================================
 */
-// Define the sentinel for "done" signals
-DONE_SENTINEL = 1
 
 // Don't overwrite global params.modules, create a copy instead and use that within the main script.
 def modules = params.modules.clone()
@@ -237,8 +244,6 @@ include { trimmomatic } from '../modules/local/trimmomatic' addParams(publish_pa
 
 workflow GEMmaker {
     ch_software_versions = Channel.empty()
-
-
     //
     // MODULE: Pipeline reporting
     //
@@ -254,34 +259,6 @@ workflow GEMmaker {
         ch_software_versions.map { it }.collect()
     )
 
-    /**
-     * Delete "done" file from previous run.
-     */
-    file("${workflow.workDir}/GEMmaker/process/DONE").delete()
-
-    /**
-     * Move any incomplete samples from previous run back to staging.
-     */
-    file("${workflow.workDir}/GEMmaker/process/*").each { sample_file ->
-        sample_file.moveTo("${workflow.workDir}/GEMmaker/stage")
-    }
-
-    /**
-     * Get list of samples to skip.
-     */
-    skip_samples = params.skip_samples
-        ? file(params.skip_samples).readLines().collect { line -> line.trim() }
-        : []
-
-    /**
-     * Remove samples in the skip list from staging.
-     */
-    skip_samples.each { sample_id ->
-        skip_sample = file("${workflow.workDir}/GEMmaker/stage/${sample_id}.sample.csv")
-        if (skip_sample.exists()) {
-            skip_sample.delete()
-        }
-    }
 
     /**
      * Load local sample files.

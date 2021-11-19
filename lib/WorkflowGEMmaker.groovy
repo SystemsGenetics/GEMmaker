@@ -8,7 +8,7 @@ class WorkflowGEMmaker {
     //
     // Check and validate parameters
     //
-    public static void initialise(workflow, params, log) {
+    public static void initialise(workflow, skip_samples, params, log) {
 
         // Create the directories used for running batches
         File gemmaker_dir = new File("${workflow.workDir}/GEMmaker")
@@ -26,6 +26,27 @@ class WorkflowGEMmaker {
         File done_dir = new File("${workflow.workDir}/GEMmaker/done")
         if (done_dir.isEmpty()) {
             done_dir.mkdir()
+        }
+
+        // Delete "done" file from previous run.
+        File done_file = new File("${workflow.workDir}/GEMmaker/process/DONE")
+        if (done_file.exists()) {
+            done_file.delete()
+        }
+
+        // Move any incomplete samples from previous run back to staging.
+        String[] stage_files = stage_dir.list();
+        for (int i = 0; i < stage_files.length; i++) {
+            File stage_file = new File("${workflow.workDir}/GEMmaker/stage/" + stage_files[i]);
+            stage_file.moveTo("${workflow.workDir}/GEMmaker/stage")
+        }
+
+        // Remove samples in the skip list from staging.
+        skip_samples.each { sample_id ->
+            File skip_sample = new File("${workflow.workDir}/GEMmaker/stage/${sample_id}.sample.csv")
+            if (skip_sample.exists()) {
+                skip_sample.delete()
+            }
         }
 
         // Make sure that the user hasn't changed the quantification
