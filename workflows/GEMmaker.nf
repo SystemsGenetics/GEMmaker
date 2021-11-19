@@ -126,6 +126,8 @@ if (!file(params.failed_run_report_template).exists()) {
     IMPORT LOCAL MODULES/SUBWORKFLOWS
 ========================================================================================
 */
+// Define the sentinel for "done" signals
+DONE_SENTINEL = 1
 
 // Don't overwrite global params.modules, create a copy instead and use that within the main script.
 def modules = params.modules.clone()
@@ -135,71 +137,96 @@ def modules = params.modules.clone()
 //
 include { GET_SOFTWARE_VERSIONS } from '../modules/local/get_software_versions' addParams( options: [publish_files : ['tsv':'']] )
 
+// Module: clean_work_dirs
+include { clean_work_dirs } from '../modules/local/clean_work_dirs' addParams()
+
+// Module: clean_work_files
+include { clean_work_files } from '../modules/local/clean_work_files' addParams()
+
+// Module: create_gem
+include { create_gem } from '../modules/local/create_gem' addParams(publish_fpkm: publish_fpkm, hisat2_enable: hisat2_enable, publish_tpm: publish_tpm, publish_raw: publish_raw)
+
+// Module: download_runs
+include { download_runs } from '../modules/local/download_runs' addParams()
+
+// Module: failed_run_report
+include { failed_run_report } from '../modules/local/failed_run_report' addParams()
+
+// Module: fastq_dump
+publish_pattern_fastq_dump = params.keep_retrieved_fastq
+    ? "{*.fastq}"
+    : "{none}"
+include { fastq_dump } from '../modules/local/fastq_dump' addParams(publish_pattern_fastq_dump: publish_pattern_fastq_dump, DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: fastqc
+include { fastqc as fastqc_1 } from '../modules/local/fastqc' addParams(DONE_SENTINEL: DONE_SENTINEL)
+include { fastqc as fastqc_2 } from '../modules/local/fastqc' addParams(DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: fastq_merge
+include { fastq_merge } from '../modules/local/fastq_merge' addParams(DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: hisat2_fpkm_tpm
+include { hisat2_fpkm_tpm } from '../modules/local/hisat2_fpkm_tpm' addParams(DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: hisat2
+include { hisat2 } from '../modules/local/hisat2' addParams(DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: kallisto
+publish_pattern_kallisto_ga = params.kallisto_keep_data
+    ? "{*.ga,*.log}"
+    : "{*.log}"
+include { kallisto } from '../modules/local/kallisto' addParams(publish_pattern_kallisto_ga: publish_pattern_kallisto_ga, DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: kallisto_tpm
+include { kallisto_tpm } from '../modules/local/kallisto_tpm' addParams(DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: multiqc
+include { multiqc } from '../modules/local/multiqc' addParams()
+
+// Module: next_sample
+include { next_sample } from '../modules/local/next_sample' addParams()
+
+// Module: retrieve_sra_metadata
+include { retrieve_sra_metadata } from '../modules/local/retrieve_sra_metadata' addParams()
+
+// Module: salmon
+publish_pattern_salmon_ga = params.salmon_keep_data
+    ? "{*.ga}"
+    : "{*.ga/aux_info/meta_info.json,*.ga/libParams/flenDist.txt}"
+include { salmon } from '../modules/local/salmon' addParams(publish_pattern_salmon_ga: publish_pattern_salmon_ga, DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: salmon_tpm
+include { salmon_tpm } from '../modules/local/salmon_tpm' addParams(DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: samtools_index
+publish_pattern_samtools_index = params.hisat2_keep_bam
+    ? "{*.log,*.bam.bai}"
+    : "{*.log}"
+include { samtools_index } from '../modules/local/samtools_index' addParams(publish_pattern_samtools_index: publish_pattern_samtools_index)
+
+// Module: samtools_sort
+publish_pattern_samtools_sort = params.hisat2_keep_bam
+    ? "{*.log,*.bam}"
+    : "{*.log}"
+include { samtools_sort } from '../modules/local/samtools_sort' addParams(publish_pattern_samtools_sort: publish_pattern_samtools_sort, DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: stringtie
+publish_pattern_stringtie_ga_gtf = params.hisat2_keep_data
+    ? "{*.ga, *.gtf}"
+    : "{none}"
+include { stringtie } from '../modules/local/stringtie' addParams(publish_pattern_stringtie_ga_gtf: publish_pattern_stringtie_ga_gtf, DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: trimmomatic
+publish_pattern_trimmomatic = params.trimmomatic_keep_trimmed_fastq
+    ? "{*.trim.log,*_trim.fastq}"
+    : "{*.trim.log}"
+include { trimmomatic } from '../modules/local/trimmomatic' addParams(publish_pattern_trimmomatic: publish_pattern_trimmomatic, DONE_SENTINEL: DONE_SENTINEL)
+
 /*
 ========================================================================================
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
 ========================================================================================
 */
-
-
-/*
-========================================================================================
-    PRE-WORKFLOW SETUP
-========================================================================================
-*/
-
-/**
- * Define publish pattern for downloaded FASTQ files
- */
-publish_pattern_fastq_dump = params.keep_retrieved_fastq
-  ? "{*.fastq}"
-  : "{none}"
-
-/**
- * Define publish pattern for trimmed FASTQ files
- */
-publish_pattern_trimmomatic = params.trimmomatic_keep_trimmed_fastq
-  ? "{*.trim.log,*_trim.fastq}"
-  : "{*.trim.log}"
-
-/**
- * Define publish pattern for BAM files
- */
-publish_pattern_samtools_sort = params.hisat2_keep_bam
-  ? "{*.log,*.bam}"
-  : "{*.log}"
-
-publish_pattern_samtools_index = params.hisat2_keep_bam
-  ? "{*.log,*.bam.bai}"
-  : "{*.log}"
-
-/**
- * Define publish pattern for stringtie GA and GTF files
- */
-publish_pattern_stringtie_ga_gtf = params.hisat2_keep_data
-  ? "{*.ga, *.gtf}"
-  : "{none}"
-
-/**
- * Define publish pattern for Kallisto GA files
- */
-publish_pattern_kallisto_ga = params.kallisto_keep_data
-  ? "{*.ga,*.log}"
-  : "{*.log}"
-
-/**
- * Define publish pattern for Salmon GA files
- * Publishes only log file used by multiqc if false
- */
-publish_pattern_salmon_ga = params.salmon_keep_data
-  ? "{*.ga}"
-  : "{*.ga/aux_info/meta_info.json,*.ga/libParams/flenDist.txt}"
-
-
-/**
- * Define the sentinel for "done" signals
- */
-DONE_SENTINEL = 1
 
 
 /*
@@ -698,657 +725,4 @@ workflow GEMmaker {
 
     clean_work_files(CLEAN_WORK_FILES)
     clean_work_dirs(CLEAN_WORK_DIRS)
-}
-
-/**
- * Retrieves metadata for all of the remote samples
- * and maps SRA runs to SRA experiments.
- */
-process retrieve_sra_metadata {
-  publishDir params.outdir, mode: params.publish_dir_mode, pattern: "failed_runs.metadata.txt"
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  output:
-  stdout emit: SRR2SRX
-  path("failed_runs.metadata.txt"), emit: FAILED_RUNS
-
-  script:
-  """
-  >&2 echo "#TRACE n_remote_run_ids=`cat ${file(params.sras)} | wc -l`"
-
-  retrieve_sra_metadata.py \
-      --run_id_file ${file(params.sras)} \
-      --meta_dir ${workflow.workDir}/GEMmaker \
-       ${params.skip_samples ? "--skip_file ${file(params.skip_samples)}" : ""}
-  """
-}
-
-
-
-/**
- * Move a new sample into the process directory when
- * a previous sample is completed.
- */
-process next_sample {
-  tag { sample_id }
-  label "local"
-  cache false
-  maxForks 1
-
-  input:
-    val(sample_id)
-
-  exec:
-    // Move the completed file into the done folder.
-    sample_file = file("${workflow.workDir}/GEMmaker/process/${sample_id}.sample.csv")
-    sample_file.moveTo("${workflow.workDir}/GEMmaker/done")
-
-    // Move the next sample file into the processing directory.
-    staged_files = file("${workflow.workDir}/GEMmaker/stage/*")
-    if (staged_files.size() > 0) {
-        staged_files.first().moveTo("${workflow.workDir}/GEMmaker/process")
-    }
-
-    // Write the "done" file if there are no more samples to process.
-    else {
-        done_file = file("${workflow.workDir}/GEMmaker/process/DONE")
-        done_file << ""
-    }
-}
-
-
-
-/**
- * Downloads SRA files from NCBI using the SRA Toolkit.
- */
-process download_runs {
-  tag { sample_id }
-  publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.download.txt', saveAs: { "Samples/${sample_id}/${it}" }
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), val(run_ids), val(type)
-
-  output:
-    tuple val(sample_id), path("*.sra"), optional: true, emit: SRA_FILES
-    tuple val(sample_id), path("sample_failed"), optional: true, emit: FAILED_SAMPLES
-    tuple val(sample_id), path("*.failed_runs.download.txt"), emit: FAILED_RUNS
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE n_remote_run_ids=${run_ids.tokenize(" ").size()}"
-  echo "#TRACE n_spots=`retrieve_sra_spots.py ${workflow.workDir}/GEMmaker ${sample_id}`"
-
-  retrieve_sra.py --sample ${sample_id} --run_ids ${run_ids} --akey \${ASPERA_KEY}
-  """
-}
-
-
-
-/**
- * Extracts FASTQ files from downloaded SRA files.
- */
-process fastq_dump {
-  tag { sample_id }
-  publishDir params.outdir, mode: params.publish_dir_mode, pattern: publish_pattern_fastq_dump, saveAs: { "Samples/${sample_id}/${it}" }
-  publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.fastq-dump.txt', saveAs: { "Samples/${sample_id}/${it}" }
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(sra_files)
-
-  output:
-    tuple val(sample_id), path("*.fastq"), optional: true, emit: FASTQ_FILES
-    tuple val(sample_id), path("sample_failed"), optional: true, emit: FAILED_SAMPLES
-    tuple val(sample_id), path("*.failed_runs.fastq-dump.txt"), emit: FAILED_RUNS
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE sra_bytes=`stat -Lc '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
-
-  sra2fastq.py --sample ${sample_id} --sra_files ${sra_files}
-  """
-}
-
-
-
-/**
- * This process merges the fastq files based on their sample_id number.
- */
-process fastq_merge {
-  tag { sample_id }
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(fastq_files)
-
-  output:
-    tuple val(sample_id), path("${sample_id}_?.fastq"), emit: FASTQ_FILES
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-
-  fastq_merge.sh ${sample_id}
-  """
-}
-
-
-
-/**
- * Performs fastqc on raw fastq files
- */
-process fastqc_1 {
-  tag { sample_id }
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(fastq_files)
-
-  output:
-    tuple path("*_fastqc.html"), path("*_fastqc.zip"), emit: REPORTS
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-
-  fastqc ${fastq_files}
-  """
-}
-
-
-
-/**
- * Performs KALLISTO alignemnt of fastq files
- */
-process kallisto {
-  tag { sample_id }
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_kallisto_ga
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(fastq_files)
-    path(kallisto_index)
-
-  output:
-    tuple val(sample_id), path("*.ga", type: "dir"), emit: GA_FILES
-    tuple val(sample_id), path("*.kallisto.log"), emit: LOGS
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-  echo "#TRACE index_bytes=`stat -Lc '%s' ${kallisto_index}`"
-
-  kallisto.sh \
-    ${sample_id} \
-    ${kallisto_index} \
-    ${params.kallisto_bootstrap_samples} \
-    ${task.cpus} \
-    "${fastq_files}"
-  """
-}
-
-
-
-/**
- * Generates the final TPM and raw count files for Kallisto
- */
-process kallisto_tpm {
-  tag { sample_id }
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(ga_file)
-
-  output:
-    path("*.tpm"), optional: true, emit: TPM_FILES
-    path("*.raw"), optional: true, emit: RAW_FILES
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-
-  kallisto_tpm.sh \
-    ${sample_id} \
-    ${params.kallisto_keep_tpm} \
-    ${params.kallisto_keep_counts}
-  """
-}
-
-
-
-/**
- * Performs SALMON alignemnt of fastq files
- */
-process salmon {
-  tag { sample_id }
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_salmon_ga
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(fastq_files)
-    path(salmon_index)
-
-  output:
-    tuple val(sample_id), path("*.ga", type: "dir"), emit: GA_FILES
-    tuple val(sample_id), path("*.ga", type: "dir"), emit: LOGS
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-  echo "#TRACE index_bytes=`stat -Lc '%s' ${salmon_index} | awk '{sum += \$1} END {print sum}'`"
-
-  salmon.sh \
-    ${sample_id} \
-    ${task.cpus} \
-    ${salmon_index} \
-    "${fastq_files}" \
-  """
-}
-
-
-
-/**
- * Generates the final TPM file for Salmon
- */
-process salmon_tpm {
-  tag { sample_id }
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(ga_file)
-
-  output:
-    path("*.Salmon.tpm"), optional: true, emit: TPM_FILES
-    path("*.Salmon.raw"), optional: true, emit: RAW_FILES
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-
-  salmon_tpm.sh \
-    ${params.salmon_keep_tpm} \
-    ${params.salmon_keep_counts} \
-    ${sample_id}
-  """
-}
-
-
-
-/**
- * Performs Trimmomatic on all fastq files.
- *
- * This process requires that the ILLUMINACLIP_PATH environment
- * variable be set in the trimmomatic module. This indicates
- * the path where the clipping files are stored.
- *
- * MINLEN is calculated using based on percentage of the mean
- * read length. The percentage is determined by the user in the
- * "nextflow.config" file
- */
-process trimmomatic {
-  tag { sample_id }
-  label "process_medium"
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_trimmomatic
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(fastq_files)
-    path(fasta_adapter)
-
-  output:
-    tuple val(sample_id), path("*_trim.fastq"), emit: FASTQ_FILES
-    tuple val(sample_id), path("*.trim.log"), emit: LOGS
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE n_cpus=${task.cpus}"
-  echo "#TRACE minlen=${params.trimmomatic_MINLEN}"
-  echo "#TRACE leading=${params.trimmomatic_LEADING}"
-  echo "#TRACE trailing=${params.trimmomatic_TRAILING}"
-  echo "#TRACE slidingwindow=${params.trimmomatic_SLIDINGWINDOW}"
-  echo "#TRACE fasta_lines=`cat ${fasta_adapter} | wc -l`"
-  echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-
-  trimmomatic.sh \
-    ${sample_id} \
-    ${params.trimmomatic_MINLEN} \
-    ${task.cpus} \
-    ${fasta_adapter} \
-    ${params.trimmomatic_LEADING} \
-    ${params.trimmomatic_TRAILING} \
-    ${params.trimmomatic_SLIDINGWINDOW} \
-    "${fastq_files}"
-  """
-}
-
-
-
-/**
- * Performs fastqc on fastq files post trimmomatic
- * Files are stored to an independent folder
- */
-process fastqc_2 {
-  tag { sample_id }
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(fastq_files)
-
-  output:
-    tuple path("*_fastqc.html"), path("*_fastqc.zip"), emit: REPORTS
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
-
-  fastqc ${fastq_files}
-  """
-}
-
-
-
-/**
- * Performs hisat2 alignment of fastq files to a genome reference
- */
-process hisat2 {
-  tag { sample_id }
-  label "process_medium"
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*.log"
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(fastq_files)
-    path(indexes)
-
-  output:
-    tuple val(sample_id), path("*.sam"), emit: SAM_FILES
-    tuple val(sample_id), path("*.sam.log"), emit: LOGS
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE n_cpus=${task.cpus}"
-  echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
-  echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
-
-  hisat2.sh \
-    ${sample_id} \
-    ${params.hisat2_base_name} \
-    ${task.cpus} \
-    "${fastq_files}" \
-  """
-}
-
-
-
-/**
- * Sorts the SAM alignment file and coverts it to binary BAM
- */
-process samtools_sort {
-  tag { sample_id }
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_sort
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(sam_file)
-
-  output:
-    tuple val(sample_id), path("*.bam"), emit: BAM_FILES
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE sam_lines=`cat *.sam | wc -l`"
-
-  samtools sort \
-    -o ${sample_id}.bam \
-    -O bam \
-    -T temp \
-    ${sam_file}
-  """
-}
-
-
-
-/**
- * Indexes the BAM alignment file
- */
-process samtools_index {
-  tag { sample_id }
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_samtools_index
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(bam_file)
-
-  output:
-    tuple val(sample_id), path(bam_file), emit: BAM_FILES
-    tuple val(sample_id), path("*.bam.bai"), emit: BAI_FILES
-    tuple val(sample_id), path("*.bam.log"), emit: LOGS
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE bam_bytes=`stat -Lc '%s' *.bam`"
-
-  samtools index ${bam_file}
-  samtools stats ${bam_file} > ${sample_id}.bam.log
-  """
-}
-
-
-
-/**
- * Generates expression-level transcript abundance
- */
-process stringtie {
-  tag { sample_id }
-  label "process_medium"
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: publish_pattern_stringtie_ga_gtf
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(bam_file)
-    path(gtf_file)
-
-  output:
-    tuple val(sample_id), path("*.Hisat2.*"), emit: GA_GTF_FILES
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE bam_bytes=`stat -Lc '%s' *.bam`"
-  echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
-
-  stringtie \
-    -v \
-    -p ${task.cpus} \
-    -e \
-    -o ${sample_id}.Hisat2.gtf \
-    -G ${gtf_file} \
-    -A ${sample_id}.Hisat2.ga \
-    -l ${sample_id} \
-    ${bam_file}
-  """
-}
-
-
-
-/**
- * Generates the final FPKM / TPM / raw files from Hisat2
- */
-process hisat2_fpkm_tpm {
-  tag { sample_id }
-  publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    tuple val(sample_id), path(stringtie_files)
-
-  output:
-    path("*.Hisat2.fpkm"), optional: true, emit: FPKM_FILES
-    path("*.Hisat2.tpm"), optional: true, emit: TPM_FILES
-    path("*.Hisat2.raw"), optional: true, emit: RAW_FILES
-    tuple val(sample_id), val(DONE_SENTINEL), emit: DONE_SIGNAL
-
-  script:
-  """
-  echo "#TRACE sample_id=${sample_id}"
-  echo "#TRACE publish_fpkm=${params.hisat2_keep_fpkm}"
-  echo "#TRACE publish_tpm=${params.hisat2_keep_tpm}"
-  echo "#TRACE publish_raw=${params.hisat2_keep_counts}"
-  echo "#TRACE ga_lines=`cat *.ga | wc -l`"
-  echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
-
-  hisat2_fpkm_tpm.sh \
-    ${params.hisat2_keep_fpkm} \
-    ${sample_id} \
-    ${params.hisat2_keep_tpm} \
-    ${params.hisat2_keep_counts}
-  """
-}
-
-
-
-/**
- * Process to generate the multiqc report once everything is completed
- */
-process multiqc {
-  cache false
-  publishDir "${params.outdir}/reports", mode: params.publish_dir_mode
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    val(signal)
-    path(config_file)
-    path(custom_logo)
-    path(input_files)
-
-  output:
-    path("multiqc_data"), emit: MULTIQC_DATA
-    path("multiqc_report.html"), emit: MULTIQC_REPORT
-
-  script:
-  """
-  multiqc --config ${config_file} ./
-  """
-}
-
-
-
-/**
- * Creates the GEM file from all the FPKM/TPM outputs
- */
-process create_gem {
-  publishDir "${params.outdir}/GEMs", mode: params.publish_dir_mode
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    val(signal)
-    path(input_files)
-
-  output:
-    path("*.GEM.*.txt"), emit: GEM_FILES
-
-  script:
-  """
-  echo "#TRACE publish_fpkm=${publish_fpkm}"
-  echo "#TRACE hisat2_enable=${hisat2_enable}"
-  echo "#TRACE publish_tpm=${publish_tpm}"
-  echo "#TRACE publish_raw=${publish_raw}"
-  echo "#TRACE fpkm_lines=`cat ${params.outdir}/*.fpkm 2> /dev/null  | wc -l`"
-  echo "#TRACE tpm_lines=`cat ${params.outdir}/*.tpm 2> /dev/null | wc -l`"
-  echo "#TRACE raw_lines=`cat ${params.outdir}/*.raw 2> /dev/null | wc -l`"
-
-  create_gem.sh \
-    ${publish_fpkm} \
-    ${hisat2_enable} \
-    . \
-    GEMmaker \
-    ${publish_raw} \
-    ${publish_tpm}
-  """
-}
-
-
-
-/**
- * Creates a report of any SRA run IDs that failed and why they failed.
- */
-process failed_run_report {
-  publishDir "${params.outdir}/reports", mode: params.publish_dir_mode
-  container "systemsgenetics/gemmaker:2.0.0"
-
-  input:
-    path(failed_runs)
-    path(failed_run_template)
-
-  output:
-    path("failed_SRA_run_report.html"), emit: FAILED_RUN_REPORT
-
-  script:
-  """
-  failed_runs_report.py --template ${failed_run_template}
-  """
-}
-
-
-
-/**
- * Clean intermediate files.
- */
-process clean_work_files {
-  tag { sample_id }
-  label "local"
-
-  input:
-    tuple val(sample_id), val(files)
-
-  script:
-  """
-  clean_work_files.sh "${files.join(" ")}"
-  """
-}
-
-
-
-/**
- * Clean intermediate directories.
- */
-process clean_work_dirs {
-  tag { sample_id }
-  label "local"
-
-  input:
-    tuple val(sample_id), val(directory)
-
-  script:
-  """
-  clean_work_dirs.sh "${directory}"
-  """
 }
