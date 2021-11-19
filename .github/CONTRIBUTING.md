@@ -1,19 +1,21 @@
-# GEMmaker: Contributing Guidelines
+# systemsgenetics/gemmaker: Contributing Guidelines
 
 Hi there!
-Many thanks for taking an interest in improving GEMmaker.
+Many thanks for taking an interest in improving systemsgenetics/gemmaker.
 
-We try to manage the required tasks for GEMmaker using GitHub issues, you probably came to this page when creating one.
+We try to manage the required tasks for systemsgenetics/gemmaker using GitHub issues, you probably came to this page when creating one.
 Please use the pre-filled template to save time.
 
 However, don't be put off by this template - other more general issues and suggestions are welcome!
 Contributions to the code are even more welcome ;)
 
+> If you need help using or modifying systemsgenetics/gemmaker then the best place to ask is on the nf-core Slack [#systemsgenetics-gemmaker](https://nfcore.slack.com/channels/systemsgenetics-gemmaker) channel ([join our Slack here](https://nf-co.re/join/slack)).
+
 ## Contribution workflow
 
-If you'd like to write some code for GEMmaker, the standard workflow is as follows:
+If you'd like to write some code for systemsgenetics/gemmaker, the standard workflow is as follows:
 
-1. Check that there isn't already an issue about your idea in the [GEMmaker issues](https://github.com/systemsgenetics/gemmaker/issues) to avoid duplicating work
+1. Check that there isn't already an issue about your idea in the [systemsgenetics/gemmaker issues](https://github.com/systemsgenetics/gemmaker/issues) to avoid duplicating work
     * If there isn't one already, please create one so that others know you're working on this
 2. [Fork](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) the [systemsgenetics/gemmaker repository](https://github.com/systemsgenetics/gemmaker) to your GitHub account
 3. Make the necessary changes / additions within your forked repository following [Pipeline conventions](#pipeline-contribution-conventions)
@@ -53,11 +55,11 @@ These tests are run both with the latest available version of `Nextflow` and als
 
 ## Getting help
 
-For further information/help, please consult the [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/). 
+For further information/help, please consult the [systemsgenetics/gemmaker documentation](https://gemmaker.readthedocs.io/en/latest/) and don't hesitate to get in touch on the nf-core Slack [#systemsgenetics-gemmaker](https://nfcore.slack.com/channels/systemsgenetics-gemmaker) channel ([join our Slack here](https://nf-co.re/join/slack)).
 
 ## Pipeline contribution conventions
 
-To make the GEMmaker code and processing logic more understandable for new contributors and to ensure quality, we semi-standardise the way the code and other contributions are written.
+To make the systemsgenetics/gemmaker code and processing logic more understandable for new contributors and to ensure quality, we semi-standardise the way the code and other contributions are written.
 
 ### Adding a new step
 
