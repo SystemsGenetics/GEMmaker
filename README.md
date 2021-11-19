@@ -12,7 +12,6 @@
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
 
-
 ## Introduction
 
 GEMmaker (i.e. **systemsgenetics/gemmaker**) is a pipeline for quantification of Illumina RNA-seq data. Users can choose from Hisat2, Kallisto or Salmon. It can process locally stored FASTQ files or automatically retrieve them from NCBI's SRA.  The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It comes with docker containers making installation trivial and results highly reproducible.
