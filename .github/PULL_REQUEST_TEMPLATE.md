@@ -1,5 +1,5 @@
 <!--
-# systemsgenetics/gemmaker pull request
+# GEMmaker pull request
 
 Many thanks for contributing to systemsgenetics/gemmaker!
 

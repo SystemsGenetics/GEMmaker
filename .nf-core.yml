@@ -16,3 +16,5 @@ lint:
     - docs/README.md
     - assets/multiqc_config.yaml
     nextflow_config: false
+    actions_ci: false
+    readme: false

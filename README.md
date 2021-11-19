@@ -36,32 +36,10 @@ Development of GEMmaker was funded by the U.S. National Science Foundation Award
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
 
-## Citations
+## Quick Start
 
-### GEMmaker
+1. Install [`Nextflow`](https://www.nextflow.io/docs/latest/getstarted.html#installation) (`>=21.04.0`)
 
-If you use GEMmaker for your analysis, please cite it using the following:
+2. Install any of [`Docker`](https://docs.docker.com/engine/installation/), [`Singularity`](https://www.sylabs.io/guides/3.0/user-guide/), [`Podman`](https://podman.io/), [`Shifter`](https://nersc.gitlab.io/development/shifter/how-to-use/) or [`Charliecloud`](https://hpc.github.io/charliecloud/) for full pipeline reproducibility _(please only use [`Conda`](https://conda.io/miniconda.html) as a last resort; see [docs](https://nf-co.re/usage/configuration#basic-configuration-profiles))_
 
-> John Hadish, Tyler Biggs, Ben Shealy, Connor Wytko, Sai Prudhvi Oruganti, F. Alex Feltus, & Stephen Ficklin. (2020, January 22). SystemsGenetics/GEMmaker: Release v1.1 (Version v1.1). Zenodo. [10.5281/zenodo.3620945](http://doi.org/10.5281/zenodo.3620945)
-
-### nf-core
-
-To cite the nf-core framework for community-curated bioinformatics pipelines:
->
-> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen. The nf-core framework for community-curated bioinformatics pipelines. _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://www.nature.com/articles/s41587-020-0439-x).
-
-### Tools used by GEMmaker
-
-| Tool  | Citation or URL |
-| ----- | ------------ |
-| Nextflow |  Di Tommaso, P., Chatzou, M., Floden, E. W., Barja, P. P., Palumbo, E., & Notredame, C. (2017). Nextflow enables reproducible computational workflows. Nature Biotechnology, 35(4), 316–319. [10.1038/nbt.3820](https://doi.org/10.1038/nbt.3820) |
-| SRAtoolkit | [https://github.com/ncbi/sra-tools](https://github.com/ncbi/sra-tools) |
-| Aspera | [https://www.ibm.com/products/aspera](https://www.ibm.com/products/aspera) |
-| FastQC | [https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) |
-| Trimmomatic | Bolger, A. M., Lohse, M., & Usadel, B. (2014). Trimmomatic: A flexible trimmer for Illumina sequence data. Bioinformatics, 30(15), 2114–2120. [10.1093/bioinformatics/btu170](https://doi.org/10.1093/bioinformatics/btu170) |
-| Hisat2 | Kim, D., Paggi, J. M., Park, C., Bennett, C., & Salzberg, S. L. (2019). Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. Nature Biotechnology, 37(8), 907–915. [10.1038/s41587-019-0201-4](https://doi.org/10.1038/s41587-019-0201-4) |
-| Kallisto | Bray, N. L., Pimentel, H., Melsted, P., & Pachter, L. (2016). Near-optimal probabilistic RNA-seq quantification. Nature Biotechnology. [10.1038/nbt.3519](https://doi.org/10.1038/nbt.3519) |
-| Salmon | Patro, R., Duggal, G., Love, M. I., Irizarry, R. A., & Kingsford, C. (2017). Salmon provides fast and bias-aware quantification of transcript expression. Nature Methods, 14(4), 417–419. [10.1038/nmeth.4197](https://doi.org/10.1038/nmeth.4197) |
-| SAMtools | Li, H., Handsaker, B., Wysoker, A., Fennell, T., Ruan, J., Homer, N., Marth, G., Abecasis, G., & Durbin, R. (2009). The Sequence Alignment/Map format and SAMtools. Bioinformatics, 25(16), 2078–2079. [10.1093/bioinformatics/btp352](https://doi.org/10.1093/bioinformatics/btp352) |
-| StringTie | Pertea, M., Kim, D., Pertea, G. M., Leek, J. T., & Salzberg, S. L. (2016). Transcript-level expression analysis of RNA-seq experiments with HISAT, StringTie and Ballgown. Nature Protocols, 11(9), 1650–1667. [10.1038/nprot.2016.095](https://doi.org/10.1038/nprot.2016.095) |
-| MultiQC | Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: Summarize analysis results for multiple tools and samples in a single report. Bioinformatics. [10.1093/bioinformatics/btw354](https://doi.org/10.1093/bioinformatics/btw354) |
+3. Follow the examples in the ['Online Documentation'](https://gemmaker.readthedocs.io/en/latest/)

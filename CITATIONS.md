@@ -1,5 +1,10 @@
 # GEMmaker Citations
 
+If you use GEMmaker for your analysis, please cite it using the following:
+
+> John Hadish, Tyler Biggs, Ben Shealy, Connor Wytko, Sai Prudhvi Oruganti, F. Alex Feltus, & Stephen Ficklin. (2020, January 22). SystemsGenetics/GEMmaker: Release v1.1 (Version v1.1). Zenodo. [10.5281/zenodo.3620945](http://doi.org/10.5281/zenodo.3620945)
+
+
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 
 > Ewels PA, Peltzer A, Fillinger S, Patel H, Alneberg J, Wilm A, Garcia MU, Di Tommaso P, Nahnsen S. The nf-core framework for community-curated bioinformatics pipelines. Nat Biotechnol. 2020 Mar;38(3):276-278. doi: 10.1038/s41587-020-0439-x. PubMed PMID: 32055031.
