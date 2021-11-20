@@ -4,7 +4,13 @@
 process samtools_sort {
     tag { sample_id }
     publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: params.publish_pattern_samtools_sort
-    container "systemsgenetics/gemmaker:2.0.0"
+    
+    conda (params.enable_conda ? "bioconda::samtools=1.14" : null)
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+        container "https://depot.galaxyproject.org/singularity/samtools:1.14--hb421002_0"
+    } else {
+        container "quay.io/biocontainers/samtools:1.14--hb421002_0"
+    }
 
     input:
     tuple val(sample_id), path(sam_file)

@@ -4,7 +4,13 @@
 process kallisto {
     tag { sample_id }
     publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: params.publish_pattern_kallisto_ga
-    container "systemsgenetics/gemmaker:2.0.0"
+
+    conda (params.enable_conda ? "bioconda::kallisto=0.46.2" : null)
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+        container "https://depot.galaxyproject.org/singularity/kallisto:0.46.2--h4f7b962_1"
+    } else {
+        container "quay.io/biocontainers/kallisto:0.46.2--h4f7b962_1"
+    }
 
     input:
     tuple val(sample_id), path(fastq_files)

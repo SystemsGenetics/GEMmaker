@@ -4,7 +4,13 @@
 process fastqc {
     tag { sample_id }
     publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*_fastqc.*"
-    container "systemsgenetics/gemmaker:2.0.0"
+    
+    conda (params.enable_conda ? "bioconda::fastqc=0.11.9" : null)
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+        container "https://depot.galaxyproject.org/singularity/fastqc:0.11.9--0"
+    } else {
+        container "quay.io/biocontainers/fastqc:0.11.9--0"
+    }
 
     input:
     tuple val(sample_id), path(fastq_files)

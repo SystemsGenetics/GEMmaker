@@ -4,7 +4,13 @@
 process multiqc {
     cache false
     publishDir "${params.outdir}/reports", mode: params.publish_dir_mode
-    container "systemsgenetics/gemmaker:2.0.0"
+    
+    conda (params.enable_conda ? 'bioconda::multiqc=1.11' : null)
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+        container "https://depot.galaxyproject.org/singularity/multiqc:1.11--pyhdfd78af_0"
+    } else {
+        container "quay.io/biocontainers/multiqc:1.11--pyhdfd78af_0"
+    }
 
     input:
     val(signal)

@@ -4,7 +4,13 @@
 process hisat2_fpkm_tpm {
     tag { sample_id }
     publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode
-    container "systemsgenetics/gemmaker:2.0.0"
+    // Note: 2.7X indices incompatible with AWS iGenomes.
+    conda     (params.enable_conda ? "bioconda::stringtie=2.1.7" : null)
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+        container "https://depot.galaxyproject.org/singularity/stringtie:2.1.7--h978d192_0"
+    } else {
+        container "quay.io/biocontainers/stringtie:2.1.7--h978d192_0"
+    }
 
     input:
     tuple val(sample_id), path(stringtie_files)
@@ -40,7 +46,7 @@ process hisat2_fpkm_tpm {
       # Reformat the raw file to be the same as the TPM/FKPM files.
       cat ${sample_id}.raw.pre | \
         grep -v gene_id | \
-        perl -pi -e "s/,/\\t/g" > ${sample_id}.Hisat2.raw
+        sed "s/,/\\t/g" > ${sample_id}.Hisat2.raw
     fi
     """
 }

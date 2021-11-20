@@ -142,7 +142,7 @@ def modules = params.modules.clone()
 //
 // MODULE: Local to the pipeline
 //
-include { GET_SOFTWARE_VERSIONS } from '../modules/local/get_software_versions' addParams( options: [publish_files : ['tsv':'']] )
+include { GET_SOFTWARE_VERSIONS as get_software_versions } from '../modules/local/get_software_versions' addParams( options: [publish_files : ['tsv':'']] )
 
 // Module: clean_work_dirs
 include { clean_work_dirs } from '../modules/local/clean_work_dirs' addParams()
@@ -255,9 +255,7 @@ workflow GEMmaker {
         .collect()
         .set { ch_software_versions }
 
-    GET_SOFTWARE_VERSIONS (
-        ch_software_versions.map { it }.collect()
-    )
+    get_software_versions( ch_software_versions.map { it }.collect() )
 
 
     /**
