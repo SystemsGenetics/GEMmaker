@@ -15,7 +15,7 @@ process retrieve_sra_metadata {
 
   script:
   """
-  >&2 echo "#TRACE n_remote_run_ids=`cat ${sras} | wc -l`"
+  echo "#TRACE n_remote_run_ids=`cat ${sras} | wc -l`"
 
   # Remove the 'path:' prefix. This was added to prevent
   # Nextflow from recoginzing the path and noticing the work
