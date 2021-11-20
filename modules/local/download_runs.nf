@@ -16,9 +16,15 @@ process download_runs {
 
     script:
     """
+    # Remove the 'path:' prefix. This was added to prevent
+    # Nextflow from recoginzing the path and noticing the work
+    # directory changed and trying to re-run this process even
+    # if it succeeded.
+    workdir=`echo ${params.workDirParent}/${params.workDirName}/GEMmaker | sed 's/path://'`
+
     echo "#TRACE sample_id=${sample_id}"
     echo "#TRACE n_remote_run_ids=${run_ids.tokenize(" ").size()}"
-    echo "#TRACE n_spots=`retrieve_sra_spots.py ${workflow.workDir}/GEMmaker ${sample_id}`"
+    echo "#TRACE n_spots=`retrieve_sra_spots.py \$workdir ${sample_id}`"
 
     retrieve_sra.py --sample ${sample_id} --run_ids ${run_ids} --akey \${ASPERA_KEY}
     """

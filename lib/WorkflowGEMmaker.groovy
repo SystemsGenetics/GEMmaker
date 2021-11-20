@@ -29,16 +29,26 @@ class WorkflowGEMmaker {
         }
 
         // Delete "done" file from previous run.
-        File done_file = new File("${workflow.workDir}/GEMmaker/process/DONE")
-        if (done_file.exists()) {
-            done_file.delete()
+        File done_marker_file = new File("${workflow.workDir}/GEMmaker/process/DONE")
+        if (done_marker_file.exists()) {
+            done_marker_file.delete()
         }
 
         // Move any incomplete samples from previous run back to staging.
-        String[] stage_files = stage_dir.list();
-        for (int i = 0; i < stage_files.length; i++) {
-            File stage_file = new File("${workflow.workDir}/GEMmaker/stage/" + stage_files[i]);
-            stage_file.moveTo("${workflow.workDir}/GEMmaker/stage")
+        String[] process_files = process_dir.list()
+        for (int i = 0; i < process_files.length; i++) {
+            File process_file = new File("${workflow.workDir}/GEMmaker/process/" + process_files[i])
+            process_file.moveTo("${workflow.workDir}/GEMmaker/stage")
+        }
+
+        // Move done files back to the staging folder. The results
+        // from these files should be cached so they won't get processed
+        // again on a resume of the workflow. But we move them back
+        // otherwise the workflow stalls.
+        String[] done_files = done_dir.list()
+        for (int i = 0; i < done_files.length; i++) {
+            File done_file = new File("${workflow.workDir}/GEMmaker/done/" + done_files[i])
+            done_file.moveTo("${workflow.workDir}/GEMmaker/stage")
         }
 
         // Remove samples in the skip list from staging.

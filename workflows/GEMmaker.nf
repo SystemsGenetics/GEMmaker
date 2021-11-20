@@ -154,7 +154,12 @@ include { clean_work_files } from '../modules/local/clean_work_files' addParams(
 include { create_gem } from '../modules/local/create_gem' addParams(publish_fpkm: publish_fpkm, hisat2_enable: hisat2_enable, publish_tpm: publish_tpm, publish_raw: publish_raw)
 
 // Module: download_runs
-include { download_runs } from '../modules/local/download_runs' addParams()
+// Note: we have to pass in the work directory in pieces with a 'path:'
+// prefix because Nextflow will recoginze the path, see that the
+// diretory attributes have changed and won't use the cache. So, this is
+// a bit of a hack to keep Nextflow from rerunning the retreive on a resume
+// if it completed successfully.
+include { download_runs } from '../modules/local/download_runs' addParams(workDirParent: "path:" + workflow.workDir.getParent(), workDirName: workflow.workDir.getName())
 
 // Module: failed_run_report
 include { failed_run_report } from '../modules/local/failed_run_report' addParams()
@@ -194,7 +199,12 @@ include { multiqc } from '../modules/local/multiqc' addParams()
 include { next_sample } from '../modules/local/next_sample' addParams()
 
 // Module: retrieve_sra_metadata
-include { retrieve_sra_metadata } from '../modules/local/retrieve_sra_metadata' addParams()
+// Note: we have to pass in the work directory in pieces with a 'path:'
+// prefix because Nextflow will recoginze the path, see that the
+// diretory attributes have changed and won't use the cache. So, this is
+// a bit of a hack to keep Nextflow from rerunning the retreive on a resume
+// if it completed successfully.
+include { retrieve_sra_metadata } from '../modules/local/retrieve_sra_metadata' addParams(workDirParent: "path:" + workflow.workDir.getParent(), workDirName: workflow.workDir.getName())
 
 // Module: salmon
 publish_pattern_salmon_ga = params.salmon_keep_data
@@ -243,19 +253,19 @@ include { trimmomatic } from '../modules/local/trimmomatic' addParams(publish_pa
 */
 
 workflow GEMmaker {
-    ch_software_versions = Channel.empty()
+    CH_SOFTWARE_VERSIONS = Channel.empty()
     //
     // MODULE: Pipeline reporting
     //
-    ch_software_versions
+    CH_SOFTWARE_VERSIONS
         .map { it -> if (it) [ it.baseName, it ] }
         .groupTuple()
         .map { it[1][0] }
         .flatten()
         .collect()
-        .set { ch_software_versions }
+        .set { CH_SOFTWARE_VERSIONS }
 
-    get_software_versions( ch_software_versions.map { it }.collect() )
+    get_software_versions( CH_SOFTWARE_VERSIONS.map { it }.collect() )
 
 
     /**
@@ -272,7 +282,7 @@ workflow GEMmaker {
      * Retrieve metadata for remote samples from NCBI SRA.
      */
     if ( params.sras ) {
-        retrieve_sra_metadata(1)
+        retrieve_sra_metadata(file(params.sras))
 
         /**
          * Parse remote samples from the SRR2SRX mapping.

@@ -19,6 +19,6 @@ dependencies:
   - conda-forge::requests=2.23.0
   - conda-forge::jinja2=2.10
   # Use version 2.10.0 to avoid a vdb-config problem with singularity
-  - bioconda::sra-tools=2.11.0
+  - bioconda::sra-tools=2.10.0
   - bioconda::trimmomatic=0.39
   - bioconda::gffread=0.12.1
