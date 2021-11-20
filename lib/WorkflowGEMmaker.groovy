@@ -29,9 +29,9 @@ class WorkflowGEMmaker {
         }
 
         // Delete "done" file from previous run.
-        File done_marker_file = new File("${workflow.workDir}/GEMmaker/process/DONE")
-        if (done_marker_file.exists()) {
-            done_marker_file.delete()
+        File done_sentinel_file = new File("${workflow.workDir}/GEMmaker/process/DONE")
+        if (done_sentinel_file.exists()) {
+            done_sentinel_file.delete()
         }
 
         // Move any incomplete samples from previous run back to staging.
