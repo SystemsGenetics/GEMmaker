@@ -1,8 +1,3 @@
-// Import generic module functions
-include { saveFiles } from './functions'
-
-params.options = [:]
-
 /**
  * Creates the GEM file from all the FPKM/TPM outputs
  */
@@ -27,12 +22,26 @@ process create_gem {
     echo "#TRACE tpm_lines=`cat ${params.outdir}/*.tpm 2> /dev/null | wc -l`"
     echo "#TRACE raw_lines=`cat ${params.outdir}/*.raw 2> /dev/null | wc -l`"
 
-    create_gem.sh \
-        ${params.publish_fpkm} \
-        ${params.hisat2_enable} \
-        . \
-        GEMmaker \
-        ${params.publish_raw} \
-        ${params.publish_tpm}
+    # FPKM format is only generated if hisat2 is used
+    if [[ ${params.publish_fpkm} == true && ${params.hisat2_enable} == true ]]; then
+      create-gem.py \
+        --sources . \
+        --prefix GEMmaker \
+        --type FPKM
+    fi;
+
+    if [[ ${params.publish_raw} == true ]]; then
+      create-gem.py \
+        --sources . \
+        --prefix GEMmaker \
+        --type raw
+    fi
+
+    if [[ ${params.publish_tpm} == true ]]; then
+      create-gem.py \
+        --sources . \
+        --prefix GEMmaker \
+        --type TPM
+    fi
     """
 }

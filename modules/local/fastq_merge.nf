@@ -1,8 +1,3 @@
-// Import generic module functions
-include { saveFiles } from './functions'
-
-params.options = [:]
-
 /**
  * This process merges the fastq files based on their sample_id number.
  */
@@ -22,6 +17,26 @@ process fastq_merge {
     echo "#TRACE sample_id=${sample_id}"
     echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
 
-    fastq_merge.sh ${sample_id}
+    # First, concatenate all of the set 1 files
+    files1=`ls *_1.fastq | grep -v ${sample_id} | sort`
+    for file in $files1; do
+       echo "Concatenate file: ${file} to ${sample_id}_1.fastq"
+       cat $file >> "${sample_id}_1.fastq"
+    done
+    echo "Done with ${sample_id}_1.fastq"
+
+    # Next, concatenate all of the set 2 files
+    files2=`ls *_2.fastq | grep -v ${sample_id} | sort`
+    for file in $files2; do
+      echo "Concatenate file: ${file} to ${sample_id}_2.fastq"
+      cat $file >> "${sample_id}_2.fastq"
+    done
+    echo "Done with ${sample_id}_2.fastq"
+
+    # If there is a FASTQ sample with _2 suffix but no _1  then rename
+    # to _1 so that count software will work
+    if [ -e ${sample_id}_2.fastq ] && [ ! -e ${sample_id}_1.fastq ]; then
+      mv ${sample_id}_2.fastq ${sample_id}_1.fastq
+    fi
     """
 }

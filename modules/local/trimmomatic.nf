@@ -1,8 +1,3 @@
-// Import generic module functions
-include { saveFiles } from './functions'
-
-params.options = [:]
-
 /**
  * Performs Trimmomatic on all fastq files.
  *
@@ -40,14 +35,63 @@ process trimmomatic {
     echo "#TRACE fasta_lines=`cat ${fasta_adapter} | wc -l`"
     echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
 
-    trimmomatic.sh \
-        ${sample_id} \
-        ${params.trimmomatic_MINLEN} \
-        ${task.cpus} \
-        ${fasta_adapter} \
-        ${params.trimmomatic_LEADING} \
-        ${params.trimmomatic_TRAILING} \
-        ${params.trimmomatic_SLIDINGWINDOW} \
-        "${fastq_files}"
+    # convert the incoming FASTQ file list to an array
+    read -a fastq_files <<< ${fastq_files}
+
+    # This script calculates average length of fastq files.
+    total=0
+    # This if statement checks if the data is single or paired data, and checks length accordingly
+    # This script returns 1 number, which can be used for the minlen in trimmomatic
+    if [ \${#fastq_files[@]} == 2 ]; then
+      for fastq in "\${fastq_files[@]}"; do
+        cat="cat \$fastq"
+        if [[ \$fastq =~ .gz\$ ]]; then
+          cat="zcat \$fastq"
+        fi
+        a=`\$cat | awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}' \
+        | sort \
+        | awk '{ print \$0, \$1*\$2}' \
+        | awk -v var="${params.trimmomatic_MINLEN}" '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * var)} '`
+      total=(\$a + \$total)
+      done
+      total=( \$total / 2 )
+      minlen=\$total
+    else
+      cat="cat \${fastq_files[0]}"
+      if [[ \${fastq_files[0]} =~ .gz\$ ]]; then
+        cat="zcat \${fastq_files[0]}"
+      fi
+      minlen=`\$cat | awk 'NR%4 == 2 {lengths[length(\$0)]++} END {for (l in lengths) {print l, lengths[l]}}'  \
+        | sort \
+        | awk '{ print \$0, \$1*\$2}' \
+        | awk -v var="${params.trimmomatic_MINLEN}" '{ SUM += \$3 } { SUM2 += \$2 } END { printf("%.0f", SUM / SUM2 * var)} '`
+    fi
+    if [ \${#fastq_files[@]} == 2 ]; then
+      trimmomatic \
+        PE \
+        -threads ${task.cpus} \
+        \${fastq_files[0]} \
+        \${fastq_files[1]} \
+        ${sample_id}_1p_trim.fastq \
+        ${sample_id}_1u_trim.fastq \
+        ${sample_id}_2p_trim.fastq \
+        ${sample_id}_2u_trim.fastq \
+        ILLUMINACLIP:${fasta_adapter}:2:40:15 \
+        LEADING:${params.trimmomatic_LEADING} \
+        TRAILING:${params.trimmomatic_TRAILING} \
+        SLIDINGWINDOW:${params.trimmomatic_SLIDINGWINDOW} \
+        MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
+    else
+      trimmomatic \
+        SE \
+        -threads ${task.cpus} \
+        \${fastq_files[0]} \
+        ${sample_id}_1u_trim.fastq \
+        ILLUMINACLIP:${fasta_adapter}:2:40:15 \
+        LEADING:${params.trimmomatic_LEADING} \
+        TRAILING:${params.trimmomatic_TRAILING} \
+        SLIDINGWINDOW:${params.trimmomatic_SLIDINGWINDOW} \
+        MINLEN:"\$minlen" > ${sample_id}.trim.log 2>&1
+    fi
     """
 }

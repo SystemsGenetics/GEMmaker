@@ -1,8 +1,3 @@
-// Import generic module functions
-include { saveFiles } from './functions'
-
-params.options = [:]
-
 /**
  * Performs SALMON alignemnt of fastq files
  */
@@ -26,10 +21,30 @@ process salmon {
     echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
     echo "#TRACE index_bytes=`stat -Lc '%s' ${salmon_index} | awk '{sum += \$1} END {print sum}'`"
 
-    salmon.sh \
-        ${sample_id} \
-        ${task.cpus} \
-        ${salmon_index} \
-        "${fastq_files}" \
+    # convert the incoming FASTQ file list to an array
+    read -a fastq_files <<< ${fastq_files}
+
+    if [ \${#fastq_files[@]} == 2 ]; then
+      salmon quant \
+        -i ${salmon_index} \
+        -l A \
+        -1 \${fastq_files[0]} \
+        -2 \${fastq_files[1]} \
+        -p ${task.cpus} \
+        -o ${sample_id}.Salmon.ga \
+        --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
+    else
+      salmon quant \
+        -i ${salmon_index} \
+        -l A \
+        -r \${fastq_files[0]} \
+        -p ${task.cpus} \
+        -o ${sample_id}.Salmon.ga \
+        --minAssignedFrags 1 > ${sample_id}.salmon.log 2>&1
+    fi
+
+    # Copy these files for MultiQC reporting
+    cp ${sample_id}.Salmon.ga/aux_info/meta_info.json ${sample_id}-meta_info.json
+    cp ${sample_id}.Salmon.ga/libParams/flenDist.txt ${sample_id}-flenDist.txt
     """
 }

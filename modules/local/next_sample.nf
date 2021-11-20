@@ -1,10 +1,3 @@
-
-// Import generic module functions
-include { saveFiles } from './functions'
-
-params.options = [:]
-
-
 /**
  * Move a new sample into the process directory when
  * a previous sample is completed.
@@ -17,6 +10,9 @@ process next_sample {
 
     input:
     val(sample_id)
+
+    output:
+    val(1), emit: SAMPLE_READY
 
     exec:
     // Move the completed file into the done folder.

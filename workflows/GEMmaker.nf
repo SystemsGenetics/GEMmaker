@@ -274,7 +274,7 @@ workflow GEMmaker {
      * Retrieve metadata for remote samples from NCBI SRA.
      */
     if ( params.sras ) {
-        retrieve_sra_metadata()
+        retrieve_sra_metadata(1)
 
         /**
          * Parse remote samples from the SRR2SRX mapping.

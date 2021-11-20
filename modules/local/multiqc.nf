@@ -1,8 +1,3 @@
-// Import generic module functions
-include { saveFiles } from './functions'
-
-params.options = [:]
-
 /**
  * Process to generate the multiqc report once everything is completed
  */

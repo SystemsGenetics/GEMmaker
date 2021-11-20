@@ -1,8 +1,3 @@
-// Import generic module functions
-include { saveFiles } from './functions'
-
-params.options = [:]
-
 /**
  * Sorts the SAM alignment file and coverts it to binary BAM
  */

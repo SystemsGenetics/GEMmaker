@@ -1,8 +1,3 @@
-// Import generic module functions
-include { saveFiles } from './functions'
-
-params.options = [:]
-
 /**
  * Generates the final FPKM / TPM / raw files from Hisat2
  */
@@ -29,10 +24,23 @@ process hisat2_fpkm_tpm {
     echo "#TRACE ga_lines=`cat *.ga | wc -l`"
     echo "#TRACE gtf_lines=`cat *.gtf | wc -l`"
 
-    hisat2_fpkm_tpm.sh \
-        ${params.hisat2_keep_fpkm} \
-        ${sample_id} \
-        ${params.hisat2_keep_tpm} \
-        ${params.hisat2_keep_counts}
+    if [[ ${params.hisat2_keep_fpkm} == true ]]; then
+      awk -F"\t" '{if (NR!=1) {print \$1, \$8}}' OFS='\t' ${sample_id}.Hisat2.ga > ${sample_id}.Hisat2.fpkm
+    fi
+
+    if [[ ${params.hisat2_keep_tpm} == true ]]; then
+      awk -F"\t" '{if (NR!=1) {print \$1, \$9}}' OFS='\t' ${sample_id}.Hisat2.ga > ${sample_id}.Hisat2.tpm
+    fi
+
+    if [[ ${params.hisat2_keep_counts} == true ]]; then
+      # Run the prepDE.py script provided by stringtie to get the raw counts.
+      echo -e "${sample_id}\t./${sample_id}.Hisat2.gtf" > gtf_files
+      prepDE.py -i gtf_files -g ${sample_id}.raw.pre
+
+      # Reformat the raw file to be the same as the TPM/FKPM files.
+      cat ${sample_id}.raw.pre | \
+        grep -v gene_id | \
+        perl -pi -e "s/,/\\t/g" > ${sample_id}.Hisat2.raw
+    fi
     """
 }

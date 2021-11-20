@@ -1,8 +1,3 @@
-// Import generic module functions
-include { saveFiles } from './functions'
-
-params.options = [:]
-
 /**
  * Generates the final TPM file for Salmon
  */
@@ -23,9 +18,12 @@ process salmon_tpm {
     """
     echo "#TRACE sample_id=${sample_id}"
 
-    salmon_tpm.sh \
-        ${params.salmon_keep_tpm} \
-        ${params.salmon_keep_counts} \
-        ${sample_id}
+    if [[ ${params.salmon_keep_tpm} == true ]]; then
+      awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}.Salmon.ga/quant.sf > ${sample_id}.Salmon.tpm
+    fi
+
+    if [[ ${params.salmon_keep_counts} == true ]]; then
+      awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}.Salmon.ga/quant.sf > ${sample_id}.Salmon.raw
+    fi
     """
 }

@@ -1,8 +1,3 @@
-// Import generic module functions
-include { saveFiles } from './functions'
-
-params.options = [:]
-
 /**
  * Downloads SRA files from NCBI using the SRA Toolkit.
  */
