@@ -1,5 +1,5 @@
 /**
- * Performs hisat2 alignment of fastq files to a genome reference
+ * Performs STAR alignment of fastq files to a genome reference
  */
 process star {
     tag { sample_id }
