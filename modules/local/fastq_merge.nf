@@ -17,6 +17,6 @@ process fastq_merge {
     echo "#TRACE sample_id=${sample_id}"
     echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
 
-    merge_fastq.py --fastq_files ${fastq_files.join(" ")} --out_fastq ${sample_id}
+    merge_fastq.py --fastq_files ${fastq_files.join(" ")} --out_prefix ${sample_id}
     """
 }
