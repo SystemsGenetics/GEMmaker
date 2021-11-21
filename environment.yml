@@ -18,6 +18,7 @@ dependencies:
   - conda-forge::tbb=2020.2
   - conda-forge::requests=2.23.0
   - conda-forge::jinja2=2.10
+  - conda-forge::biopython=1.79
   # Use version 2.10.0 to avoid a vdb-config problem with singularity
   - bioconda::sra-tools=2.10.0
   - bioconda::trimmomatic=0.39
