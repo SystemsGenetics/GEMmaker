@@ -3,7 +3,7 @@
  */
 process create_gem {
     publishDir "${params.outdir}/GEMs", mode: params.publish_dir_mode
-    container "systemsgenetics/gemmaker:2.0.0"
+    container "systemsgenetics/gemmaker:2.1.0"
 
     input:
     val(signal)

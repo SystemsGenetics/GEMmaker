@@ -5,7 +5,7 @@ process star {
     tag { sample_id }
     label "process_medium"
     publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*.log"
-    container "systemsgenetics/gemmaker:2.0.0"
+    container "systemsgenetics/gemmaker:2.1.0"
 
     input:
     tuple val(sample_id), path(fastq_files)

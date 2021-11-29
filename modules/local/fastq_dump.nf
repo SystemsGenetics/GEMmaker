@@ -5,7 +5,7 @@ process fastq_dump {
     tag { sample_id }
     publishDir params.outdir, mode: params.publish_dir_mode, pattern: params.publish_pattern_fastq_dump, saveAs: { "Samples/${sample_id}/${it}" }
     publishDir params.outdir, mode: params.publish_dir_mode, pattern: '*.failed_runs.fastq-dump.txt', saveAs: { "Samples/${sample_id}/${it}" }
-    container "systemsgenetics/gemmaker:2.0.0"
+    container "systemsgenetics/gemmaker:2.1.0"
 
     input:
     tuple val(sample_id), path(sra_files)
