@@ -4,16 +4,16 @@
   |\\ | |__  __ /  ` /  \\ |__) |__         }  {
   | \\| |       \\__, \\__/ |  \\ |___     \\`-._,-`-,
                                         `._,._,'
-  nf-core/gemmaker v${version}
+  systemsgenetics/gemmaker v${version}
 ----------------------------------------------------
 
 Run Name: $runName
 
 <% if (success){
-    out << "## nf-core/gemmaker execution completed successfully! ##"
+    out << "## systemsgenetics/gemmaker execution completed successfully! ##"
 } else {
     out << """####################################################
-## nf-core/gemmaker execution completed unsuccessfully! ##
+## systemsgenetics/gemmaker execution completed unsuccessfully! ##
 ####################################################
 The exit status of the task that caused the workflow execution to fail was: $exitStatus.
 The full error message was:
@@ -36,5 +36,5 @@ Pipeline Configuration:
 <% out << summary.collect{ k,v -> " - $k: $v" }.join("\n") %>
 
 --
-nf-core/gemmaker
-https://github.com/nf-core/gemmaker
+systemsgenetics/gemmaker
+https://github.com/systemsgenetics/gemmaker
