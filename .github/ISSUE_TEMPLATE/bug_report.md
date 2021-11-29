@@ -56,8 +56,8 @@ Have you provided the following extra information/files:
 ## Container engine
 
 - Engine: <!-- [e.g. Conda, Docker, Singularity, Podman, Shifter or Charliecloud] -->
-- version: <!-- [e.g. 2.0.0] -->
-- Image tag: <!-- [e.g. systemsgenetics/gemmaker:2.0.0] -->
+- version: <!-- [e.g. 2.1.0] -->
+- Image tag: <!-- [e.g. systemsgenetics/gemmaker:2.1.0] -->
 
 ## Additional context
 
