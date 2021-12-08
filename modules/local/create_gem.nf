@@ -18,9 +18,9 @@ process create_gem {
     echo "#TRACE hisat2_enable=${params.hisat2_enable}"
     echo "#TRACE publish_tpm=${params.publish_tpm}"
     echo "#TRACE publish_raw=${params.publish_raw}"
-    echo "#TRACE fpkm_lines=`cat ${params.outdir}/*.fpkm 2> /dev/null  | wc -l`"
-    echo "#TRACE tpm_lines=`cat ${params.outdir}/*.tpm 2> /dev/null | wc -l`"
-    echo "#TRACE raw_lines=`cat ${params.outdir}/*.raw 2> /dev/null | wc -l`"
+    #echo "#TRACE fpkm_lines=`cat ${params.outdir}/*.fpkm 2> /dev/null  | wc -l`"
+    #echo "#TRACE tpm_lines=`cat ${params.outdir}/*.tpm 2> /dev/null | wc -l`"
+    #echo "#TRACE raw_lines=`cat ${params.outdir}/*.raw 2> /dev/null | wc -l`"
 
     # FPKM format is only generated if hisat2 is used
     if [[ ${params.publish_fpkm} == true && ${params.hisat2_enable} == true ]]; then
