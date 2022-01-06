@@ -31,3 +31,13 @@ kallisto index -i CORG.transcripts.Kalisto.indexed CORG.transcripts.clean
 #This is the commands for making the Salmon Index:
 module load salmon
 salmon index -t CORG.transcripts.clean -i CORG.transcripts.Salmon.indexed
+
+#These are the commands for making the Star Index:
+mkdir CORG.genome.Star.indexed
+
+singularity exec -B ${PWD} https://depot.galaxyproject.org/singularity/star:2.7.9a--h9ee0642_0 STAR \
+--runThreadN 4 \
+--runMode genomeGenerate \
+--genomeDir CORG.genome.Star.indexed \
+--genomeFastaFiles CORG.fna \
+--sjdbGTFfile CORG.transcripts.gtf

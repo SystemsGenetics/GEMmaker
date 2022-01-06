@@ -1,0 +1,19 @@
+### /usr/local/bin/STAR   --runMode genomeGenerate      --runThreadN 4   --genomeDir CORG.genome.Star.indexed   --genomeFastaFiles CORG.fna      --sjdbGTFfile CORG.transcripts.gtf
+### GstrandBit 32
+versionGenome	2.7.4a
+genomeType	Full
+genomeFastaFiles	CORG.fna 
+genomeSAindexNbases	14
+genomeChrBinNbits	18
+genomeSAsparseD	1
+genomeTransformType	None
+genomeTransformVCF	-
+sjdbOverhang	100
+sjdbFileChrStartEnd	- 
+sjdbGTFfile	CORG.transcripts.gtf
+sjdbGTFchrPrefix	-
+sjdbGTFfeatureExon	exon
+sjdbGTFtagExonParentTranscript	transcript_id
+sjdbGTFtagExonParentGene	gene_id
+sjdbInsertSave	Basic
+genomeFileSizes	786432 19003
