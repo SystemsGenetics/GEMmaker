@@ -40,4 +40,5 @@ singularity exec -B ${PWD} https://depot.galaxyproject.org/singularity/star:2.7.
 --runMode genomeGenerate \
 --genomeDir CORG.genome.Star.indexed \
 --genomeFastaFiles CORG.fna \
---sjdbGTFfile CORG.transcripts.gtf
+--sjdbGTFfile CORG.transcripts.gtf \
+--genomeSAindexNbases 4
