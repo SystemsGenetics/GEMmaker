@@ -1,3 +1,5 @@
+nextflow.enable.dsl=2
+
 /**
  * Performs STAR alignment of fastq files to a genome reference
  */
@@ -7,16 +9,16 @@ process star {
 
     conda (params.enable_conda ? "bioconda::star=2.7.9a" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-      container'https://depot.galaxyproject.org/singularity/star:2.7.9a--h9ee0642_0' :
+      container "https://depot.galaxyproject.org/singularity/star:2.7.9a--h9ee0642_0"
     }
 
     input:
     tuple val(sample_id), path(fastq_files)
-    path(indexes)
+    path(star_index)
 
     output:
     tuple val(sample_id), path("*.sam"), emit: SAM_FILES
-    tuple val(sample_id), path("*.sam.log"), emit: LOGS
+    tuple val(sample_id), path("*.star.log"), emit: LOGS
     tuple val(sample_id), val(params.DONE_SENTINEL), emit: DONE_SIGNAL
 
     script:
@@ -24,7 +26,7 @@ process star {
     echo "#TRACE sample_id=${sample_id}"
     echo "#TRACE n_cpus=${task.cpus}"
     echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
-    echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
+    echo "#TRACE index_bytes=`stat -Lc '%s' ${star_index} | awk '{sum += \$1} END {print sum}'`"
 
     # convert the incoming FASTQ file list to an array
     read -a fastq_files <<< ${fastq_files}
@@ -64,7 +66,7 @@ process star {
         STAR \
             --runThreadN ${task.cpus} \
             --genomeDir ${star_index} \
-            --readFilesIn \${fq_1u}
+            --readFilesIn \${fq_1u} > ${sample_id}.star.log 2>&1
     fi
     """
 }

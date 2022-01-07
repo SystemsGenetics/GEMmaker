@@ -10,11 +10,15 @@ def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
  * Determine which quantification tool was selected.
  */
 hisat2_enable = false
+star_enable = false
 kallisto_enable = false
 salmon_enable = false
 
 if (params.pipeline.equals('hisat2')) {
   hisat2_enable = true
+}
+else if (params.pipeline.equals('star')) {
+  star_enable = true
 }
 else if (params.pipeline.equals('kallisto')) {
   kallisto_enable = true
@@ -45,20 +49,24 @@ publish_tpm = false
 publish_raw = false
 publish_gem = false
 
-if (hisat2_enable && params.hisat2_keep_fpkm) {
+if ((hisat2_enable && params.hisat2_keep_fpkm) ||
+    (star_enable && params.star_keep_fpkm)) {
     publish_fpkm = true
 }
 if ((hisat2_enable && params.hisat2_keep_counts) ||
+    (star_enable && params.star_keep_counts) ||
     (salmon_enable && params.salmon_keep_counts) ||
     (kallisto_enable && params.kallisto_keep_counts)) {
     publish_raw = true
 }
 if ((hisat2_enable && params.hisat2_keep_tpm) ||
+    (star_enable && params.star_keep_tpm) ||
     (salmon_enable && params.salmon_keep_tpm) ||
     (kallisto_enable && params.kallisto_keep_tpm)) {
     publish_tpm = true
 }
 if ((hisat2_enable && params.hisat2_keep_gem) ||
+    (star_enable && params.star_keep_gem) ||
     (salmon_enable && params.salmon_keep_gem) ||
     (kallisto_enable && params.kallisto_keep_gem)) {
     publish_gem = true
@@ -77,10 +85,23 @@ if (hisat2_enable && !file(params.hisat2_index_dir).isDirectory()) {
     \nGEMmaker is missing the following file: '${params.hisat2_index_dir}'"
 }
 
+
+if (star_enable && file(params.star_gtf_file).isEmpty()) {
+    error "Error: GTF reference file for star does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.star_gtf_file}' "
+}
+
+if (star_enable && !file(params.star_index_dir).isDirectory()) {
+    error "Error: star Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
+    \nGEMmaker is missing the following file: '${params.star_index_dir}'"
+}
+
+
 if (kallisto_enable && file(params.kallisto_index_path).isEmpty()) {
     error "Error: Kallisto Index File does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.kallisto_index_path}'"
 }
+
 
 if (salmon_enable && !file(params.salmon_index_path).isDirectory()) {
     error "Error: Salmon Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
@@ -90,7 +111,8 @@ if (salmon_enable && !file(params.salmon_index_path).isDirectory()) {
 /**
  * Check that other input files/directories exist
  */
-if (hisat2_enable && !file(params.trimmomatic_clip_file).exists()) {
+if (hisat2_enable && !file(params.trimmomatic_clip_file).exists() ||
+    star_enable && !file(params.trimmomatic_clip_file).exists()) {
     error "Error: The Trimmomatic clip file cannot be found at '${params.trimmomatic_clip_file}'."
 }
 
@@ -182,6 +204,9 @@ include { hisat2_fpkm_tpm } from '../modules/local/hisat2_fpkm_tpm' addParams(DO
 
 // Module: hisat2
 include { hisat2 } from '../modules/local/hisat2' addParams(DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: star
+include { star } from '../modules/local/star' addParams(DONE_SENTINEL: DONE_SENTINEL)
 
 // Module: kallisto
 publish_pattern_kallisto_ga = params.kallisto_keep_data
@@ -440,6 +465,50 @@ workflow GEMmaker {
                 trimmomatic.out.LOGS.map { it[1] },
                 fastqc_2.out.REPORTS.flatten(),
                 hisat2.out.LOGS.map { it[1] },
+                samtools_index.out.LOGS.map { it[1] })
+    }
+
+    /**
+     * Process samples with star if enabled.
+     */
+    if ( star_enable ) {
+        // execute star pipeline
+        STAR_INDEXES = Channel.fromPath( params.star_index_dir ).collect()
+        FASTA_ADAPTER = Channel.fromPath( params.trimmomatic_clip_file ).collect()
+        GTF_FILE = Channel.fromPath( params.star_gtf_file ).collect()
+
+        trimmomatic(FASTQ_FILES, FASTA_ADAPTER)
+        TRIMMED_FASTQ_FILES = trimmomatic.out.FASTQ_FILES
+        MERGED_FASTQ_DONE = trimmomatic.out.DONE_SIGNAL
+
+        fastqc_2(TRIMMED_FASTQ_FILES)
+
+        star(TRIMMED_FASTQ_FILES, STAR_INDEXES)
+        SAM_FILES = star.out.SAM_FILES
+
+        samtools_sort(SAM_FILES)
+        BAM_FILES = samtools_sort.out.BAM_FILES
+
+        samtools_index(BAM_FILES)
+        INDEXED_BAM_FILES = samtools_index.out.BAM_FILES
+
+        stringtie(INDEXED_BAM_FILES, GTF_FILE)
+        STRINGTIE_FILES = stringtie.out.GA_GTF_FILES
+
+        hisat2_fpkm_tpm(STRINGTIE_FILES)
+        RAW_FILES = hisat2_fpkm_tpm.out.RAW_FILES
+        TPM_FILES = hisat2_fpkm_tpm.out.TPM_FILES
+        FPKM_FILES = hisat2_fpkm_tpm.out.FPKM_FILES
+
+        // prepare channels for downstream processes
+        COMPLETED_SAMPLES = hisat2_fpkm_tpm.out.DONE_SIGNAL
+
+        MULTIQC_FILES = Channel.empty()
+            .mix(
+                fastqc_1.out.REPORTS.flatten(),
+                trimmomatic.out.LOGS.map { it[1] },
+                fastqc_2.out.REPORTS.flatten(),
+                star.out.LOGS.map { it[1] },
                 samtools_index.out.LOGS.map { it[1] })
     }
 

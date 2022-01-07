@@ -21,12 +21,13 @@
                 },
                 "pipeline": {
                     "type": "string",
-                    "description": "The name of the quantification pipeline that should be used. This should be one of 'kallisto', 'salmon' or 'hisat2'",
+                    "description": "The name of the quantification pipeline that should be used. This should be one of 'kallisto', 'salmon', 'hisat2' or 'star'",
                     "default": "kallisto",
                     "enum": [
                         "kallisto",
                         "salmon",
-                        "hisat2"
+                        "hisat2",
+                        "star"
                     ]
                 },
                 "sras": {
@@ -199,6 +200,85 @@
                     "description": "Indicates if the TPM normalized counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
                 },
                 "hisat2_keep_gem": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the GEM file should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "trimmomatic_clip_file": {
+                    "type": "string",
+                    "description": "This option is only used for the Hisat2 pipeline. The location of the clip file containing sequences of contaminants that should be removed from reads during trimming.",
+                    "default": "${projectDir}/assets/fasta_adapter.txt"
+                },
+                "trimmomatic_MINLEN": {
+                    "type": "number",
+                    "description": "This option is only used for the Hisat2 pipeline.  The MINLEN parameter for Trimmomatic.",
+                    "default": 0.7
+                },
+                "trimmomatic_SLIDINGWINDOW": {
+                    "type": "string",
+                    "description": "This option is only used for the Hisat2 pipeline.  The SLIDINGWINDOW parameter for Trimmomatic.",
+                    "default": "4:15"
+                },
+                "trimmomatic_LEADING": {
+                    "type": "integer",
+                    "description": "This option is only used for the Hisat2 pipeline. The LEADING parameter for Trimmomatic.",
+                    "default": 3
+                },
+                "trimmomatic_TRAILING": {
+                    "type": "integer",
+                    "description": "This option is only used for the Hisat2 pipeline. The TRAILING parameter for Trimmomatic.",
+                    "default": 6
+                },
+                "trimmomatic_keep_trimmed_fastq": {
+                    "type": "boolean",
+                    "description": "Indicates if the trimmed FASTQ file should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                }
+            }
+        },
+        "star_pipeline": {
+            "title": "Star Pipeline",
+            "type": "object",
+            "description": "Parameters for the Star pipeline which includes Trimmomatic.",
+            "default": "",
+            "properties": {
+                "star_index_dir": {
+                    "type": "string",
+                    "description": "The directory containing the star indexed files for the reference genome.",
+                    "default": "${projectDir}/assets/demo/references/CORG.genome.star.indexed"
+                },
+                "star_gtf_file": {
+                    "type": "string",
+                    "description": "A GTF of the reference genome.",
+                    "default": "${projectDir}/assets/demo/references/CORG.transcripts.gtf"
+                },
+                "star_keep_data": {
+                    "type": "boolean",
+                    "description": "Indicates if the intermediate data files created by Star should be kept. If true, the files are retrained, if false the files are removed to save storage space."
+                },
+                "star_keep_sam": {
+                    "type": "boolean",
+                    "description": "Indicates if the SAM file created by star should be retained. If true then the file is kept, if false the file is removed to save storage space. These files can be large and should not be kept if  they are not ultimately needed or if storage is limited."
+                },
+                "star_keep_bam": {
+                    "type": "boolean",
+                    "description": "Indicates if the BAM file created by star should be retained. If true then the file is kept, if false the file is removed to save storage space. These files can be large and should not be kept if  they are not ultimately needed or if storage is limited."
+                },
+                "star_keep_counts": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the raw abundance counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "star_keep_fpkm": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the FPKM normalized counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "star_keep_tpm": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the TPM normalized counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "star_keep_gem": {
                     "type": "boolean",
                     "default": true,
                     "description": "Indicates if the GEM file should be retained. If true then the file is kept, if false the file is removed to save storage space."
