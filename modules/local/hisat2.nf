@@ -3,7 +3,6 @@
  */
 process hisat2 {
     tag { sample_id }
-    label "process_medium"
     publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*.log"
 
     conda (params.enable_conda ? "bioconda::hisat2=2.2.0 bioconda::samtools=1.10" : null)

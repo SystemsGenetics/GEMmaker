@@ -4,7 +4,7 @@
 process salmon {
     tag { sample_id }
     publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: params.publish_pattern_salmon_ga
-    
+
     conda (params.enable_conda ? 'bioconda::salmon=1.5.2' : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/salmon:1.5.2--h84f40af_0"
@@ -18,7 +18,7 @@ process salmon {
 
     output:
     tuple val(sample_id), path("*.ga", type: "dir"), emit: GA_FILES
-    tuple val(sample_id), path("*.ga", type: "dir"), emit: LOGS
+    tuple val(sample_id), path("*.salmon.log"), emit: LOGS
     tuple val(sample_id), val(params.DONE_SENTINEL), emit: DONE_SIGNAL
 
     script:
