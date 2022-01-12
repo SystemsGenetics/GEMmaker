@@ -199,21 +199,8 @@ include { fastqc as fastqc_2 } from '../modules/local/fastqc' addParams(DONE_SEN
 include { fastq_merge } from '../modules/local/fastq_merge' addParams(DONE_SENTINEL: DONE_SENTINEL)
 
 // Module: stringtie_fpkm_tpm
-keep_tpm = false
-keep_fpkm = false
-keep_counts = false
-if ( star_enable ) {
-    keep_tmp = params.star_keep_tpm
-    keep_fpkm = params.star_keep_fpkm
-    keep_counts = params.star_keep_counts
-}
-if ( hisat2_enable ) {
-    keep_tmp = params.hisat2_keep_tpm
-    keep_fpkm = params.hisat2_keep_fpkm
-    keep_counts = params.hisat2_keep_counts
-}
 include { stringtie_fpkm_tpm } from '../modules/local/stringtie_fpkm_tpm' addParams(DONE_SENTINEL: DONE_SENTINEL,
-    keep_fpkm: keep_fpkm, keep_tpm: keep_tpm, keep_counts: keep_counts)
+    keep_fpkm: publish_fpkm, keep_tpm: publish_tpm, keep_counts: publish_raw)
 
 // Module: hisat2
 include { hisat2 } from '../modules/local/hisat2' addParams(DONE_SENTINEL: DONE_SENTINEL)
