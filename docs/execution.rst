@@ -165,9 +165,8 @@ If you want to run GEMmaker on a local High Performance Computing Cluster (HPC) 
    profiles {
       my_cluster {
          process {
-            executor = "slurm" 
+            executor = "slurm"
             queue = "<queue name>"
-            maxRetries = 2
             clusterOptions = ""
          }
          executor {
@@ -176,9 +175,7 @@ If you want to run GEMmaker on a local High Performance Computing Cluster (HPC) 
       }
    }
 
-In the example above we created a new profile named ``my_cluster``. The ``executor`` is what type of cluster we will be running on, in this case a slurm cluster. Additional executor options for other HPC cluster types can be located in the `nextflow executor documentation <https://www.nextflow.io/docs/latest/executor.html>`_ 
-
-Within the stanza, the placeholder text ``<queue name>`` should be replaced with the name of the queue on which you are allowed to submit jobs. ``maxRetries`` indicates how many times Nextflow will attempt to perform a process before giving an error. ``maxRetries`` is an important option if you are running on the backfill queue of a HPC where you have the potential to be pre-empted by other jobs. If you need to provide specific options that you would normally provide in a SLURM submission script (such as an account or other node targetting settings) you can use the ``clusterOptions`` setting.
+In the example above we created a new profile named ``my_cluster``. Within the stanza, the placeholder text ``<queue name>`` should be replaced with the name of the queue on which you are allowed to submit jobs. If you need to provide specific options that you would normally provide in a SLURM submission script (such as an account or other node targetting settings) you can use the ``clusterOptions`` setting.
 
 Next, is an example SLURM submission script for submitting a job to run GEMmaker. Please note, this is just an example and your specific cluster may require slightly different configuration/usage. The script assumes your cluster uses the lmod system for specifying software.
 
@@ -199,7 +196,7 @@ Next, is an example SLURM submission script for submitting a job to run GEMmaker
       -profile my_cluster,singularity \
       -resume \
       --pipeline kallisto \
-      --kallisto_index_path Araport11_genes.201606.cdna.indexed \
+      --kallisto_index_path Arabidopsis_thaliana.TAIR10.kallisto.indexed \
       --sras  SRA_IDs.txt \
       --max_cpus 120
 
