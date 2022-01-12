@@ -20,7 +20,7 @@ process star {
 
     output:
     tuple val(sample_id), path("*.sam"), emit: SAM_FILES
-    tuple val(sample_id), path("*.star.log"), emit: LOGS
+    tuple val(sample_id), path("*Log.final.out"), emit: LOGS
     tuple val(sample_id), val(params.DONE_SENTINEL), emit: DONE_SIGNAL
 
     script:
@@ -57,17 +57,21 @@ process star {
       STAR \
         --runThreadN ${task.cpus} \
         --genomeDir ${star_index} \
+        --outFileNamePrefix ${sample_id}p \
         --readFilesIn \${fq_1p} \${fq_2p}
+
       # Now aligned the non-paired
       STAR \
         --runThreadN ${task.cpus} \
         --genomeDir ${star_index} \
+        --outFileNamePrefix ${sample_id}s
         --readFilesIn \${fq_1u},\${fq_2u}
 
     else
         STAR \
             --runThreadN ${task.cpus} \
             --genomeDir ${star_index} \
+            --outFileNamePrefix ${sample_id}s \
             --readFilesIn \${fq_1u} > ${sample_id}.star.log 2>&1
     fi
     """
