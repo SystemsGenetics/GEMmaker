@@ -27,7 +27,7 @@ else if (params.pipeline.equals('salmon')) {
   salmon_enable = true
 }
 else {
-  error "Error: You must select a valid quantification tool using the '--pipeline' parameter. Currently valid options are 'salmon', 'kallisto', or 'hisat2'"
+  error "Error: You must select a valid quantification tool using the '--pipeline' parameter. Currently valid options are 'salmon', 'kallisto', 'star', or 'hisat2'"
 }
 
 /**
@@ -251,6 +251,12 @@ publish_pattern_samtools_sort = params.hisat2_keep_bam
     ? "{*.log,*.bam}"
     : "{*.log}"
 include { samtools_sort } from '../modules/local/samtools_sort' addParams(publish_pattern_samtools_sort: publish_pattern_samtools_sort, DONE_SENTINEL: DONE_SENTINEL)
+
+// Module: samtools_merge - used with STAR only
+publish_pattern_samtools_merge = params.star_keep_bam
+    ? "{*.log,*.bam}"
+    : "{*.log}"
+include { samtools_merge } from '../modules/local/samtools_merge' addParams(publish_pattern_samtools_merge: publish_pattern_samtools_merge, DONE_SENTINEL: DONE_SENTINEL)
 
 // Module: stringtie
 publish_pattern_stringtie_ga_gtf = params.hisat2_keep_data
@@ -486,7 +492,10 @@ workflow GEMmaker {
         star(TRIMMED_FASTQ_FILES, STAR_INDEXES)
         SAM_FILES = star.out.SAM_FILES
 
-        samtools_sort(SAM_FILES)
+        samtools_merge(SAM_FILES)
+        MERGED_BAM_FILES = samtools_merge.out.BAM_FILES
+
+        samtools_sort(MERGED_BAM_FILES)
         BAM_FILES = samtools_sort.out.BAM_FILES
 
         samtools_index(BAM_FILES)
