@@ -36,7 +36,7 @@ process trimmomatic {
     echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
 
     # convert the incoming FASTQ file list to an array
-    read -a fastq_files <<< ${fastq_files}
+    fastq_files=(${fastq_files})
 
     # This script calculates average length of fastq files.
     total=0
