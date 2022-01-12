@@ -33,12 +33,12 @@ else {
 /**
  * Make sure that at least one output format is enabled.
  */
-if (hisat2_enable && !params.hisat2_keep_counts && !params.hisat2_keep_fpkm && !params.hisat2_keep_tpm) {
-  error "Error: at least one output format (raw, fpkm, tpm) must be enabled for hisat2"
+if ((hisat2_enable || star_enable) && !params.hisat2_keep_counts && !params.hisat2_keep_fpkm && !params.hisat2_keep_tpm) {
+  error "Error: at least one output format (raw, fpkm, tpm) must be enabled."
 }
 
 if (!hisat2_enable && !params.hisat2_keep_counts && !params.hisat2_keep_tpm) {
-  error "Error: at least one output format (raw, tpm) must be enabled for kallisto / salmon"
+  error "Error: at least one output format (raw, tpm) must be enabled."
 }
 
 /**
