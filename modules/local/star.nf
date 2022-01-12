@@ -10,6 +10,8 @@ process star {
     conda (params.enable_conda ? "bioconda::star=2.7.9a" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
       container "https://depot.galaxyproject.org/singularity/star:2.7.9a--h9ee0642_0"
+    } else {
+      container "quay.io/biocontainers/star:2.7.9a--h9ee0642_0"
     }
 
     input:

@@ -138,3 +138,66 @@ To index the reference:
   docker run -v ${PWD}:/reference -u $(id -u ${USER}):$(id -g ${USER}) systemsgenetics/gemmaker  /bin/bash -c "cd /reference; hisat2-build -f Arabidopsis_thaliana.TAIR10.dna.toplevel.fa Arabidopsis_thaliana.TAIR10"
 
 The command above uses the ``systemsgenetics/gemmaker`` image.  The image will be downloaded if it does not already exist on your machine.   The ``-v ${PWD}:/reference`` argument instructs Docker to mount the current directory (i.e.: ``${PWD}``) onto a new directory in the image named ``/references`` and gives the image access to the transcript file for indexing.  The ``-c`` argument provides the Salmon index command needed to index the files.  The ``-u $(id -u ${USER}):$(id -g ${USER})`` argument instructs Docker to run ``hisat2-build`` as you rather than the system root user.
+
+
+STAR
+''''''
+STAR requires multiple steps that include alignment of RNA-seq reads to a genomic reference sequence followed by quantification of expression using the tool `StringTie <https://ccb.jhu.edu/software/stringtie/>`__. You must therefore obtain the following files:
+
+-  A FASTA file containing the full genomic sequence in FASTA format (either pseudomolecules or scaffolds).
+-  A `GTF <https://uswest.ensembl.org/info/website/upload/gff.html>`__ file containing the gene models.
+
+As an example, to retrieve the Arabidopsis files:
+
+.. code-block:: bash
+
+  wget ftp://ftp.ensemblgenomes.org/pub/plants/release-50/fasta/arabidopsis_thaliana/dna/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz
+  gunzip Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz
+
+  wget ftp://ftp.ensemblgenomes.org/pub/plants/release-50/gff3/arabidopsis_thaliana/Arabidopsis_thaliana.TAIR10.50.gff3.gz
+  gunzip Arabidopsis_thaliana.TAIR10.50.gff3.gz
+
+.. note::
+  If your genome file is extremely large with hundreds of thousands of contigs/scaffolds, you may want to reduce the size of the FASTA file to contain only those contigs/scaffolds with predicted annotated genes.
+
+Sometimes a genome assembly does not provide a GTF file, but rather provides a `GFF3 <https://uswest.ensembl.org/info/website/upload/gff.html>`__ file. This is the case for the Arabidopsis genome provided by Ensemble You can convert the GFF file to a GTF file using the `gffread <https://github.com/gpertea/gffread>`__.  Examples for using gffread are provdied below.
+
+
+Index STAR using Singularity
+............................
+If you do not have a GTF or STAR indexes already prepared for your reference genome, you can use the GEMmaker docker image to create the GTF and perform the indexing. For example, you can use Singularity in the following way:
+
+To create the GTF file:
+
+.. code-block:: bash
+
+  singularity exec -B ${PWD} docker://systemsgenetics/gemmaker  gffread Arabidopsis_thaliana.TAIR10.50.gff3.gz -T -o Arabidopsis_thaliana.TAIR10.gtf
+
+To index the reference:
+
+.. code-block:: bash
+
+    singularity exec -B ${PWD} https://depot.galaxyproject.org/singularity/star:2.7.9a--h9ee0642_0 STAR --runThreadN 2 --runMode genomeGenerate --genomeDir Arabidopsis_thaliana.TAIR10.star.indexed --genomeFastaFiles  Arabidopsis_thaliana.TAIR10.dna.toplevel.fa --sjdbGTFfile Arabidopsis_thaliana.TAIR10.gtf --genomeSAindexNbases 12
+
+The following describes the meaning of the arguments in the command-line above:
+
+The command above uses the ``https://depot.galaxyproject.org/singularity/star:2.7.9a--h9ee0642_0`` image.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the STAR index command can be executed. Change the ``--runThreadN 2`` setting above to be the number of processor cores you want to dedicate to indexing the genome. Change the ``--genomeSAindexNBase`` to a size recommended by STAR for the desired size of index files.
+
+Index STAR using Docker
+.........................
+If you do not have a GTF or Hisat2 indexes already prepared for your reference genome, you can use the GEMmaker docker image to create the GTF and perform the indexing. For example, you can use Docker in the following way:
+
+To create the GTF file:
+
+.. code-block:: bash
+
+  docker run -v ${PWD}:/reference -u $(id -u ${USER}):$(id -g ${USER}) systemsgenetics/gemmaker /bin/bash -c "cd /reference; gffread Arabidopsis_thaliana.TAIR10.50.gff3 -T -o Arabidopsis_thaliana.TAIR10.gtf"
+
+To index the reference:
+
+.. code-block:: bash
+
+  docker run -v ${PWD}:/reference -u $(id -u ${USER}):$(id -g ${USER}) quay.io/biocontainers/star:2.7.9a--h9ee0642_0 /bin/bash -c "cd /reference; STAR --runThreadN 2 --runMode genomeGenerate  --genomeDir Arabidopsis_thaliana.TAIR10.star.indexed --genomeFastaFiles Arabidopsis_thaliana.TAIR10.dna.toplevel.fa --sjdbGTFfile Arabidopsis_thaliana.TAIR10.gtf --genomeSAindexNbases 12"
+
+
+The command above uses the ``quay.io/biocontainers/star:2.7.9a--h9ee0642_0`` image.  The image will be downloaded if it does not already exist on your machine.   The ``-v ${PWD}:/reference`` argument instructs Docker to mount the current directory (i.e.: ``${PWD}``) onto a new directory in the image named ``/references`` and gives the image access to the transcript file for indexing.  The ``-c`` argument provides the Salmon index command needed to index the files.  The ``-u $(id -u ${USER}):$(id -g ${USER})`` argument instructs Docker to run ``hisat2-build`` as you rather than the system root user.  Change the ``--runThreadN 2`` setting above to be the number of processor cores you want to dedicate to indexing the genome. Change the ``--genomeSAindexNBase`` to a size recommended by STAR for the desired size of index files.

@@ -75,35 +75,35 @@ if ((hisat2_enable && params.hisat2_keep_gem) ||
 /**
  * Check that required reference files exist
  */
-if (hisat2_enable && file(params.hisat2_gtf_file).isEmpty()) {
+if (hisat2_enable && (!params.hisat2_gtf_file || file(params.hisat2_gtf_file).isEmpty())) {
     error "Error: GTF reference file for Hisat2 does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.hisat2_gtf_file}' "
 }
 
-if (hisat2_enable && !file(params.hisat2_index_dir).isDirectory()) {
+if (hisat2_enable && (!params.hisat2_index_dir || !file(params.hisat2_index_dir).isDirectory())) {
     error "Error: hisat2 Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.hisat2_index_dir}'"
 }
 
 
-if (star_enable && file(params.star_gtf_file).isEmpty()) {
+if (star_enable && (!params.star_gtf_file || file(params.star_gtf_file).isEmpty())) {
     error "Error: GTF reference file for star does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.star_gtf_file}' "
 }
 
-if (star_enable && !file(params.star_index_dir).isDirectory()) {
+if (star_enable && (!params.star_index_dir || !file(params.star_index_dir).isDirectory())) {
     error "Error: star Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.star_index_dir}'"
 }
 
 
-if (kallisto_enable && file(params.kallisto_index_path).isEmpty()) {
+if (kallisto_enable && (!params.kallisto_index_path || file(params.kallisto_index_path).isEmpty())) {
     error "Error: Kallisto Index File does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.kallisto_index_path}'"
 }
 
 
-if (salmon_enable && !file(params.salmon_index_path).isDirectory()) {
+if (salmon_enable && (!params.salmon_index_path || !file(params.salmon_index_path).isDirectory())) {
     error "Error: Salmon Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.salmon_index_path}'"
 }
@@ -111,8 +111,7 @@ if (salmon_enable && !file(params.salmon_index_path).isDirectory()) {
 /**
  * Check that other input files/directories exist
  */
-if (hisat2_enable && !file(params.trimmomatic_clip_file).exists() ||
-    star_enable && !file(params.trimmomatic_clip_file).exists()) {
+if ((hisat2_enable || star_enable) && (!params.trimmomatic_clip_file || !file(params.trimmomatic_clip_file).exists())) {
     error "Error: The Trimmomatic clip file cannot be found at '${params.trimmomatic_clip_file}'."
 }
 
@@ -199,8 +198,22 @@ include { fastqc as fastqc_2 } from '../modules/local/fastqc' addParams(DONE_SEN
 // Module: fastq_merge
 include { fastq_merge } from '../modules/local/fastq_merge' addParams(DONE_SENTINEL: DONE_SENTINEL)
 
-// Module: hisat2_fpkm_tpm
-include { hisat2_fpkm_tpm } from '../modules/local/hisat2_fpkm_tpm' addParams(DONE_SENTINEL: DONE_SENTINEL)
+// Module: stringtie_fpkm_tpm
+keep_tpm = false
+keep_fpkm = false
+keep_counts = false
+if ( star_enable ) {
+    keep_tmp = params.star_keep_tpm
+    keep_fpkm = params.star_keep_fpkm
+    keep_counts = params.star_keep_counts
+}
+if ( hisat2_enable ) {
+    keep_tmp = params.hisat2_keep_tpm
+    keep_fpkm = params.hisat2_keep_fpkm
+    keep_counts = params.hisat2_keep_counts
+}
+include { stringtie_fpkm_tpm } from '../modules/local/stringtie_fpkm_tpm' addParams(DONE_SENTINEL: DONE_SENTINEL,
+    keep_fpkm: keep_fpkm, keep_tpm: keep_tpm, keep_counts: keep_counts)
 
 // Module: hisat2
 include { hisat2 } from '../modules/local/hisat2' addParams(DONE_SENTINEL: DONE_SENTINEL)
@@ -451,13 +464,13 @@ workflow GEMmaker {
         stringtie(INDEXED_BAM_FILES, GTF_FILE)
         STRINGTIE_FILES = stringtie.out.GA_GTF_FILES
 
-        hisat2_fpkm_tpm(STRINGTIE_FILES)
-        RAW_FILES = hisat2_fpkm_tpm.out.RAW_FILES
-        TPM_FILES = hisat2_fpkm_tpm.out.TPM_FILES
-        FPKM_FILES = hisat2_fpkm_tpm.out.FPKM_FILES
+        stringtie_fpkm_tpm(STRINGTIE_FILES)
+        RAW_FILES = stringtie_fpkm_tpm.out.RAW_FILES
+        TPM_FILES = stringtie_fpkm_tpm.out.TPM_FILES
+        FPKM_FILES = stringtie_fpkm_tpm.out.FPKM_FILES
 
         // prepare channels for downstream processes
-        COMPLETED_SAMPLES = hisat2_fpkm_tpm.out.DONE_SIGNAL
+        COMPLETED_SAMPLES = stringtie_fpkm_tpm.out.DONE_SIGNAL
 
         MULTIQC_FILES = Channel.empty()
             .mix(
@@ -495,13 +508,13 @@ workflow GEMmaker {
         stringtie(INDEXED_BAM_FILES, GTF_FILE)
         STRINGTIE_FILES = stringtie.out.GA_GTF_FILES
 
-        hisat2_fpkm_tpm(STRINGTIE_FILES)
-        RAW_FILES = hisat2_fpkm_tpm.out.RAW_FILES
-        TPM_FILES = hisat2_fpkm_tpm.out.TPM_FILES
-        FPKM_FILES = hisat2_fpkm_tpm.out.FPKM_FILES
+        stringtie_fpkm_tpm(STRINGTIE_FILES)
+        RAW_FILES = stringtie_fpkm_tpm.out.RAW_FILES
+        TPM_FILES = stringtie_fpkm_tpm.out.TPM_FILES
+        FPKM_FILES = stringtie_fpkm_tpm.out.FPKM_FILES
 
         // prepare channels for downstream processes
-        COMPLETED_SAMPLES = hisat2_fpkm_tpm.out.DONE_SIGNAL
+        COMPLETED_SAMPLES = stringtie_fpkm_tpm.out.DONE_SIGNAL
 
         MULTIQC_FILES = Channel.empty()
             .mix(
@@ -742,11 +755,11 @@ workflow GEMmaker {
     }
 
     /**
-     * Clean stringtie files after they are used by hisat2_fpkm_tpm.
+     * Clean stringtie files after they are used by stringtie_fpkm_tpm.
      */
     if ( hisat2_enable && !params.hisat2_keep_data ) {
         CLEAN_STRINGTIE_FILES = STRINGTIE_FILES
-            .mix(hisat2_fpkm_tpm.out.DONE_SIGNAL)
+            .mix(stringtie_fpkm_tpm.out.DONE_SIGNAL)
             .groupTuple(size: 2)
             .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
 
