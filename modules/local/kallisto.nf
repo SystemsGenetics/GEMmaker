@@ -25,16 +25,16 @@ process kallisto {
     """
     echo "#TRACE sample_id=${sample_id}"
     echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-    echo "#TRACE index_bytes=`stat -Lc '%s' ${kallisto_index}`"
 
     # Convert the incoming FASTQ file list to an array
-    read -a fastq_files <<< ${fastq_files}
+    fastq_files=(${fastq_files})
 
     # Kallisto will generate an exit code of 1 if no alignments are made. This
     # isn't an error and should be rewritten to 0 so that Nextflow doesn't end.
     trap 'if [[ \$? == 1 ]]; then echo OK; exit 0; fi' EXIT
 
     if [ \${#fastq_files[@]} == 2 ]; then
+      echo "#TRACE Paired End Files Detected"
       kallisto quant \
         -i ${kallisto_index} \
         -b ${params.kallisto_bootstrap_samples} \
@@ -43,6 +43,7 @@ process kallisto {
         \${fastq_files[0]} \
         \${fastq_files[1]} > ${sample_id}.kallisto.log 2>&1
     else
+      echo "#TRACE Unpaired End Files Detected"
       kallisto quant \
         --single \
         -l 70 \

@@ -25,10 +25,9 @@ process salmon {
     """
     echo "#TRACE sample_id=${sample_id}"
     echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-    echo "#TRACE index_bytes=`stat -Lc '%s' ${salmon_index} | awk '{sum += \$1} END {print sum}'`"
 
     # convert the incoming FASTQ file list to an array
-    read -a fastq_files <<< ${fastq_files}
+    fastq_files=(${fastq_files})
 
     if [ \${#fastq_files[@]} == 2 ]; then
       salmon quant \

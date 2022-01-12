@@ -73,25 +73,6 @@ If you are launching GEMmaker on an HPC system with the SLURM scheduler you can 
 If you have a lot of samples, Nextflow may need more memory.  Increasing the amount of memory in your SLURM submission script will correct this problem.  Remember to restart GEMmaker with the ``-resume`` flag to have it continue where it left off.
 
 
-Preempted on HPC Cluster
-~~~~~~~~~~~~~~~~~~~~~~~~
-When running on the back queue of a HPC cluster, your jobs may be preempted by another user:
-
-Slurm Example:
-
-.. code:: bash
-
-  slurmstepd: error: *** JOB 32391783 ON cn119 CANCELLED AT 2021-06-18T13:05:36 DUE TO PREEMPTION ***
-
-This will cause your run to end. To avoid this, modify the ``nextflow.config`` parameter ``maxRetries``:
-
-.. code:: bash
-
-  maxRetries = 3
-
-Which will attempt to re-run jobs which failed, including those which have been preempted.
-
-
 Get Help or Suggest Improvements
 --------------------------------
 
