@@ -127,8 +127,7 @@
             "properties": {
                 "kallisto_index_path": {
                     "type": "string",
-                    "description": "The directory containing the reference genome index files",
-                    "default": "${projectDir}/assets/demo/references/CORG.transcripts.Kallisto.indexed"
+                    "description": "The directory containing the reference genome index files"
                 },
                 "kallisto_bootstrap_samples": {
                     "type": "integer",
@@ -164,8 +163,7 @@
             "properties": {
                 "salmon_index_path": {
                     "type": "string",
-                    "description": "The directory containing the reference genome index files",
-                    "default": "${projectDir}/assets/demo/references/CORG.transcripts.Salmon.indexed"
+                    "description": "The directory containing the reference genome index files"
                 },
                 "salmon_keep_data": {
                     "type": "boolean",
@@ -196,18 +194,15 @@
             "properties": {
                 "hisat2_base_name": {
                     "type": "string",
-                    "description": "The reference genome base name as required by Hiast2.",
-                    "default": "CORG"
+                    "description": "The reference genome base name as required by Hiast2."
                 },
                 "hisat2_index_dir": {
                     "type": "string",
-                    "description": "The directory containing the hisat2 indexed files for the reference genome.",
-                    "default": "${projectDir}/assets/demo/references/CORG.genome.Hisat2.indexed"
+                    "description": "The directory containing the hisat2 indexed files for the reference genome."
                 },
                 "hisat2_gtf_file": {
                     "type": "string",
-                    "description": "A GTF of the reference genome.",
-                    "default": "${projectDir}/assets/demo/references/CORG.transcripts.gtf"
+                    "description": "A GTF of the reference genome."
                 },
                 "hisat2_keep_data": {
                     "type": "boolean",
@@ -251,13 +246,11 @@
             "properties": {
                 "star_index_dir": {
                     "type": "string",
-                    "description": "The directory containing the star indexed files for the reference genome.",
-                    "default": "${projectDir}/assets/demo/references/CORG.genome.star.indexed"
+                    "description": "The directory containing the star indexed files for the reference genome."
                 },
                 "star_gtf_file": {
                     "type": "string",
-                    "description": "A GTF of the reference genome.",
-                    "default": "${projectDir}/assets/demo/references/CORG.transcripts.gtf"
+                    "description": "A GTF of the reference genome."
                 },
                 "star_keep_data": {
                     "type": "boolean",
