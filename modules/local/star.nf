@@ -10,6 +10,8 @@ process star {
     conda (params.enable_conda ? "bioconda::star=2.7.9a" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
       container "https://depot.galaxyproject.org/singularity/star:2.7.9a--h9ee0642_0"
+    } else {
+      container "quay.io/biocontainers/star:2.7.9a--h9ee0642_0"
     }
 
     input:
@@ -18,7 +20,7 @@ process star {
 
     output:
     tuple val(sample_id), path("*.sam"), emit: SAM_FILES
-    tuple val(sample_id), path("*.star.log"), emit: LOGS
+    tuple val(sample_id), path("*Log.final.out"), emit: LOGS
     tuple val(sample_id), val(params.DONE_SENTINEL), emit: DONE_SIGNAL
 
     script:
@@ -55,20 +57,22 @@ process star {
       STAR \
         --runThreadN ${task.cpus} \
         --genomeDir ${star_index} \
-        --outFileNamePrefix ${sample_id}_p_ \
-        --readFilesIn \${fq_1p} \${fq_2p} > ${sample_id}_p.star.log 2>&1
+        --outFileNamePrefix ${sample_id}.trimmed_paired \
+        --readFilesIn \${fq_1p} \${fq_2p} > ${sample_id}.trimmed_paired.star.log 2>&1
+
       # Now aligned the non-paired
       STAR \
         --runThreadN ${task.cpus} \
         --genomeDir ${star_index} \
-        --outFileNamePrefix ${sample_id}_u_ \
-        --readFilesIn \${fq_1u},\${fq_2u} > ${sample_id}_u.star.log 2>&1
+        --outFileNamePrefix ${sample_id}.trimmed_single \
+        --readFilesIn \${fq_1u},\${fq_2u} > ${sample_id}.trimmed_single.star.log 2>&1
 
     else
         STAR \
             --runThreadN ${task.cpus} \
             --genomeDir ${star_index} \
-            --readFilesIn \${fq_1u} > ${sample_id}.star.log 2>&1
+            --outFileNamePrefix ${sample_id}.trimmed \
+            --readFilesIn \${fq_1u} > ${sample_id}.trimmed.star.log 2>&1
     fi
     """
 }

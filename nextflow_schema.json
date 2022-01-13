@@ -82,6 +82,43 @@
                 }
             }
         },
+        "trimmomatic_options": {
+            "title": "Trimmomatic Options",
+            "type": "object",
+            "description": "Parameters for Trimmomatic which is used bythe Hisat2 and STAR pipelines.",
+            "default": "",
+            "properties": {
+                "trimmomatic_clip_file": {
+                    "type": "string",
+                    "description": "This option is only used for the Hisat2 pipeline. The location of the clip file containing sequences of contaminants that should be removed from reads during trimming.",
+                    "default": "${projectDir}/assets/fasta_adapter.txt"
+                },
+                "trimmomatic_MINLEN": {
+                    "type": "number",
+                    "description": "This option is only used for the Hisat2 pipeline.  The MINLEN parameter for Trimmomatic.",
+                    "default": 0.7
+                },
+                "trimmomatic_SLIDINGWINDOW": {
+                    "type": "string",
+                    "description": "This option is only used for the Hisat2 pipeline.  The SLIDINGWINDOW parameter for Trimmomatic.",
+                    "default": "4:15"
+                },
+                "trimmomatic_LEADING": {
+                    "type": "integer",
+                    "description": "This option is only used for the Hisat2 pipeline. The LEADING parameter for Trimmomatic.",
+                    "default": 3
+                },
+                "trimmomatic_TRAILING": {
+                    "type": "integer",
+                    "description": "This option is only used for the Hisat2 pipeline. The TRAILING parameter for Trimmomatic.",
+                    "default": 6
+                },
+                "trimmomatic_keep_trimmed_fastq": {
+                    "type": "boolean",
+                    "description": "Indicates if the trimmed FASTQ file should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                }
+            }
+        },
         "kallisto_pipeline": {
             "title": "Kallisto Pipeline",
             "type": "object",
@@ -154,7 +191,7 @@
         "hisat_pipeline": {
             "title": "Hisat Pipeline",
             "type": "object",
-            "description": "Parameters for the Hisat2 pipeline which includes Trimmomatic.",
+            "description": "Parameters for the Hisat2 pipeline.",
             "default": "",
             "properties": {
                 "hisat2_base_name": {
@@ -203,42 +240,13 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Indicates if the GEM file should be retained. If true then the file is kept, if false the file is removed to save storage space."
-                },
-                "trimmomatic_clip_file": {
-                    "type": "string",
-                    "description": "This option is only used for the Hisat2 pipeline. The location of the clip file containing sequences of contaminants that should be removed from reads during trimming.",
-                    "default": "${projectDir}/assets/fasta_adapter.txt"
-                },
-                "trimmomatic_MINLEN": {
-                    "type": "number",
-                    "description": "This option is only used for the Hisat2 pipeline.  The MINLEN parameter for Trimmomatic.",
-                    "default": 0.7
-                },
-                "trimmomatic_SLIDINGWINDOW": {
-                    "type": "string",
-                    "description": "This option is only used for the Hisat2 pipeline.  The SLIDINGWINDOW parameter for Trimmomatic.",
-                    "default": "4:15"
-                },
-                "trimmomatic_LEADING": {
-                    "type": "integer",
-                    "description": "This option is only used for the Hisat2 pipeline. The LEADING parameter for Trimmomatic.",
-                    "default": 3
-                },
-                "trimmomatic_TRAILING": {
-                    "type": "integer",
-                    "description": "This option is only used for the Hisat2 pipeline. The TRAILING parameter for Trimmomatic.",
-                    "default": 6
-                },
-                "trimmomatic_keep_trimmed_fastq": {
-                    "type": "boolean",
-                    "description": "Indicates if the trimmed FASTQ file should be retained. If true then the file is kept, if false the file is removed to save storage space."
                 }
             }
         },
         "star_pipeline": {
             "title": "Star Pipeline",
             "type": "object",
-            "description": "Parameters for the Star pipeline which includes Trimmomatic.",
+            "description": "Parameters for the Star pipeline.",
             "default": "",
             "properties": {
                 "star_index_dir": {
@@ -282,35 +290,6 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Indicates if the GEM file should be retained. If true then the file is kept, if false the file is removed to save storage space."
-                },
-                "trimmomatic_clip_file": {
-                    "type": "string",
-                    "description": "This option is only used for the Hisat2 pipeline. The location of the clip file containing sequences of contaminants that should be removed from reads during trimming.",
-                    "default": "${projectDir}/assets/fasta_adapter.txt"
-                },
-                "trimmomatic_MINLEN": {
-                    "type": "number",
-                    "description": "This option is only used for the Hisat2 pipeline.  The MINLEN parameter for Trimmomatic.",
-                    "default": 0.7
-                },
-                "trimmomatic_SLIDINGWINDOW": {
-                    "type": "string",
-                    "description": "This option is only used for the Hisat2 pipeline.  The SLIDINGWINDOW parameter for Trimmomatic.",
-                    "default": "4:15"
-                },
-                "trimmomatic_LEADING": {
-                    "type": "integer",
-                    "description": "This option is only used for the Hisat2 pipeline. The LEADING parameter for Trimmomatic.",
-                    "default": 3
-                },
-                "trimmomatic_TRAILING": {
-                    "type": "integer",
-                    "description": "This option is only used for the Hisat2 pipeline. The TRAILING parameter for Trimmomatic.",
-                    "default": 6
-                },
-                "trimmomatic_keep_trimmed_fastq": {
-                    "type": "boolean",
-                    "description": "Indicates if the trimmed FASTQ file should be retained. If true then the file is kept, if false the file is removed to save storage space."
                 }
             }
         },
@@ -547,6 +526,9 @@
             "$ref": "#/definitions/input_output_options"
         },
         {
+            "$ref": "#/definitions/trimmomatic_options"
+        },
+        {
             "$ref": "#/definitions/kallisto_pipeline"
         },
         {
@@ -554,6 +536,9 @@
         },
         {
             "$ref": "#/definitions/hisat_pipeline"
+        },
+        {
+            "$ref": "#/definitions/star_pipeline"
         },
         {
             "$ref": "#/definitions/generic_options"
