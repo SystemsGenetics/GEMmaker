@@ -138,7 +138,7 @@ skip_samples = params.skip_samples
 WorkflowGEMmaker.initialise(workflow, skip_samples, params, log)
 
 // Check input path parameters to see if they exist
-def checkPathParamList = [ params.input ]
+def checkPathParamList = [ params.input, params.sras]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Define the sentinel for "done" signals
