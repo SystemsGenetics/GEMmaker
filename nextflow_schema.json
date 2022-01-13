@@ -45,8 +45,7 @@
                 },
                 "skip_samples": {
                     "type": "string",
-                    "description": "A text file containing the names of SRA runs or local FASTQ samples that should be excluded.",
-                    "default": "${projectDir}/assets/demo/samples2skip.txt"
+                    "description": "A text file containing the names of SRA runs or local FASTQ samples that should be excluded."
                 },
                 "outdir": {
                     "type": "string",
