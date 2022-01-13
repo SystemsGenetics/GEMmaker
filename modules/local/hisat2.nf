@@ -3,7 +3,6 @@
  */
 process hisat2 {
     tag { sample_id }
-    label "process_medium"
     publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*.log"
 
     conda (params.enable_conda ? "bioconda::hisat2=2.2.0 bioconda::samtools=1.10" : null)
@@ -27,10 +26,9 @@ process hisat2 {
     echo "#TRACE sample_id=${sample_id}"
     echo "#TRACE n_cpus=${task.cpus}"
     echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
-    echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
 
     # convert the incoming FASTQ file list to an array
-    read -a fastq_files <<< ${fastq_files}
+    fastq_files=(${fastq_files})
 
     # we don't know the order the files will come so we have
     # to find the paired and non paired files.

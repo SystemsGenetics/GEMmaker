@@ -21,18 +21,19 @@
                 },
                 "pipeline": {
                     "type": "string",
-                    "description": "The name of the quantification pipeline that should be used. This should be one of 'kallisto', 'salmon' or 'hisat2'",
+                    "description": "The name of the quantification pipeline that should be used. This should be one of 'kallisto', 'salmon', 'hisat2' or 'star'",
                     "default": "kallisto",
                     "enum": [
                         "kallisto",
                         "salmon",
-                        "hisat2"
+                        "hisat2",
+                        "star"
                     ]
                 },
                 "sras": {
                     "type": "string",
                     "description": "A text file containing NCBI SRA Run IDs, one per line, that GEMmaker should automatically retrieve. If no files are to be retrieved from SRA the file should be left emptly",
-                    "default": "${projectDir}/assets/demo/SRA_IDs.txt"
+                    "default": ""
                 },
                 "keep_sra": {
                     "type": "boolean",
@@ -44,8 +45,7 @@
                 },
                 "skip_samples": {
                     "type": "string",
-                    "description": "A text file containing the names of SRA runs or local FASTQ samples that should be excluded.",
-                    "default": "${projectDir}/assets/demo/samples2skip.txt"
+                    "description": "A text file containing the names of SRA runs or local FASTQ samples that should be excluded."
                 },
                 "outdir": {
                     "type": "string",
@@ -81,6 +81,43 @@
                 }
             }
         },
+        "trimmomatic_options": {
+            "title": "Trimmomatic Options",
+            "type": "object",
+            "description": "Parameters for Trimmomatic which is used bythe Hisat2 and STAR pipelines.",
+            "default": "",
+            "properties": {
+                "trimmomatic_clip_file": {
+                    "type": "string",
+                    "description": "This option is only used for the Hisat2 pipeline. The location of the clip file containing sequences of contaminants that should be removed from reads during trimming.",
+                    "default": "${projectDir}/assets/fasta_adapter.txt"
+                },
+                "trimmomatic_MINLEN": {
+                    "type": "number",
+                    "description": "This option is only used for the Hisat2 pipeline.  The MINLEN parameter for Trimmomatic.",
+                    "default": 0.7
+                },
+                "trimmomatic_SLIDINGWINDOW": {
+                    "type": "string",
+                    "description": "This option is only used for the Hisat2 pipeline.  The SLIDINGWINDOW parameter for Trimmomatic.",
+                    "default": "4:15"
+                },
+                "trimmomatic_LEADING": {
+                    "type": "integer",
+                    "description": "This option is only used for the Hisat2 pipeline. The LEADING parameter for Trimmomatic.",
+                    "default": 3
+                },
+                "trimmomatic_TRAILING": {
+                    "type": "integer",
+                    "description": "This option is only used for the Hisat2 pipeline. The TRAILING parameter for Trimmomatic.",
+                    "default": 6
+                },
+                "trimmomatic_keep_trimmed_fastq": {
+                    "type": "boolean",
+                    "description": "Indicates if the trimmed FASTQ file should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                }
+            }
+        },
         "kallisto_pipeline": {
             "title": "Kallisto Pipeline",
             "type": "object",
@@ -89,8 +126,7 @@
             "properties": {
                 "kallisto_index_path": {
                     "type": "string",
-                    "description": "The directory containing the reference genome index files",
-                    "default": "${projectDir}/assets/demo/references/CORG.transcripts.Kallisto.indexed"
+                    "description": "The directory containing the reference genome index files"
                 },
                 "kallisto_bootstrap_samples": {
                     "type": "integer",
@@ -126,8 +162,7 @@
             "properties": {
                 "salmon_index_path": {
                     "type": "string",
-                    "description": "The directory containing the reference genome index files",
-                    "default": "${projectDir}/assets/demo/references/CORG.transcripts.Salmon.indexed"
+                    "description": "The directory containing the reference genome index files"
                 },
                 "salmon_keep_data": {
                     "type": "boolean",
@@ -153,23 +188,20 @@
         "hisat_pipeline": {
             "title": "Hisat Pipeline",
             "type": "object",
-            "description": "Parameters for the Hisat2 pipeline which includes Trimmomatic.",
+            "description": "Parameters for the Hisat2 pipeline.",
             "default": "",
             "properties": {
                 "hisat2_base_name": {
                     "type": "string",
-                    "description": "The reference genome base name as required by Hiast2.",
-                    "default": "CORG"
+                    "description": "The reference genome base name as required by Hiast2."
                 },
                 "hisat2_index_dir": {
                     "type": "string",
-                    "description": "The directory containing the hisat2 indexed files for the reference genome.",
-                    "default": "${projectDir}/assets/demo/references/CORG.genome.Hisat2.indexed"
+                    "description": "The directory containing the hisat2 indexed files for the reference genome."
                 },
                 "hisat2_gtf_file": {
                     "type": "string",
-                    "description": "A GTF of the reference genome.",
-                    "default": "${projectDir}/assets/demo/references/CORG.transcripts.gtf"
+                    "description": "A GTF of the reference genome."
                 },
                 "hisat2_keep_data": {
                     "type": "boolean",
@@ -202,35 +234,54 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Indicates if the GEM file should be retained. If true then the file is kept, if false the file is removed to save storage space."
-                },
-                "trimmomatic_clip_file": {
+                }
+            }
+        },
+        "star_pipeline": {
+            "title": "Star Pipeline",
+            "type": "object",
+            "description": "Parameters for the Star pipeline.",
+            "default": "",
+            "properties": {
+                "star_index_dir": {
                     "type": "string",
-                    "description": "This option is only used for the Hisat2 pipeline. The location of the clip file containing sequences of contaminants that should be removed from reads during trimming.",
-                    "default": "${projectDir}/assets/fasta_adapter.txt"
+                    "description": "The directory containing the star indexed files for the reference genome."
                 },
-                "trimmomatic_MINLEN": {
-                    "type": "number",
-                    "description": "This option is only used for the Hisat2 pipeline.  The MINLEN parameter for Trimmomatic.",
-                    "default": 0.7
-                },
-                "trimmomatic_SLIDINGWINDOW": {
+                "star_gtf_file": {
                     "type": "string",
-                    "description": "This option is only used for the Hisat2 pipeline.  The SLIDINGWINDOW parameter for Trimmomatic.",
-                    "default": "4:15"
+                    "description": "A GTF of the reference genome."
                 },
-                "trimmomatic_LEADING": {
-                    "type": "integer",
-                    "description": "This option is only used for the Hisat2 pipeline. The LEADING parameter for Trimmomatic.",
-                    "default": 3
-                },
-                "trimmomatic_TRAILING": {
-                    "type": "integer",
-                    "description": "This option is only used for the Hisat2 pipeline. The TRAILING parameter for Trimmomatic.",
-                    "default": 6
-                },
-                "trimmomatic_keep_trimmed_fastq": {
+                "star_keep_data": {
                     "type": "boolean",
-                    "description": "Indicates if the trimmed FASTQ file should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                    "description": "Indicates if the intermediate data files created by Star should be kept. If true, the files are retrained, if false the files are removed to save storage space."
+                },
+                "star_keep_sam": {
+                    "type": "boolean",
+                    "description": "Indicates if the SAM file created by star should be retained. If true then the file is kept, if false the file is removed to save storage space. These files can be large and should not be kept if  they are not ultimately needed or if storage is limited."
+                },
+                "star_keep_bam": {
+                    "type": "boolean",
+                    "description": "Indicates if the BAM file created by star should be retained. If true then the file is kept, if false the file is removed to save storage space. These files can be large and should not be kept if  they are not ultimately needed or if storage is limited."
+                },
+                "star_keep_counts": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the raw abundance counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "star_keep_fpkm": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the FPKM normalized counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "star_keep_tpm": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the TPM normalized counts should be retained. If true then the file is kept, if false the file is removed to save storage space."
+                },
+                "star_keep_gem": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Indicates if the GEM file should be retained. If true then the file is kept, if false the file is removed to save storage space."
                 }
             }
         },
@@ -245,15 +296,6 @@
                     "description": "Name of iGenomes reference.",
                     "fa_icon": "fas fa-book",
                     "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details."
-                },
-                 "fasta": {
-                    "type": "string",
-                    "format": "file-path",
-                    "mimetype": "text/plain",
-                    "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
-                    "description": "Path to FASTA genome file.",
-                    "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
-                    "fa_icon": "far fa-file-code"
                 },
                 "igenomes_base": {
                     "type": "string",
@@ -315,24 +357,10 @@
                     "fa_icon": "fas fa-remove-format",
                     "hidden": true
                 },
-                "max_multiqc_email_size": {
-                    "type": "string",
-                    "description": "File size limit when attaching MultiQC reports to summary emails.",
-                    "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
-                    "default": "25.MB",
-                    "fa_icon": "fas fa-file-upload",
-                    "hidden": true
-                },
                 "monochrome_logs": {
                     "type": "boolean",
                     "description": "Do not use coloured log outputs.",
                     "fa_icon": "fas fa-palette",
-                    "hidden": true
-                },
-                "multiqc_config": {
-                    "type": "string",
-                    "description": "Custom config file to supply to MultiQC.",
-                    "fa_icon": "fas fa-cog",
                     "hidden": true
                 },
                 "tracedir": {
@@ -467,6 +495,9 @@
             "$ref": "#/definitions/input_output_options"
         },
         {
+            "$ref": "#/definitions/trimmomatic_options"
+        },
+        {
             "$ref": "#/definitions/kallisto_pipeline"
         },
         {
@@ -474,6 +505,9 @@
         },
         {
             "$ref": "#/definitions/hisat_pipeline"
+        },
+        {
+            "$ref": "#/definitions/star_pipeline"
         },
         {
             "$ref": "#/definitions/generic_options"

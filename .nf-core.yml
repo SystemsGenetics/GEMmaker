@@ -1,20 +1,28 @@
 lint:
     files_exist:
     - assets/nf-core-systemsgenetics/gemmaker_logo.png
+    - assets/nf-core-systemsgenetics/gemmaker_logo_light.png
+    - docs/images/nf-core-systemsgenetics/gemmaker_logo_light.png
+    - docs/images/nf-core-systemsgenetics/gemmaker_logo_dark.png
     - docs/images/nf-core-systemsgenetics/gemmaker_logo.png
     - conf/igenomes.config
+    - lib/WorkflowSystemsgenetics/gemmaker.groovy
     files_unchanged:
     - .github/CONTRIBUTING.md
-    - .github/ISSUE_TEMPLATE/bug_report.md
+    - .github/ISSUE_TEMPLATE/bug_report.yml
     - .github/ISSUE_TEMPLATE/config.yml
-    - .github/ISSUE_TEMPLATE/feature_request.md
+    - .github/ISSUE_TEMPLATE/feature_request.yml
     - .github/PULL_REQUEST_TEMPLATE.md
     - .github/workflows/branch.yml
+    - .github/workflows/linting_comment.yml
+    - assets/sendmail_template.txt
     - assets/email_template.html
     - assets/email_template.txt
+    - assets/multiqc_config.yaml
     - bin/scrape_software_versions.py
     - docs/README.md
-    - assets/multiqc_config.yaml
+    - lib/NfcoreSchema.groovy
+    - lib/NfcoreTemplate.groovy
     nextflow_config: false
     actions_ci: false
     readme: false

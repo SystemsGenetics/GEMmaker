@@ -4,7 +4,7 @@
 process salmon {
     tag { sample_id }
     publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: params.publish_pattern_salmon_ga
-    
+
     conda (params.enable_conda ? 'bioconda::salmon=1.5.2' : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/salmon:1.5.2--h84f40af_0"
@@ -18,17 +18,16 @@ process salmon {
 
     output:
     tuple val(sample_id), path("*.ga", type: "dir"), emit: GA_FILES
-    tuple val(sample_id), path("*.ga", type: "dir"), emit: LOGS
+    tuple val(sample_id), path("${sample_id}.Salmon_multiqc", type: "dir"), emit: LOGS
     tuple val(sample_id), val(params.DONE_SENTINEL), emit: DONE_SIGNAL
 
     script:
     """
     echo "#TRACE sample_id=${sample_id}"
     echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-    echo "#TRACE index_bytes=`stat -Lc '%s' ${salmon_index} | awk '{sum += \$1} END {print sum}'`"
 
     # convert the incoming FASTQ file list to an array
-    read -a fastq_files <<< ${fastq_files}
+    fastq_files=(${fastq_files})
 
     if [ \${#fastq_files[@]} == 2 ]; then
       salmon quant \
@@ -50,7 +49,9 @@ process salmon {
     fi
 
     # Copy these files for MultiQC reporting
-    cp ${sample_id}.Salmon.ga/aux_info/meta_info.json ${sample_id}-meta_info.json
-    cp ${sample_id}.Salmon.ga/libParams/flenDist.txt ${sample_id}-flenDist.txt
+    mkdir -p ./${sample_id}.Salmon_multiqc/aux_info
+    mkdir -p ./${sample_id}.Salmon_multiqc/libParams
+    cp ${sample_id}.Salmon.ga/aux_info/meta_info.json ${sample_id}.Salmon_multiqc/aux_info/meta_info.json
+    cp ${sample_id}.Salmon.ga/libParams/flenDist.txt ${sample_id}.Salmon_multiqc/libParams/flenDist.txt
     """
 }

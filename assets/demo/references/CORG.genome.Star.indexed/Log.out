@@ -1,0 +1,76 @@
+STAR version=2.7.9a
+STAR compilation time,server,dir=2021-05-04T09:43:56-0400 vega:/home/dobin/data/STAR/STARcode/STAR.master/source
+##### Command Line:
+/usr/local/bin/STAR --runThreadN 4 --runMode genomeGenerate --genomeDir CORG.genome.Star.indexed --genomeFastaFiles CORG.fna --sjdbGTFfile CORG.transcripts.gtf --genomeSAindexNbases 4
+##### Initial USER parameters from Command Line:
+###### All USER parameters from Command Line:
+runThreadN                    4     ~RE-DEFINED
+runMode                       genomeGenerate        ~RE-DEFINED
+genomeDir                     CORG.genome.Star.indexed     ~RE-DEFINED
+genomeFastaFiles              CORG.fna        ~RE-DEFINED
+sjdbGTFfile                   CORG.transcripts.gtf     ~RE-DEFINED
+genomeSAindexNbases           4     ~RE-DEFINED
+##### Finished reading parameters from all sources
+
+##### Final user re-defined parameters-----------------:
+runMode                           genomeGenerate   
+runThreadN                        4
+genomeDir                         CORG.genome.Star.indexed
+genomeFastaFiles                  CORG.fna   
+genomeSAindexNbases               4
+sjdbGTFfile                       CORG.transcripts.gtf
+
+-------------------------------
+##### Final effective command line:
+/usr/local/bin/STAR   --runMode genomeGenerate      --runThreadN 4   --genomeDir CORG.genome.Star.indexed   --genomeFastaFiles CORG.fna      --genomeSAindexNbases 4   --sjdbGTFfile CORG.transcripts.gtf
+----------------------------------------
+
+Number of fastq files for each mate = 1
+ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
+Finished loading and checking parameters
+--genomeDir directory exists and will be overwritten: CORG.genome.Star.indexed/
+Jan 06 18:07:11 ... starting to generate Genome files
+CORG.fna : chr # 0  "Chr1" chrStart: 0
+CORG.fna : chr # 1  "Chr2" chrStart: 262144
+CORG.fna : chr # 2  "Chr3" chrStart: 524288
+Chromosome sequence lengths: 
+Chr1	1120
+Chr2	833
+Chr3	350
+Genome sequence total length = 2303
+Genome size with padding = 786432
+Jan 06 18:07:11 ..... processing annotations GTF
+Processing pGe.sjdbGTFfile=CORG.transcripts.gtf, found:
+		6 transcripts
+		6 exons (non-collapsed)
+		0 collapsed junctions
+Total junctions: 0
+Jan 06 18:07:11 ..... finished GTF processing
+
+Estimated genome size with padding and SJs: total=genome+SJ=201786432 = 786432 + 201000000
+GstrandBit=32
+Number of SA indices: 4606
+Jan 06 18:07:11 ... starting to sort Suffix Array. This may take a long time...
+Number of chunks: 4;   chunks size limit: 12280 bytes
+Jan 06 18:07:11 ... sorting Suffix Array chunks and saving them to disk...
+Writing 3248 bytes into CORG.genome.Star.indexed//SA_3 ; empty space on disk = 84052729856 bytes ... done
+Writing 9224 bytes into CORG.genome.Star.indexed//SA_2 ; empty space on disk = 84052725760 bytes ... done
+Writing 12256 bytes into CORG.genome.Star.indexed//SA_1 ; empty space on disk = 84052713472 bytes ... done
+Writing 12120 bytes into CORG.genome.Star.indexed//SA_0 ; empty space on disk = 84052701184 bytes ... done
+Jan 06 18:07:11 ... loading chunks from disk, packing SA...
+Jan 06 18:07:11 ... finished generating suffix array
+Jan 06 18:07:11 ... generating Suffix Array index
+Jan 06 18:07:11 ... completed Suffix Array index
+Jan 06 18:07:11   Finished preparing junctions
+Jan 06 18:07:11 ..... finished inserting junctions into genome
+Jan 06 18:07:11 ... writing Genome to disk ...
+Writing 786432 bytes into CORG.genome.Star.indexed//Genome ; empty space on disk = 84053516288 bytes ... done
+SA size in bytes: 19003
+Jan 06 18:07:11 ... writing Suffix Array to disk ...
+Writing 19003 bytes into CORG.genome.Star.indexed//SA ; empty space on disk = 84052750336 bytes ... done
+Jan 06 18:07:11 ... writing SAindex to disk
+Writing 8 bytes into CORG.genome.Star.indexed//SAindex ; empty space on disk = 85618610176 bytes ... done
+Writing 40 bytes into CORG.genome.Star.indexed//SAindex ; empty space on disk = 85618610176 bytes ... done
+Writing 1491 bytes into CORG.genome.Star.indexed//SAindex ; empty space on disk = 85618610176 bytes ... done
+Jan 06 18:07:11 ..... finished successfully
+DONE: Genome generation, EXITING

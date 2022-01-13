@@ -1,19 +1,26 @@
+nextflow.enable.dsl=2
+
 /**
  * Performs STAR alignment of fastq files to a genome reference
  */
 process star {
     tag { sample_id }
-    label "process_medium"
     publishDir "${params.outdir}/Samples/${sample_id}", mode: params.publish_dir_mode, pattern: "*.log"
-    container "systemsgenetics/gemmaker:2.1.0"
+
+    conda (params.enable_conda ? "bioconda::star=2.7.9a" : null)
+    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
+      container "https://depot.galaxyproject.org/singularity/star:2.7.9a--h9ee0642_0"
+    } else {
+      container "quay.io/biocontainers/star:2.7.9a--h9ee0642_0"
+    }
 
     input:
     tuple val(sample_id), path(fastq_files)
-    path(indexes)
+    path(star_index)
 
     output:
     tuple val(sample_id), path("*.sam"), emit: SAM_FILES
-    tuple val(sample_id), path("*.sam.log"), emit: LOGS
+    tuple val(sample_id), path("*Log.final.out"), emit: LOGS
     tuple val(sample_id), val(params.DONE_SENTINEL), emit: DONE_SIGNAL
 
     script:
@@ -21,10 +28,10 @@ process star {
     echo "#TRACE sample_id=${sample_id}"
     echo "#TRACE n_cpus=${task.cpus}"
     echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
-    echo "#TRACE index_bytes=`stat -Lc '%s' ${indexes} | awk '{sum += \$1} END {print sum}'`"
+    echo "#TRACE index_bytes=`stat -Lc '%s' ${star_index} | awk '{sum += \$1} END {print sum}'`"
 
     # convert the incoming FASTQ file list to an array
-    read -a fastq_files <<< ${fastq_files}
+    fastq_files=(${fastq_files})
 
     # we don't know the order the files will come so we have
     # to find the paired and non paired files.
@@ -50,18 +57,22 @@ process star {
       STAR \
         --runThreadN ${task.cpus} \
         --genomeDir ${star_index} \
-        --readFilesIn \${fq_1p} \${fq_2p}
+        --outFileNamePrefix ${sample_id}.trimmed_paired \
+        --readFilesIn \${fq_1p} \${fq_2p} > ${sample_id}.trimmed_paired.star.log 2>&1
+
       # Now aligned the non-paired
       STAR \
         --runThreadN ${task.cpus} \
         --genomeDir ${star_index} \
-        --readFilesIn \${fq_1u},\${fq_2u}
+        --outFileNamePrefix ${sample_id}.trimmed_single \
+        --readFilesIn \${fq_1u},\${fq_2u} > ${sample_id}.trimmed_single.star.log 2>&1
 
     else
         STAR \
             --runThreadN ${task.cpus} \
             --genomeDir ${star_index} \
-            --readFilesIn \${fq_1u}
+            --outFileNamePrefix ${sample_id}.trimmed \
+            --readFilesIn \${fq_1u} > ${sample_id}.trimmed.star.log 2>&1
     fi
     """
 }
