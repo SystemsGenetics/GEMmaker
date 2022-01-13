@@ -18,7 +18,7 @@ process salmon {
 
     output:
     tuple val(sample_id), path("*.ga", type: "dir"), emit: GA_FILES
-    tuple val(sample_id), path("*.salmon.log"), emit: LOGS
+    tuple val(sample_id), path("${sample_id}.Salmon_multiqc", type: "dir"), emit: LOGS
     tuple val(sample_id), val(params.DONE_SENTINEL), emit: DONE_SIGNAL
 
     script:
@@ -49,7 +49,9 @@ process salmon {
     fi
 
     # Copy these files for MultiQC reporting
-    cp ${sample_id}.Salmon.ga/aux_info/meta_info.json ${sample_id}-meta_info.json
-    cp ${sample_id}.Salmon.ga/libParams/flenDist.txt ${sample_id}-flenDist.txt
+    mkdir -p ./${sample_id}.Salmon_multiqc/aux_info
+    mkdir -p ./${sample_id}.Salmon_multiqc/libParams
+    cp ${sample_id}.Salmon.ga/aux_info/meta_info.json ${sample_id}.Salmon_multiqc/aux_info/meta_info.json
+    cp ${sample_id}.Salmon.ga/libParams/flenDist.txt ${sample_id}.Salmon_multiqc/libParams/flenDist.txt
     """
 }
