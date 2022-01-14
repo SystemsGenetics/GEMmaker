@@ -241,15 +241,33 @@ include { salmon } from '../modules/local/salmon' addParams(publish_pattern_salm
 include { salmon_tpm } from '../modules/local/salmon_tpm' addParams(DONE_SENTINEL: DONE_SENTINEL)
 
 // Module: samtools_index
-publish_pattern_samtools_index = params.hisat2_keep_bam
-    ? "{*.log,*.bam.bai}"
-    : "{*.log}"
+// Hisat2
+if (hisat2_enable) {
+  publish_pattern_samtools_index = params.hisat2_keep_bam
+      ? "{*.log,*.bam.bai}"
+      : "{*.log}"
+}
+// STAR
+else  {
+  publish_pattern_samtools_index = params.star_keep_bam
+      ? "{*.log,*.bam.bai}"
+      : "{*.log}"
+}
 include { samtools_index } from '../modules/local/samtools_index' addParams(publish_pattern_samtools_index: publish_pattern_samtools_index)
 
 // Module: samtools_sort
-publish_pattern_samtools_sort = params.hisat2_keep_bam
-    ? "{*.log,*.bam}"
-    : "{*.log}"
+// Hisat2
+if (hisat2_enable) {
+  publish_pattern_samtools_sort = params.hisat2_keep_bam
+      ? "{*.log,*.bam}"
+      : "{*.log}"
+}
+// STAR
+else  {
+  publish_pattern_samtools_sort = params.star_keep_bam
+      ? "{*.log,*.bam}"
+      : "{*.log}"
+}
 include { samtools_sort } from '../modules/local/samtools_sort' addParams(publish_pattern_samtools_sort: publish_pattern_samtools_sort, DONE_SENTINEL: DONE_SENTINEL)
 
 // Module: samtools_merge - used with STAR only
@@ -259,9 +277,18 @@ publish_pattern_samtools_merge = params.star_keep_bam
 include { samtools_merge } from '../modules/local/samtools_merge' addParams(publish_pattern_samtools_merge: publish_pattern_samtools_merge, DONE_SENTINEL: DONE_SENTINEL)
 
 // Module: stringtie
-publish_pattern_stringtie_ga_gtf = params.hisat2_keep_data
-    ? "{*.ga, *.gtf}"
-    : "{none}"
+// Hisat2
+if (hisat2_enable) {
+  publish_pattern_stringtie_ga_gtf = params.hisat2_keep_data
+      ? "{*.ga, *.gtf}"
+      : "{none}"
+}
+// STAR
+else  {
+  publish_pattern_stringtie_ga_gtf = params.star_keep_data
+      ? "{*.ga, *.gtf}"
+      : "{none}"
+}
 include { stringtie } from '../modules/local/stringtie' addParams(publish_pattern_stringtie_ga_gtf: publish_pattern_stringtie_ga_gtf, DONE_SENTINEL: DONE_SENTINEL)
 
 // Module: trimmomatic
