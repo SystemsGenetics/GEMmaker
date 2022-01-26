@@ -33,7 +33,8 @@ else {
 /**
  * Make sure that at least one output format is enabled.
  */
-if ((hisat2_enable || star_enable) && !params.hisat2_keep_counts && !params.hisat2_keep_fpkm && !params.hisat2_keep_tpm) {
+if ( (hisat2_enable && !params.hisat2_keep_counts && !params.hisat2_keep_fpkm && !params.hisat2_keep_tpm) ||
+     (star_enable && !params.star_keep_counts && !params.star_keep_fpkm && !params.star_keep_tpm) ) {
   error "Error: at least one output format (raw, fpkm, tpm) must be enabled."
 }
 
@@ -83,6 +84,10 @@ if (hisat2_enable && (!params.hisat2_gtf_file || file(params.hisat2_gtf_file).is
 if (hisat2_enable && (!params.hisat2_index_dir || !file(params.hisat2_index_dir).isDirectory())) {
     error "Error: hisat2 Index Directory does not exist or is empty! Please Check that you have the proper references, that they are placed in the reference directory, and they are named properly.\
     \nGEMmaker is missing the following file: '${params.hisat2_index_dir}'"
+}
+
+if (hisat2_enable && !params.hisat2_base_name) {
+    error "Error: hisat2 requires the hisat2 index file's base name! Please Check that you have assigned the base name parameter '--hisat2_base_name'"
 }
 
 
@@ -740,7 +745,7 @@ workflow GEMmaker {
     }
 
     /**
-     * Clean trimmed fastq files after they are used by fastqc_2 and hisat2.
+     * Clean trimmed fastq files after they are used by fastqc_2 and hisat2
      */
     if ( hisat2_enable && !params.trimmomatic_keep_trimmed_fastq ) {
         CLEAN_TRIMMED_FASTQ_FILES = TRIMMED_FASTQ_FILES
@@ -754,9 +759,24 @@ workflow GEMmaker {
     }
 
     /**
-     * Clean sam files after they are used by samtools_sort.
+     * Clean trimmed fastq files after they are used by fastqc_2 and Star
      */
-    if ( hisat2_enable && !params.hisat2_keep_sam ) {
+    if ( star_enable && !params.trimmomatic_keep_trimmed_fastq ) {
+        CLEAN_TRIMMED_FASTQ_FILES = TRIMMED_FASTQ_FILES
+            .mix(
+                fastqc_2.out.DONE_SIGNAL,
+                star.out.DONE_SIGNAL)
+            .groupTuple(size: 3)
+            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
+
+        CLEAN_WORK_FILES = CLEAN_WORK_FILES.mix(CLEAN_TRIMMED_FASTQ_FILES)
+    }
+
+    /**
+     * Clean sam files after they are used by samtools_sort. Hisat and Star
+     */
+    if ( (hisat2_enable && !params.hisat2_keep_sam) ||
+         (star_enable && !params.star_keep_sam) ) {
         CLEAN_SAM_FILES = SAM_FILES
             .mix(samtools_sort.out.DONE_SIGNAL)
             .groupTuple(size: 2)
@@ -765,10 +785,25 @@ workflow GEMmaker {
         CLEAN_WORK_FILES = CLEAN_WORK_FILES.mix(CLEAN_SAM_FILES)
     }
 
+
+    /**
+     * Clean merged bam files after they are used by samtools_sort. Star
+     */
+    if ( star_enable && !params.star_keep_bam ) {
+        CLEAN_MERGED_BAM_FILES = MERGED_BAM_FILES
+            .mix(samtools_sort.out.DONE_SIGNAL)
+            .groupTuple(size: 2)
+            .map { [it[0], it[1].flatten().findAll { v -> v != DONE_SENTINEL }] }
+
+        CLEAN_WORK_FILES = CLEAN_WORK_FILES.mix(CLEAN_MERGED_BAM_FILES)
+    }
+
+
     /**
      * Clean bam files after they are used by stringtie.
      */
-    if ( hisat2_enable && !params.hisat2_keep_bam ) {
+    if ( (hisat2_enable && !params.hisat2_keep_bam) ||
+         (star_enable && !params.star_keep_bam) ) {
         CLEAN_BAM_FILES = BAM_FILES
             .mix(stringtie.out.DONE_SIGNAL)
             .groupTuple(size: 2)
@@ -780,7 +815,8 @@ workflow GEMmaker {
     /**
      * Clean stringtie files after they are used by stringtie_fpkm_tpm.
      */
-    if ( hisat2_enable && !params.hisat2_keep_data ) {
+    if ( (hisat2_enable && !params.hisat2_keep_data) ||
+         (star_enable && !params.star_keep_data) ) {
         CLEAN_STRINGTIE_FILES = STRINGTIE_FILES
             .mix(stringtie_fpkm_tpm.out.DONE_SIGNAL)
             .groupTuple(size: 2)
