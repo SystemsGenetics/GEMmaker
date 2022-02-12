@@ -41,12 +41,12 @@ Full Test With Large Data
 '''''''''''''''''''''''''
 If you would like to test GEMmaker on a large data then the NCBI SRA Project `PRJNA301554 <https://www.ncbi.nlm.nih.gov/bioproject/PRJNA301554/>`_ offers a good choice.  To test this data you can use the following:
 
-- Reference data for Hisat2:
+- Reference data for Hisat2/STAR:
 
   - *Oryza sativa* `MSU v7.0 genome reference FASTA file <http://rice.uga.edu/pub/data/Eukaryotic_Projects/o_sativa/annotation_dbs/pseudomolecules/version_7.0/all.dir/all.con>`_.
   - *Oryza sativa* `MSU v7.0 annotations in GFF3 <http://rice.uga.edu/pub/data/Eukaryotic_Projects/o_sativa/annotation_dbs/pseudomolecules/version_7.0/all.dir/all.gff3>`_.
 
-- Reference data for Kallisto:
+- Reference data for Kallisto/Salmon:
 
   - *Oryza sativa* `MSU v7.0 transcriptome (cDNA) FASTA file <http://rice.uga.edu/pub/data/Eukaryotic_Projects/o_sativa/annotation_dbs/pseudomolecules/version_7.0/all.dir/all.cdna>`_.
 - SRA List of :download:`475 Run IDs <./SRA_IDs.txt>` from the the NCBI SRA Project PRJNA301554.

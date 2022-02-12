@@ -79,6 +79,33 @@ Additionally, you can control the Trimmomatic trimming step by adding any of the
 - ``--trimmomatic_LEADING``: corresponds to the ``LEADING`` argument of Trimmomatic. Defults to 3.
 - ``--trimmomatic_TRAILING``: correponds to teh ``TRAILING`` argument of Trimmomatic. Defaults to 6.
 
+Use STAR
+........
+To run STAR you need to specify:
+
+- The path to directory containing the STAR genome reference indexed files
+- The GTF file containing the gene annotations.
+- A file containing a set of SRA run IDs you want to download or the path were FASTQ files are stored on the local system.
+
+For example:
+
+.. code:: bash
+
+  nextflow run systemsgenetics/gemmaker -profile singularity \
+    --pipeline star \
+    --sras SRAs.txt \
+    --star_index_dir Arabidopsis_thaliana.TAIR10.STAR.indexed \
+    --star_gtf_file Arabidopsis_thaliana.TAIR10.gtf
+
+Additionally, you can control the Trimmomatic trimming step by adding any of the following parameters:
+
+- ``--trimmomatic_clip_file``: the location for a custom file of sequences to clip. GEMmaker provides a default version so you only need to set this if you have custom sequences.
+- ``--trimmomatic_MINLEN``: corresponds to the ``MINLEN`` argument of Trimmomatic. Defaults to 0.7.
+- ``--trimmomatic_SLIDINGWINDOW``: corresponds to the ``SLIDINGWINDOW`` argument of Trimmomatic. Defaults to "4:15"
+- ``--trimmomatic_LEADING``: corresponds to the ``LEADING`` argument of Trimmomatic. Defults to 3.
+- ``--trimmomatic_TRAILING``: correponds to teh ``TRAILING`` argument of Trimmomatic. Defaults to 6.
+
+
 Use Local FASTQ Files
 .....................
 If your FASTQ files are local to your computer you must provide the ``--input`` argument when launching Nextflow and indicate the `GLOB pattern <https://en.wikipedia.org/wiki/Glob_(programming)>`_ than is needed to find the files:
@@ -175,7 +202,9 @@ If you want to run GEMmaker on a local High Performance Computing Cluster (HPC) 
       }
    }
 
-In the example above we created a new profile named ``my_cluster``. Within the stanza, the placeholder text ``<queue name>`` should be replaced with the name of the queue on which you are allowed to submit jobs. If you need to provide specific options that you would normally provide in a SLURM submission script (such as an account or other node targetting settings) you can use the ``clusterOptions`` setting.
+In the example above we created a new profile named ``my_cluster``. The ``executor`` is what type of cluster we will be running on, in this case a slurm cluster. Additional executor options for other HPC cluster types can be located in the `nextflow executor documentation <https://www.nextflow.io/docs/latest/executor.html>`_
+
+Within the stanza, the placeholder text ``<queue name>`` should be replaced with the name of the queue on which you are allowed to submit jobs. ``maxRetries`` indicates how many times Nextflow will attempt to perform a process before giving an error. ``maxRetries`` is an important option if you are running on the backfill queue of a HPC where you have the potential to be pre-empted by other jobs. If you need to provide specific options that you would normally provide in a SLURM submission script (such as an account or other node targetting settings) you can use the ``clusterOptions`` setting.
 
 Next, is an example SLURM submission script for submitting a job to run GEMmaker. Please note, this is just an example and your specific cluster may require slightly different configuration/usage. The script assumes your cluster uses the lmod system for specifying software.
 

@@ -220,7 +220,7 @@ def find_downloaded_runs(meta_dir, run_ids):
 
 
 
-def map_run_to_exp(meta_dir, run_ids):
+def map_run_to_exp(meta_dir, run_ids, out_file):
     """
     Performs a looking for each run to get it's experiment and prints it.
 
@@ -238,7 +238,7 @@ def map_run_to_exp(meta_dir, run_ids):
                 run = json.load(run_file)
                 exp_id = run['EXPERIMENT_REF']['@accession']
                 # Write in CSV format to stdout
-                sys.stdout.write("%s,%s\n" % (run_id, exp_id))
+                out_file.write("%s,%s\n" % (run_id, exp_id))
 
 
 
@@ -255,6 +255,7 @@ if __name__ == "__main__":
     parser.add_argument("--skip_file", help="A file containing the SRA run IDs to skip", required=False)
     parser.add_argument("--meta_dir", help="The directory were meta data should be stored", required=True)
     parser.add_argument("--page-size", help="number of SRA run IDs to query at a time", type=int, default=100, dest="PAGE_SIZE")
+    parser.add_argument("--out_file", help="The name of the output file", required=True)
 
     args = parser.parse_args()
 
@@ -297,7 +298,9 @@ if __name__ == "__main__":
     f.close()
 
     # Now iterate through the metadata and and map runs to experiments.
-    map_run_to_exp(meta_dir, run_ids)
+    out_file = open(args.out_file, "w")
+    map_run_to_exp(meta_dir, run_ids, out_file)
+    out_file.close()
 
     # Return the exit code.
     sys.exit(0)

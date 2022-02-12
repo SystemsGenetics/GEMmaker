@@ -30,3 +30,4 @@ Development of GEMmaker was funded by the U.S. National Science Foundation Award
    results
    whats_next
    troubleshooting
+   citations

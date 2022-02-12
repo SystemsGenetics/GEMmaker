@@ -1,9 +1,9 @@
-# nf-core/gemmaker: Changelog
+# GEMmaker: Changelog
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v2.0 - [date]
+## v2.1.0 - [date]
 
 This release is a major reconfiguration of GEMmaker to meet the nf-core standards [nf-core](https://nf-co.re/). It also includes multiple bug fixes
 
@@ -11,7 +11,7 @@ This release is a major reconfiguration of GEMmaker to meet the nf-core standard
 
 - Support for nf-core compatibility and functions. With nf-core compatibility come an easier configuration and execution step. Therefore configuration is much different from earlier versions of GEMmaker.
 - Added a new failed runs report.  Runs that fail to download or dump from the SRA format to fastq format no longer cause the pipeline to fail, but are skipped and information about the failure is stored in a new HTML run failure report.
-- Fully updated the documentation to be compatible with the 2.0 version.
+- Fully updated the documentation to be compatible with the 2.1.0 version.
 
 ### `Fixed`
 
