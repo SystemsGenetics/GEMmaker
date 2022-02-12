@@ -14,6 +14,7 @@ lint:
     - .github/ISSUE_TEMPLATE/feature_request.yml
     - .github/PULL_REQUEST_TEMPLATE.md
     - .github/workflows/branch.yml
+    - .github/workflows/linting.yml
     - .github/workflows/linting_comment.yml
     - assets/sendmail_template.txt
     - assets/email_template.html
