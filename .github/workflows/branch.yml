@@ -13,7 +13,7 @@ jobs:
       - name: Check PRs
         if: github.repository == 'systemsgenetics/gemmaker'
         run: |
-          { [[ ${{github.event.pull_request.head.repo.full_name }} == systemsgenetics/gemmaker ]] && [[ $GITHUB_HEAD_REF = "dev" ]]; } || [[ $GITHUB_HEAD_REF == "patch" ]]
+          { [[ ${{github.event.pull_request.head.repo.full_name }} == SystemsGenetics/GEMmaker ]] && [[ $GITHUB_HEAD_REF = "dev" ]]; } || [[ $GITHUB_HEAD_REF == "patch" ]]
 
 
       # If the above check failed, post a comment on the PR explaining the failure
