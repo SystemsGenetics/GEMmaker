@@ -27,6 +27,8 @@ Please see the [GEMmaker documentation](https://gemmaker.readthedocs.io/en/lates
 
 ## Credits
 
+Please see the list of developers who have contributed to this repository.
+
 Development of GEMmaker was funded by the U.S. National Science Foundation Award [#1659300](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1659300&HistoricalAwards=false).
 
 ## Contributions and Support
