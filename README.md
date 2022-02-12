@@ -27,8 +27,6 @@ Please see the [GEMmaker documentation](https://gemmaker.readthedocs.io/en/lates
 
 ## Credits
 
-GEMmaker was originally written by John Hadish, Tyler Biggs, Ben Shealy, Connor Wytko, Sai Prudhvi Oruganti, F. Alex Feltus, & Stephen Ficklin.
-
 Development of GEMmaker was funded by the U.S. National Science Foundation Award [#1659300](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1659300&HistoricalAwards=false).
 
 ## Contributions and Support
