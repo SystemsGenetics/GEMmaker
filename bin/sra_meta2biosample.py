@@ -61,6 +61,13 @@ def parse_meta(meta):
        for attr in attrs: 
           sample[attr['TAG']] = attr['VALUE']
 
+   # If there is a description for the sample, use that
+   # instead of any attribute values.
+   if 'DESCRIPTION' in meta.keys():
+       sample['description'] = meta['DESCRIPTION']
+
+   # use the sample name as the accession.
+   sample['sample_name'] = accession
    return sample
 
     
