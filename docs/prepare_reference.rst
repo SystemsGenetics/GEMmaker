@@ -31,7 +31,7 @@ If you do not have Kallisto indexes already prepared for your reference genome, 
 
 .. code-block:: bash
 
-  singularity exec -B ${PWD} docker://systemsgenetics/gemmaker kallisto index -i Arabidopsis_thaliana.TAIR10.kallisto.indexed Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz
+  singularity exec -B ${PWD} https://depot.galaxyproject.org/singularity/kallisto:0.46.2--h4f7b962_1 kallisto index -i Arabidopsis_thaliana.TAIR10.kallisto.indexed Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz
 
 The command above uses the ``gemmaker/gemmaker`` image that was built for GEMmaker.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the Kallisto index command can be executed.
 
@@ -62,7 +62,7 @@ If you do not have Salmon indexes already prepared for your reference genome, yo
 
 .. code-block:: bash
 
-   singularity exec -B ${PWD} docker://systemsgenetics/gemmaker salmon index index -t Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz -i Arabidopsis_thaliana.TAIR10.salmon.indexed
+   singularity exec -B ${PWD} https://depot.galaxyproject.org/singularity/salmon:1.5.2--h84f40af_0 salmon index index -t Arabidopsis_thaliana.TAIR10.cdna.all.fa.gz -i Arabidopsis_thaliana.TAIR10.salmon.indexed
 
 
 The command above uses the ``systemsgenetics/gemmaker`` image to index the transcripts.  The image will be downloaded if it does not already exist on your machine.  The command above uses the ``-B ${PWD}`` argument to automatically mount the current directory onto the same directory in the image. From there the Salmon index command can be executed.
@@ -114,7 +114,7 @@ To index the reference:
 
 .. code-block:: bash
 
-   singularity exec -B ${PWD} docker://systemsgenetics/gemmaker hisat2-build -f Arabidopsis_thaliana.TAIR10.dna.toplevel.fa Arabidopsis_thaliana.TAIR10
+   singularity exec -B ${PWD} https://depot.galaxyproject.org/singularity/mulled-v2-a97e90b3b802d1da3d6958e0867610c718cb5eb1:2880dd9d8ad0a7b221d4eacda9a818e92983128d-0 hisat2-build -f Arabidopsis_thaliana.TAIR10.dna.toplevel.fa Arabidopsis_thaliana.TAIR10
 
 The following describes the meaning of the arguments in the command-line above:
 
