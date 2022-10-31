@@ -32,7 +32,8 @@ Please see the list of developers who have contributed to this repository.
 Development of GEMmaker was funded by the U.S. National Science Foundation Award [#1659300](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1659300&HistoricalAwards=false).
 
 If you use GEMmaker in your research, please use this citation:
-Hadish, J. A., Biggs, T. D., Shealy, B. T., Bender, M. R., McKnight, C. B., Wytko, C., Smith, M. C., Feltus, F. A., Honaas, L., & Ficklin, S. P. (2022). GEMmaker: process massive RNA-seq datasets on heterogeneous computational infrastructure. BMC Bioinformatics, 23(1), 1–11.
+
+**Hadish, J. A., Biggs, T. D., Shealy, B. T., Bender, M. R., McKnight, C. B., Wytko, C., Smith, M. C., Feltus, F. A., Honaas, L., & Ficklin, S. P. (2022). GEMmaker: process massive RNA-seq datasets on heterogeneous computational infrastructure. BMC Bioinformatics, 23(1), 1–11.**
 
 ## Contributions and Support
 
