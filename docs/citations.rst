@@ -1,3 +1,10 @@
+Citing GEMmaker
+---------------
+If you use GEMmaker in your research, please cite this publication:
+
+**Hadish, J. A., Biggs, T. D., Shealy, B. T., Bender, M. R., McKnight, C. B., Wytko, C., Smith, M. C., Feltus, F. A., Honaas, L., & Ficklin, S. P. (2022). GEMmaker: process massive RNA-seq datasets on heterogeneous computational infrastructure. BMC Bioinformatics, 23(1), 1–11.**
+
+
 Publiations Citing GEMmaker
 ---------------------------
 
