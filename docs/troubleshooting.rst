@@ -73,6 +73,26 @@ If you are launching GEMmaker on an HPC system with the SLURM scheduler you can 
 If you have a lot of samples, Nextflow may need more memory.  Increasing the amount of memory in your SLURM submission script will correct this problem.  Remember to restart GEMmaker with the ``-resume`` flag to have it continue where it left off.
 
 
+Error: terminated with an error exit status (127)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This means that your system is not finding the commands. With GEMmaker, the most likely explination is that GEMmaker is attempting to run in a different mode than you intend. It could be that you are wanting to run on a HPC machine using Singularity, but GEMmaker thinks you want to run it locally. One reason that GEMmaker may think this is if you have placed spaces inbetween profile options:
+
+Incorrect:  
+
+.. code:: bash
+
+    -profile my_cluster, singularity
+ 
+ 
+Correct:  
+
+.. code:: bash
+
+    -profile my_cluster,singularity 
+ 
+ 
+
+
 Get Help or Suggest Improvements
 --------------------------------
 
