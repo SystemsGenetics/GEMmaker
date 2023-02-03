@@ -65,7 +65,9 @@ def download_runs_meta(run_ids, meta_dir, page_size=100):
             sys.stderr.write("ERROR Retrieving SRA Metadata: %s\n" % (e.reason))
             continue
 
-        response_xml = response_obj.read().decode(response_obj.headers.get_content_charset())
+        response = response_obj.read()
+        charset = response_obj.headers.get_content_charset(failobj="utf-8")
+        response_xml = response.decode(charset)
         response = xmltodict.parse(response_xml)
 
         # Write out the XML for debugging purposes should something fail
