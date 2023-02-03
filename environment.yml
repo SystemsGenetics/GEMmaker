@@ -1,6 +1,6 @@
 # You can use this file to create a conda environment for this pipeline:
 #   conda env create -f environment.yml
-name: systemsgenetics-gemmaker-2.1.0
+name: systemsgenetics-gemmaker-2.1.1
 channels:
   - conda-forge
   - bioconda
