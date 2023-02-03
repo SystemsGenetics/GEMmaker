@@ -1,4 +1,4 @@
-# GEMmaker Citations
+# systemsgenetics/gemmaker: Citations
 
 If you use GEMmaker for your analysis, please cite it using the following:
 

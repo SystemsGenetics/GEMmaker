@@ -1,9 +1,11 @@
-# GEMmaker: Changelog
+# systemsgenetics/gemmaker: Changelog
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v2.1.0 - [date]
+## v2.1.2dev - [date]
+
+## v2.1.0 - 2022-02-11
 
 This release is a major reconfiguration of GEMmaker to meet the nf-core standards [nf-core](https://nf-co.re/). It also includes multiple bug fixes
 
