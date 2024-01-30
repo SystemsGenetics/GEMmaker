@@ -12,6 +12,11 @@
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
 
+## How to Use
+
+Please see the [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/) for in-depth instructions for running GEMmaker.
+
+
 ## Introduction
 
 GEMmaker (i.e. **systemsgenetics/gemmaker**) is a pipeline for quantification of Illumina RNA-seq data. Users can choose from Hisat2, STAR, Kallisto or Salmon. It can process locally stored FASTQ files or automatically retrieve them from NCBI's SRA.  The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It comes with docker containers making installation trivial and results highly reproducible.
@@ -20,10 +25,6 @@ GEMmaker (i.e. **systemsgenetics/gemmaker**) is a pipeline for quantification of
 
 GEMmaker is an [nf-core](https://nf-co.re/) compatible workflow, however, GEMmaker is not an official nf-core workflow.  This is because nf-core offers the [nf-core/rnaseq](https://nf-co.re/rnaseq) workflow which is an excellent workflow for RNA-seq analysis that provides similar functionality to GEMmaker.  However, GEMmaker is different in that it can scale to thousands of samples without exceeding local storage resources by running samples in batches and removing intermediate files.  It can do the same for smaller sample sets on machines with less computational resources.  This ability to scale is a unique adaption that is currently not provided by Nextflow.   When Nextflow does provide support for batching and scaling, the [nf-core/rnaseq](https://nf-co.re/rnaseq) will be updated and GEMmaker will probably be retired in favor of the nf-core workflow. Until then, if you are limited by storage GEMmaker can help!
 v
-
-## How to Use
-
-Please see the [GEMmaker documentation](https://gemmaker.readthedocs.io/en/latest/) for in-depth instructions for running GEMmaker.
 
 ## Credits
 
