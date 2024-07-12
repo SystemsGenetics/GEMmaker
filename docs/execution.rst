@@ -287,7 +287,7 @@ To run GEMmaker on a computational cluster you will need to to create a custom c
 
 Increasing Resources
 .....................
-You may find that default resources are not adequate for the size of your data set.  You can alter resources requested for each step of the GEMmaker workflow by using the ``withLabel`` scope selector in a custom ``nextflow.config`` file.
+You may find that default resources are not adequate for the size of your data set.  You can alter resources requested for each step of the GEMmaker workflow by using the ``withName`` scope selector in a custom ``nextflow.config`` file.
 
 For example, if you have thousands of SRA data sets to process, you may need more memory allocated to the ``retrieve_sra_metadata`` step of the workflow. All steps in the workflow have a "label" that you can use to indicate which step resources should be changed. Below is an example ``nextflow.config`` file where a new profile named ``custom`` is provided where the memory has been increased for the ``retrieve_sra_metadata``.
 
@@ -296,7 +296,7 @@ For example, if you have thousands of SRA data sets to process, you may need mor
     profiles {
         custom {
             process {
-                withLabel:retrieve_sra_metadata {
+                withName:retrieve_sra_metadata {
                     memory = "10.GB"
          	    }
             }
