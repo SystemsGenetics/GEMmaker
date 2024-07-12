@@ -21,9 +21,6 @@ process samtools_sort {
 
     script:
     """
-    echo "#TRACE sample_id=${sample_id}"
-    # echo "#TRACE sam_lines=`cat *.sam | wc -l`"
-
     samtools sort \
         -o ${sample_id}.sorted.bam \
         -O bam \

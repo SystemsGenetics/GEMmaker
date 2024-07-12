@@ -16,8 +16,6 @@ process salmon_tpm {
 
     script:
     """
-    echo "#TRACE sample_id=${sample_id}"
-
     if [[ ${params.salmon_keep_tpm} == true ]]; then
       awk -F"\t" '{if (NR!=1) {print \$1, \$4}}' OFS='\t' ${sample_id}.Salmon.ga/quant.sf > ${sample_id}.Salmon.tpm
     fi

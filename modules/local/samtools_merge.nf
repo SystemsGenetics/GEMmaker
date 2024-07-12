@@ -21,9 +21,6 @@ process samtools_merge {
 
     script:
     """
-    echo "#TRACE sample_id=${sample_id}"
-    echo "#TRACE sam_lines=`cat *.sam | wc -l`"
-
     samtools merge \
         -o ${sample_id}.bam \
         ${sam_files}

@@ -16,8 +16,6 @@ process kallisto_tpm {
 
     script:
     """
-    echo "#TRACE sample_id=${sample_id}"
-
     if [[ ${params.kallisto_keep_tpm} == true ]]; then
       awk -F"\t" '{if (NR!=1) {print \$1, \$5}}' OFS='\t' ${sample_id}.Kallisto.ga/abundance.tsv > ${sample_id}.Kallisto.tpm
     fi

@@ -23,9 +23,6 @@ process kallisto {
 
     script:
     """
-    echo "#TRACE sample_id=${sample_id}"
-    echo "#TRACE fastq_lines=`cat *.fastq | wc -l`"
-
     # Convert the incoming FASTQ file list to an array
     fastq_files=(${fastq_files})
 

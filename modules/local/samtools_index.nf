@@ -22,9 +22,6 @@ process samtools_index {
 
     script:
     """
-    echo "#TRACE sample_id=${sample_id}"
-    echo "#TRACE bam_bytes=`stat -Lc '%s' *.bam`"
-
     samtools index ${bam_file}
     samtools stats ${bam_file} > ${sample_id}.bam.log
     """

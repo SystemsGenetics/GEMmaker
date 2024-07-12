@@ -23,10 +23,6 @@ process hisat2 {
 
     script:
     """
-    echo "#TRACE sample_id=${sample_id}"
-    echo "#TRACE n_cpus=${task.cpus}"
-    echo "#TRACE trimmed_fastq_lines=`cat *.fastq | wc -l`"
-
     # convert the incoming FASTQ file list to an array
     fastq_files=(${fastq_files})
 

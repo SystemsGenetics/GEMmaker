@@ -18,9 +18,6 @@ process fastq_dump {
 
     script:
     """
-    echo "#TRACE sample_id=${sample_id}"
-    echo "#TRACE sra_bytes=`stat -Lc '%s' *.sra | awk '{sum += \$1} END {print sum}'`"
-
     sra2fastq.py --sample ${sample_id} --sra_files ${sra_files}
     """
 }

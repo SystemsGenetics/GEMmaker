@@ -22,10 +22,6 @@ process download_runs {
     # if it succeeded.
     workdir=`echo ${params.workDirParent}/${params.workDirName}/GEMmaker | sed 's/path://'`
 
-    echo "#TRACE sample_id=${sample_id}"
-    echo "#TRACE n_remote_run_ids=${run_ids.tokenize(" ").size()}"
-    echo "#TRACE n_spots=`retrieve_sra_spots.py \$workdir ${sample_id}`"
-
     retrieve_sra.py --sample ${sample_id} --run_ids ${run_ids} --akey \${ASPERA_KEY}
     """
 }
