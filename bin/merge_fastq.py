@@ -38,7 +38,7 @@ for fastq_filename in args.fastq_files:
     if (re.match(r"^.*(_2.fastq)$", fastq_filename) and handles['_2.fastq'] is None):
         handles['_2.fastq'] = open(args.out_prefix + '_2.fastq', "w")
 
-# Now open each file and merge the records into the appropirate
+# Now open each file and merge the records into the appropriate
 # output file.
 for fastq_filename in args.fastq_files:
     fh = None

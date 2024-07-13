@@ -3,7 +3,6 @@
  */
 process fastq_merge {
     tag { sample_id }
-    container "systemsgenetics/gemmaker:2.1.0"
 
     input:
     tuple val(sample_id), path(fastq_files)
@@ -14,6 +13,6 @@ process fastq_merge {
 
     script:
     """
-    merge_fastq.py --fastq_files ${fastq_files.join(" ")} --out_prefix ${sample_id}
+    merge_fastq.sh ${sample_id}
     """
 }
