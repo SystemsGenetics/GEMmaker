@@ -16,7 +16,7 @@ if [ ${#files_1[@]} -gt 1 ] ; then
 
 elif [ ${#files_1[@]} -eq 1 ] ; then
 
-    ln ${files_1[0]} ${sample_id}_1.fastq
+    cp ${files_1[0]} ${sample_id}_1.fastq
 
 fi
 
@@ -29,6 +29,6 @@ if [ ${#files_2[@]} -gt 1 ] ; then
 
 elif [ ${#files_2[@]} -eq 1 ] ; then
 
-    ln ${files_2[0]} ${sample_id}_2.fastq
+    cp ${files_2[0]} ${sample_id}_2.fastq
 fi
 
